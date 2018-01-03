@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+     <title>shop app</title>
+     <link rel="stylesheet" type="text/css" href="scss/style.scss">
+     
+          <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+          <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
+</head>
+<body>
+     <div id="app" >
+          <h1>my shopping history</h1>
+
+          <div id="locButtons">
+                      <button v-on:click="openLocationInput('country',$event)">add country</button>
+                      <button v-on:click="openLocationInput('city',$event)">add city</button>
+                      <button v-on:click="openLocationInput('shop',$event)">add shop</button>
+          </div>
+       
+          <div id="locations">
+       
+               <select   id="CountrySel" v-model="currentCountry" data-forlabel="currentCountry" 
+                         v-on:change="updateLocationSelect('countries','cities',$event)">
+                    <option v-for="country in countries">{{country.name}}</option>
+               </select>
+
+               <select id="CitySel" v-model="currentCity" data-forlabel="currentCity"  v-on:change="updateLocationSelect('cities','shops',$event)">
+                    <option v-for="city in cities">{{city.name}}</option>
+               </select>
+
+               <select   id="ShopSel" data-forlabel="currentShop"
+                         v-on:change="updateLocationSelect('shops',null, $event)">
+                    <option v-for="shop in shops">{{shop.name}}</option>
+               </select>
+                   
+          </div>
+          <br><br>
+
+          <div id="locationInput" v-show="locationInputShown" class="vertical">
+                   
+               <button id="locationInputHide" v-on:click="locationInputShown=false">hide</button>
+                   
+               <label>add {{locationSet}}</label>
+               <input id="addCountryIn" type="text" v-model="newLocation">
+               <button id="confCountryBut"  v-on:click="addNewLocation()">confirm</button>
+
+          </div>
+
+          <div id="addProductDiv">
+               {{currentCountry}} - {{currentCity}} - {{currentShop}}
+          </div>
+
+          <button id="addProductButton">add product</button>
+     </div>
+        
+     <script src="js/db.js"></script>
+     <script src="js/index.js"></script>
+     
+</body>
+</html>
