@@ -1,0 +1,51 @@
+{
+     "userName": "auntie",
+     "countries": [{
+          "name": "all countries" , 
+          "cities": [
+                    {
+                         "name": "all cities", 
+                         "shops":[{
+                                   "name": "all shops",
+                                   "products": []
+                              },
+                              {
+                                   "name": "KFC",
+                                   "products": [{"name":"salad"}]
+                              }]
+                    }
+          ]
+     },
+     {
+          "name": "Netherlands",
+          "cities": [
+                    {
+                         "name": "all cities", 
+                         "shops":[{
+                                   "name": "all shops",
+                                   "products": []
+                              }]
+                    },
+                    {
+                         "name": "Rotter",
+                         "shops": [{
+                                   "name": "all shops",
+                                   "products": []
+                              }]
+                    },
+                    {
+                         "name": "Amsterodam",
+                         "shops": [{
+                                   "name": "all shops",
+                                   "products": []
+                              },
+                              {
+                                   "name": "japo go",
+                                   "products": [{"name": "Ramen soup"},
+                                                {"name": "Onigiri snacks"}
+                                               ]
+                              }]
+                    }
+          ]
+     }]
+}

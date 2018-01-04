@@ -27,11 +27,12 @@
                     <option v-for="country in countries">{{country.name}}</option>
                </select>
 
-               <select id="CitySel" v-model="currentCity" data-forlabel="currentCity"  v-on:change="updateLocationSelect('cities','shops',$event)">
+               <select   id="CitySel" v-model="currentCity" data-forlabel="currentCity"  
+                         v-on:change="updateLocationSelect('cities','shops',$event)">
                     <option v-for="city in cities">{{city.name}}</option>
                </select>
 
-               <select   id="ShopSel" data-forlabel="currentShop"
+               <select   id="ShopSel" v-model="currentShop" data-forlabel="currentShop"
                          v-on:change="updateLocationSelect('shops',null, $event)">
                     <option v-for="shop in shops">{{shop.name}}</option>
                </select>

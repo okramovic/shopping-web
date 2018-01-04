@@ -1,0 +1,41 @@
+{
+     "userName": "Kermit",
+     "countries": [{
+          "name": "all countries" , 
+          "cities": [
+           {
+               "name": "all cities", 
+               "shops":[{
+                         "name": "all shops",
+                         "products": []
+                    },{
+                         "name": "Pizza Hut",
+                         "products": [
+                              {"name":"Pizza with spaghetti"}
+                         ]
+               }]
+          }]
+
+     },
+     {
+          "name": "Czech",
+          "cities":[
+           {
+               "name": "Prague",
+               "shops": [{
+                         "name": "Bio Letná",
+                         "products": [
+                              {"name":"soap1"}
+                         ]
+               }]
+          },{
+               "name": "Brno",
+               "shops": [{
+                         "name": "Naturinka",
+                         "products": [
+                              {"name":"soap2"}
+                         ]
+               }]
+          }]
+     }]
+}

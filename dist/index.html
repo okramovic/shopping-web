@@ -30,7 +30,7 @@
                     <option v-for="city in cities">{{city.name}}</option>
                </select>
 
-               <select id="ShopSel" data-forlabel="currentShop" v-on:change="updateLocationSelect('shops',null, $event)">
+               <select id="ShopSel" v-model="currentShop" data-forlabel="currentShop" v-on:change="updateLocationSelect('shops',null, $event)">
                     <option v-for="shop in shops">{{shop.name}}</option>
                </select>
                    
