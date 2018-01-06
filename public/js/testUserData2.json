@@ -7,7 +7,7 @@
                "name": "all cities", 
                "shops":[{
                          "name": "all shops",
-                         "products": []
+                         "products": [{"name":"Traduccione AHA!!"}]
                     },{
                          "name": "Pizza Hut",
                          "products": [

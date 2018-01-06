@@ -11,7 +11,7 @@
  */
 
 'use strict'
-
+//createDeviceUser('app Owner')
 function createDeviceUser(defaultName = 'anonymous'){
      //if ( window.localStorage.getItem('deviceUser') === null){
           const initialData = {
@@ -34,7 +34,7 @@ window.user_locations = new Dexie('user_locations');
                     console.error('Uh oh : ' + error);
      });
 
-//const user1data = require('./testUserData1.json'), user2data = require('./testUserData2.json')
+
 
 
 
@@ -42,7 +42,7 @@ window.user_locations = new Dexie('user_locations');
 const users_followed = new Dexie('users_followed')
 
      users_followed.version(1).stores({ userData: 'userName, countries'})
-
+     //const user1data = require('./testUserData1.json'), user2data = require('./testUserData2.json')
      //users_followed.userData.put(user1data)
      //users_followed.userData.put(user2data)
      //console.log('user1data',user2data.userName)
@@ -85,7 +85,8 @@ const app = new Vue({
           currentShop:  null,
           countries: [],
           cities: [],
-          shops: []
+          shops: [],
+          currentDisplayedProducts: []
      },
      
      methods:{
@@ -109,7 +110,7 @@ const app = new Vue({
                                                         name: 'all cities', 
                                                         shops:[{
                                                                  name: 'all shops',
-                                                                 products: []
+                                                                 products: [{"name":"časopis"},{"name":"denní tisk"}]
                                                         }]
                                                        }
                                                      ]
@@ -141,7 +142,9 @@ const app = new Vue({
                     getOtherUsersLocalData().then(result=>{
                          result = result.map(el=>el.countries)
                          //console.log(result)
-                         resolve(result)
+                         if (result.length>0) resolve(result)
+                         else resolve(null)
+
                     })
                })   
           },
@@ -242,15 +245,15 @@ const app = new Vue({
 
           },
           updateLocationSelect:function(index, event){
-               console.log('slct', event.srcElement.selectedIndex)
+               //console.log('slct', event.srcElement.selectedIndex)
                //console.log('label', event,'\n', event.srcElement.getAttribute('data-saveas')  )
 
                if (event.srcElement.selectedIndex<0) return      // protection against DOM load events 
 
                const self = this
-               const selects = ['countries', 'cities', 'shops'], //, 'products'],
+               const selects = ['countries', 'cities', 'shops','products'],
                      currents= ['currentCountry','currentCity','currentShop']
-               console.log('index', index, selects[index])
+               //console.log('index', index, selects[index])
 
                // improve this nonsense
                //if (event && event.timeStamp>2000) setLastSelection(selects[index], event.srcElement.selectedOptions[0].text)
@@ -263,10 +266,17 @@ const app = new Vue({
                if (index< selects.length-1)  getSubsetItems(this,index,name)
 
                                                   .then(result =>{  // save last locations to local storage
+                                                       console.log('----- products:', result)
+
+                                                       // displays products on screen
+                                                       this.currentDisplayedProducts = result
                                                   })
                function getSubsetItems(self, outerIndex, name){
-                    if (outerIndex>2) return false;
+                    
+                    if (outerIndex>4) return false;
 
+                    //console.log('getting items of', name)
+                    //console.log('continue -- outerIndex, name',outerIndex, name)
                     return new Promise((resolve, rej)=>{
                          // 0 1 2
                          const currentX = currents[outerIndex]  // 'currentCountry' 'currentCity' 'currentShop'
@@ -276,39 +286,51 @@ const app = new Vue({
                                subSet   = selects[index+1]  // 'countries' 'cities' 'shops'
                                
                          //console.log('self[currentX]', currentX, self[currentX])
-                         //console.log('self.set', self[set])
+                         //console.log('set', set)
+                         
                          // get current Country without DOM
                          //console.log('!!',currents[outerIndex-1])
 
                          //const name = event.srcElement.selectedOptions[0].text
-                         self[currentX] = name
-                         console.log(currentX, name)
-                         console.log('    save ?', set, name)
-                         setLastSelection(set, name)
-
+                         if (set == 'products'){
+                              //console.log('products', subSet, a.name, a[subSet], a.products)
+                              //console.log('PRODUCTS!!!  ', a.products)
+                              //resolve( getSubsetItems(self, outerIndex + 1, 'products') )
+                              return alert('oops')
+                         }
 
                          let a = self[set].find(el=>{
                                    //console.log('el.name', el.name)
                                    return el.name===name
                          })
-                         //console.log('a',a.name, a[subSet])
+                         
                          
 
+                         self[currentX] = name
+                         //console.log(currentX, name)
+                         //console.log('    save ?', set, name)
+                         setLastSelection(set, name)
+
                          self[subSet] = a[subSet]
-                         //console.log(`set city to`, a[subSet][0].name)
+                         //console.log(`subset`, a[subSet])
+                         //console.log('subSet', subSet)
+                         
                          //console.log('---',currents[outerIndex+1])
-                         if (currents[outerIndex+1]=== undefined) return;
+                         if (currents[outerIndex+1]=== undefined) {
+                              //console.log('products?')
+                              resolve(a[subSet]) 
+                              return //console.log('test')
+                         }
 
                          let string = currents[outerIndex+1].toString()
                          self[string]= a[subSet][0].name    // 'currentCountry' 'currentCity' 'currentShop'
                          
-                         //console.log('self[subSet]', self[subSet][0].name)  // name of default item to set
-                         // save it as last in Loc Storage
+                         //console.log('[subSet]', self[subSet][0])  // name of default item to set
                          
-
-                         getSubsetItems(self, outerIndex + 1, a[subSet][0].name)
+                         resolve(
+                         getSubsetItems(self, outerIndex + 1, a[subSet][0].name)  //  || a[subSet][0].products
                                         //. then(()=> setLastSelection(currentX, name))
-                         resolve()
+                         )
                     })
                }
           }
@@ -326,7 +348,7 @@ const app = new Vue({
                               .then( initialData => 
                                    //console.log('-->>  initialData', initialData)
                                    initializeCountriesState(this, initialData) )
-                              return
+                              //return
                          }
                          
 
@@ -335,11 +357,13 @@ const app = new Vue({
                          //let allCountries = [...ownCountries]
                          console.log('users', users)
 
-                         copyUserData(users).then(final=>{
+                         if (users) copyUserData(users).then(final=>{
                                    console.log('\n\n')
                                    console.log('final data', final)
-                                   initializeCountriesState(this, final)
+                                   return initializeCountriesState(this, final)
                          })
+                         else console.log('NO FOLLOWED USERS')
+                         return initializeCountriesState(this, ownCountries)
 
                          function copyUserData(users){
                               return new Promise((resolve, reject)=>{
@@ -372,7 +396,7 @@ const app = new Vue({
                                         return new Promise((resolve,rej)=>{
                                              otherEntries.forEach(other_entry=>{
 
-                                                  console.log( emptyspace(outerIndex),`checking others '${other_entry.name}'`)
+                                                  //console.log( emptyspace(outerIndex),`checking others '${other_entry.name}'`)
 
                                                   if (ownEntries.some(ownEntry=> ownEntry.name == other_entry.name)===false) {
                                                        // not among own ones
@@ -383,8 +407,8 @@ const app = new Vue({
                                                        ownEntries.forEach( own_entry=>{
                                                             // take others subentries and add them to Own
                                                             if (own_entry.name === other_entry.name){
-                                                                 console.log(emptyspace(outerIndex),`duplicates ${own_entry.name} = ${other_entry.name}`)
-                                                                 console.log(emptyspace(outerIndex),'subset',subset,'<<')
+                                                                 //console.log(emptyspace(outerIndex),`duplicates ${own_entry.name} = ${other_entry.name}`)
+                                                                 //console.log(emptyspace(outerIndex),'subset',subset,'<<')
                                                                  if (subset!==undefined) // if subset is undefined, can it even reach this deep? i.e. - if the condition neccessary
                                                                  copyEntries(index, own_entry[subset], other_entry[subset] )
 
@@ -450,6 +474,8 @@ const app = new Vue({
                     let lastCity = self.cities.find(city => city.name === self.currentCity )
                     self.shops = lastCity.shops
                     self.currentShop=  getLastSelection('shops') 
+
+                    self.currentDisplayedProducts = self.shops.find(shop=>shop.name = self.currentShop).products
           }
           function updateNextSelect(items){
 

@@ -7,7 +7,7 @@
                          "name": "all cities", 
                          "shops":[{
                                    "name": "all shops",
-                                   "products": []
+                                   "products": [{"name":"Pilsner beer"}]
                               },
                               {
                                    "name": "KFC",
@@ -23,14 +23,14 @@
                          "name": "all cities", 
                          "shops":[{
                                    "name": "all shops",
-                                   "products": []
+                                   "products": [{"name": "tobacco"}]
                               }]
                     },
                     {
                          "name": "Rotter",
                          "shops": [{
                                    "name": "all shops",
-                                   "products": []
+                                   "products": [{"name": "Design your planet"}]
                               }]
                     },
                     {
