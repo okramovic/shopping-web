@@ -1,0 +1,17 @@
+
+
+
+on app start
+
+     get users own locations
+
+     get each followed-users locations from LocSto
+
+          see if each country should be added do users countries
+               ignore Uppercase, they are considered the same
+               if its not there, add whole country data
+               if user already has it, check all  cities with same workflow, the same for shops and products
+
+               - if something from other users is missing from previous times, ignore it, this user already has it and can delete it
+
+     after checking all, save all countries immediatelly to local db

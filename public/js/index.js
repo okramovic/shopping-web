@@ -3,9 +3,26 @@
  * 
  */
 
-// save last open locations to loc stor
+
 // for each product do display in DOM, use Component or template
+
+/**  DONE
+ *   -    save last open locations to loc stor
+ */
+
 'use strict'
+
+function createDeviceUser(defaultName = 'anonymous'){
+     //if ( window.localStorage.getItem('deviceUser') === null){
+          const initialData = {
+               userName: defaultName, 
+               createdDate: getFormattedDate(null)
+          } 
+          window.localStorage.setItem('deviceUser', JSON.stringify(initialData)) 
+     //}
+     console.log('created user', window.localStorage.getItem('deviceUser') )
+}
+
 
 window.otherUsers = []
 
@@ -58,11 +75,11 @@ function getOtherUsersLocalData(){
 const app = new Vue({
      el: '#app',
      data: {
+          username: undefined,
           locationInputShown: false,
           locationSet: null,
           newLocation: null,
 
-          
           currentCountry: null,
           currentCity:  null,
           currentShop:  null,
@@ -72,6 +89,16 @@ const app = new Vue({
      },
      
      methods:{
+          getDeviceUser:function(){
+               return new Promise((resolve, reject)=>{
+                    let data = JSON.parse(window.localStorage.getItem('deviceUser'))
+                    console.log('user', data)
+                    if (data) resolve(data.userName)
+                    else resolve(null)  //createDeviceUser() //can have default string
+                    
+               })
+               
+          },
           storeInitialDBData:function(){
                return new Promise((resolve, reject)=>{
 
@@ -116,9 +143,7 @@ const app = new Vue({
                          //console.log(result)
                          resolve(result)
                     })
-               })
-                    
-                         
+               })   
           },
           openLocationInput: function(set,ev){
                this.locationInputShown = true
@@ -216,139 +241,193 @@ const app = new Vue({
                this.newLocation = ""
 
           },
-          updateLocationSelect:function(set, subset, event,text){
+          updateLocationSelect:function(index, event){
+               console.log('slct', event.srcElement.selectedIndex)
+               //console.log('label', event,'\n', event.srcElement.getAttribute('data-saveas')  )
 
-               //console.log('event',event.timeStamp,set,subset)
+               if (event.srcElement.selectedIndex<0) return      // protection against DOM load events 
+
+               const self = this
+               const selects = ['countries', 'cities', 'shops'], //, 'products'],
+                     currents= ['currentCountry','currentCity','currentShop']
+               console.log('index', index, selects[index])
 
                // improve this nonsense
-               if (event && event.timeStamp>2000) setLastSelection(set, event.srcElement.selectedOptions[0].text)
+               //if (event && event.timeStamp>2000) setLastSelection(selects[index], event.srcElement.selectedOptions[0].text)
+               const name = event.srcElement.selectedOptions[0].text
 
-               const variable = event.srcElement.getAttribute('data-forlabel')
-               //console.log('---------------------\n'+ 'set',set,"subset",subset, "\n variable",variable)
+               //if (event && event.srcElement.selectedOptions[0])
+               setLastSelection(event.srcElement.getAttribute('data-saveas'), name)
 
-               //let string = event.srcElement.selectedOptions[0].text || text
 
-               if (event && event.srcElement.selectedOptions[0])
-               getSubsetItems(this[set], subset, event.srcElement.selectedOptions[0].text)
-               .then(result =>{
-                    //console.log("subset  >",subset,"\n  >",result.name, "\n  >",result[subset])
-                    this[subset] = result[subset]
-               })
+               if (index< selects.length-1)  getSubsetItems(this,index,name)
+
+                                                  .then(result =>{  // save last locations to local storage
+                                                  })
+               function getSubsetItems(self, outerIndex, name){
+                    if (outerIndex>2) return false;
+
+                    return new Promise((resolve, rej)=>{
+                         // 0 1 2
+                         const currentX = currents[outerIndex]  // 'currentCountry' 'currentCity' 'currentShop'
+                         const index = outerIndex,
+                               superSet = selects[index-1], // 'countries' 'cities' 'shops'
+                               set      = selects[index],   // 'countries' 'cities' 'shops'
+                               subSet   = selects[index+1]  // 'countries' 'cities' 'shops'
+                               
+                         //console.log('self[currentX]', currentX, self[currentX])
+                         //console.log('self.set', self[set])
+                         // get current Country without DOM
+                         //console.log('!!',currents[outerIndex-1])
+
+                         //const name = event.srcElement.selectedOptions[0].text
+                         self[currentX] = name
+                         console.log(currentX, name)
+                         console.log('    save ?', set, name)
+                         setLastSelection(set, name)
+
+
+                         let a = self[set].find(el=>{
+                                   //console.log('el.name', el.name)
+                                   return el.name===name
+                         })
+                         //console.log('a',a.name, a[subSet])
+                         
+
+                         self[subSet] = a[subSet]
+                         //console.log(`set city to`, a[subSet][0].name)
+                         //console.log('---',currents[outerIndex+1])
+                         if (currents[outerIndex+1]=== undefined) return;
+
+                         let string = currents[outerIndex+1].toString()
+                         self[string]= a[subSet][0].name    // 'currentCountry' 'currentCity' 'currentShop'
+                         
+                         //console.log('self[subSet]', self[subSet][0].name)  // name of default item to set
+                         // save it as last in Loc Storage
+                         
+
+                         getSubsetItems(self, outerIndex + 1, a[subSet][0].name)
+                                        //. then(()=> setLastSelection(currentX, name))
+                         resolve()
+                    })
+               }
           }
      },
      mounted: function(){
-          this.getOwnDBData().then( ownCountries =>{
+          this.getDeviceUser().then(username=>{
+               this.username = username
+
+               this.getOwnDBData().then( ownCountries =>{
                     //console.log('resolved',countries)
 
                     // = user opened app for first time or has deleted browser memory
-               if (ownCountries.length===0){
-                         this.storeInitialDBData()
-                         .then( initialData => 
-                              //console.log('-->>  initialData', initialData)
-                              initializeCountriesState(this, initialData) )
-                         return
-                     }
-                    
+                    if (ownCountries.length===0){
+                              this.storeInitialDBData()
+                              .then( initialData => 
+                                   //console.log('-->>  initialData', initialData)
+                                   initializeCountriesState(this, initialData) )
+                              return
+                         }
+                         
 
-               this.getLocalStoredUsersData().then(users=>{
-                              
-                    //let allCountries = [...ownCountries]
-                    console.log('users', users)
-
-                    copyUserData(users).then(final=>{
-                              console.log('\n\n')
-                              console.log('final data', final)
-                              //console.log('this', this)
-                              initializeCountriesState(this, final)
-                    })
-
-                    function copyUserData(users){
-                         return new Promise((resolve, reject)=>{
-                              const sets = ['countries','cities','shops','products']
-                              let index = 0
-                              users.forEach(other_countries=>{
-                                             console.log('------------------', other_countries)
-                                             // finish one user completely, then another
-                                             copyEntries(index, ownCountries, other_countries)
-                                             .then(newCountries=>{
-                                                  resolve(newCountries) 
-                                             })  
-                              })
-
-                    
-                              function copyEntries(outerIndex, ownEntries, otherEntries){
+                    this.getLocalStoredUsersData().then(users=>{
                                    
-                                   function emptyspace(ind){
-                                             let spaces = "", len = ind*5
-                                             for (let i=0; i<len; i++){
-                                                  spaces = spaces.concat(" ")
-                                             }
-                                             return spaces
-                                   }
-                                   let index = outerIndex +1
-                                   let set = sets[outerIndex], subset = sets[index]
-                                   //console.log(emptyspace(outerIndex),'index', index, subset)
-                                   //if (subset===undefined) return false;
-                                   //else 
-                                   return new Promise((resolve,rej)=>{
-                                        otherEntries.forEach(other_entry=>{
+                         //let allCountries = [...ownCountries]
+                         console.log('users', users)
 
-                                             console.log( emptyspace(outerIndex),`checking others '${other_entry.name}'`)
+                         copyUserData(users).then(final=>{
+                                   console.log('\n\n')
+                                   console.log('final data', final)
+                                   initializeCountriesState(this, final)
+                         })
 
-                                             if (ownEntries.some(ownEntry=> ownEntry.name == other_entry.name)===false) {
-                                                  // not among own ones
-                                                  console.log('|||',emptyspace(outerIndex),'NOT THERE -> ADDING ',other_entry.name )
-                                                  ownEntries.push(other_entry)
-                                             } else{
-                                                  //const subindex = index + 1
-                                                  ownEntries.forEach( own_entry=>{
-                                                       // take others subentries and add them to Own
-                                                       if (own_entry.name === other_entry.name){
-                                                            console.log(emptyspace(outerIndex),`duplicates ${own_entry.name} = ${other_entry.name}`)
-                                                            console.log(emptyspace(outerIndex),'subset',subset,'<<')
-                                                            if (subset!==undefined) // if subset is undefined, can it even reach this deep? i.e. - if the condition neccessary
-                                                            copyEntries(index, own_entry[subset], other_entry[subset] )
+                         function copyUserData(users){
+                              return new Promise((resolve, reject)=>{
+                                   const sets = ['countries','cities','shops','products']
+                                   let index = 0
+                                   users.forEach(other_countries=>{
+                                                  console.log('------------------ checking another user:')//, other_countries.name)
 
-                                                            else if (subset===undefined) console.log(emptyspace(outerIndex),'done -------')
-                                                       }
-                                                  })
-                                             }
-                                        })
-                                        resolve(ownEntries)
+                                                  copyEntries(index, ownCountries, other_countries)
+                                                  .then(newCountries=>{
+                                                       resolve(newCountries) 
+                                                  })  
                                    })
-                                   /*return new Promise((resolve,rej)=>{
-                                                  ownEntries.forEach(own_entry=>{
-                                                       console.log('own - checking ', own_entry.name)
-                    
-                                                       // if its not already among Own entries 
-                                                       otherEntries.forEach( other_entry=>{
-                                                            //console.log('       ', other_entry.name)//, other_entry[subset])
-                                                            console.log('     ',own_entry.name, other_entry.name)
-                                                            if (ownEntries.some(ownEntry=> ownEntry.name == other_entry.name)===false) {
-                                                                 // not among own ones
-                                                                 console.log('      not there -> adding ',other_entry.name )
-                                                                 ownEntries.push(other_entry)
-                                                                 
-                                                            } else {
-                                                                 // take others subentries and add them to Own
-                                                                 console.log(`     '${other_entry.name}'  is there, checking ${subset}`)
-                                                                 console.log(`     own ${subset}->`, own_entry[subset])
-                                                                 console.log(`     oth ${subset}->`, other_entry[subset])
-                                                                 // get all [subset] from own entry
-                                                                 // get all [subset] from other entries
+
+                         
+                                   function copyEntries(outerIndex, ownEntries, otherEntries){
+                                        
+                                        function emptyspace(ind){
+                                                  let spaces = "", len = ind*5
+                                                  for (let i=0; i<len; i++){
+                                                       spaces = spaces.concat(" ")
+                                                  }
+                                                  return spaces
+                                        }
+                                        let index = outerIndex +1
+                                        let set = sets[outerIndex], subset = sets[index]
+                                        //console.log(emptyspace(outerIndex),'index', index, subset)
+                                        //if (subset===undefined) return false;
+                                        //else 
+                                        return new Promise((resolve,rej)=>{
+                                             otherEntries.forEach(other_entry=>{
+
+                                                  console.log( emptyspace(outerIndex),`checking others '${other_entry.name}'`)
+
+                                                  if (ownEntries.some(ownEntry=> ownEntry.name == other_entry.name)===false) {
+                                                       // not among own ones
+                                                       console.log(emptyspace(outerIndex),'NOT THERE -> ADDING ',other_entry.name )
+                                                       ownEntries.push(other_entry)
+                                                  } else{
+                                                       //const subindex = index + 1
+                                                       ownEntries.forEach( own_entry=>{
+                                                            // take others subentries and add them to Own
+                                                            if (own_entry.name === other_entry.name){
+                                                                 console.log(emptyspace(outerIndex),`duplicates ${own_entry.name} = ${other_entry.name}`)
+                                                                 console.log(emptyspace(outerIndex),'subset',subset,'<<')
+                                                                 if (subset!==undefined) // if subset is undefined, can it even reach this deep? i.e. - if the condition neccessary
+                                                                 copyEntries(index, own_entry[subset], other_entry[subset] )
+
+                                                                 else if (subset===undefined) console.log(emptyspace(outerIndex),'done -------')
                                                             }
                                                        })
-                                                  })
-                                                  console.log('!! final ownEntries', ownEntries)
-                                                  resolve(ownEntries)
-                                   })*/
-                              }
-                         })
-                    }
-               })
+                                                  }
+                                             })
+                                             resolve(ownEntries)
+                                        })
+                                        /*return new Promise((resolve,rej)=>{
+                                                       ownEntries.forEach(own_entry=>{
+                                                            console.log('own - checking ', own_entry.name)
+                         
+                                                            // if its not already among Own entries 
+                                                            otherEntries.forEach( other_entry=>{
+                                                                 //console.log('       ', other_entry.name)//, other_entry[subset])
+                                                                 console.log('     ',own_entry.name, other_entry.name)
+                                                                 if (ownEntries.some(ownEntry=> ownEntry.name == other_entry.name)===false) {
+                                                                      // not among own ones
+                                                                      console.log('      not there -> adding ',other_entry.name )
+                                                                      ownEntries.push(other_entry)
+                                                                      
+                                                                 } else {
+                                                                      // take others subentries and add them to Own
+                                                                      console.log(`     '${other_entry.name}'  is there, checking ${subset}`)
+                                                                      console.log(`     own ${subset}->`, own_entry[subset])
+                                                                      console.log(`     oth ${subset}->`, other_entry[subset])
+                                                                      // get all [subset] from own entry
+                                                                      // get all [subset] from other entries
+                                                                 }
+                                                            })
+                                                       })
+                                                       console.log('!! final ownEntries', ownEntries)
+                                                       resolve(ownEntries)
+                                        })*/
+                                   }
+                              })
+                         }
+                    })
 
-          }).catch(er => console.error('error getting init data',er))
-          
+               }).catch(er => console.error('error getting init data',er))
+          })
 
 
           function initializeCountriesState(self, countries){
@@ -379,27 +458,16 @@ const app = new Vue({
      created:function(){
           //console.log('CREATED')
      }
-     
 })
 
 
 
-function getSubsetItems(set, subset, name){
-     console.log('getSubsetItems',set, subset, name)
-     
-     return new Promise((resolve, rej)=>{
-          let result = set.find(obj=>obj.name === name)
-          //console.log('   !!!  res.name, result',result.name, result[subset])
 
-          resolve( {name:result.name, [subset]: result[subset] })
-          
-     })
-     
-}
 function updateSubsetSelect(){
 
 }
 function setLastSelection(set, value){
+     //console.log('>> saving', set, value)
      window.localStorage.setItem(set, value.toString() )
 }
 function getLastSelection(set){
@@ -409,14 +477,14 @@ function getLastSelection(set){
      return val
 }
 
-function getPicDate(date){
-     console.log('typeof Date',typeof Date)
+function getFormattedDate(date){
+     //console.log('typeof Date',typeof date, date)
  
-     if (typeof date === 'number'){
+     if (typeof date === 'number' || !date){
          date = new Date()
          //var d = new Date();
          //d.setTime(1332403882588);
-         console.log(date)
+         //console.log(date)
      }
  
      let year = date.getFullYear(),
@@ -425,7 +493,19 @@ function getPicDate(date){
          hours = date.getHours(),
          minutes = date.getMinutes(),
          secs = date.getSeconds()
+     const obj = {
+          year,month, day, hours, minutes, secs
+     }
+     for (let num in obj){
+          
+          if (obj[num]<10) {
+               
+               obj[num] =  String('0' + obj[num] ) 
+               //console.log('short ',obj[num]) 
+          }
+          
+     }
 
-     return `${year}-${month}-${day} ${hours}-${minutes}-${secs}`
+     return `${obj.year}-${obj.month}-${obj.day} ${obj.hours}-${obj.minutes}-${obj.secs}`
      
 }

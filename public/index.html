@@ -12,6 +12,8 @@
 </head>
 <body>
      <div id="app" >
+          <div v-show="username===null || username === null">you are not logged in</div>
+          <div v-show="username">logged in as {{username}}</div>
           <h1>my shopping history</h1>
 
           <div id="locButtons">
@@ -22,18 +24,18 @@
        
           <div id="locations">
        
-               <select   id="CountrySel" v-model="currentCountry" data-forlabel="currentCountry" 
-                         v-on:change="updateLocationSelect('countries','cities',$event)">
+               <select   id="CountrySel" v-model="currentCountry" data-forlabel="currentCountry" data-saveas="countries"
+                         v-on:change="updateLocationSelect(0, $event)">
                     <option v-for="country in countries">{{country.name}}</option>
                </select>
 
-               <select   id="CitySel" v-model="currentCity" data-forlabel="currentCity"  
-                         v-on:change="updateLocationSelect('cities','shops',$event)">
+               <select   id="CitySel" v-model="currentCity" data-forlabel="currentCity"  data-saveas="cities"
+                         v-on:change="updateLocationSelect(1, $event)">
                     <option v-for="city in cities">{{city.name}}</option>
                </select>
 
-               <select   id="ShopSel" v-model="currentShop" data-forlabel="currentShop"
-                         v-on:change="updateLocationSelect('shops',null, $event)">
+               <select   id="ShopSel" v-model="currentShop" data-forlabel="currentShop"  data-saveas="shops"
+                         v-on:change="updateLocationSelect(2, $event)">
                     <option v-for="shop in shops">{{shop.name}}</option>
                </select>
                    
