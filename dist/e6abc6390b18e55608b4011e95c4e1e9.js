@@ -68,7 +68,7 @@ require = (function (modules, cache, entry) {
 
   // Override the current require with this new one
   return newRequire;
-})({3:[function(require,module,exports) {
+})({2:[function(require,module,exports) {
 /**
  *        simple state management http://vuetips.com/simple-state-management-vue-stash
  * 
@@ -83,10 +83,12 @@ require = (function (modules, cache, entry) {
 
 'use strict'
 //createDeviceUser('app Owner')
-function createDeviceUser(defaultName = 'anonymous'){
+function createDeviceUser(name = 'anonymous'){
      //if ( window.localStorage.getItem('deviceUser') === null){
+          name = name.toString().trim()
+
           const initialData = {
-               userName: defaultName, 
+               userName: name, 
                createdDate: getFormattedDate(null)
           } 
           window.localStorage.setItem('deviceUser', JSON.stringify(initialData)) 
@@ -139,14 +141,26 @@ function getOtherUsersLocalData(){
 }
 
 
-
+const serverURL = 'https://shopp.glitch.me/'
 
 
 
 const app = new Vue({
      el: '#app',
      data: {
-          username: undefined,
+          screen:'main',
+          showSignUp: false,
+          showLogin: false,
+          seeSignUp: false,
+          loginemail: null,
+          loginpass: null,
+
+          searchText: null,
+          searchResults: null,
+
+          showSettings: false,
+          userName: undefined,
+          console: undefined,
           locationInputShown: false,
           locationSet: null,
           newLocation: null,
@@ -157,14 +171,117 @@ const app = new Vue({
           countries: [],
           cities: [],
           shops: [],
-          currentDisplayedProducts: []
+          currentDisplayedProducts: [],
+
+          newProductForm: false
      },
      
      methods:{
+          switchScreen:function(screen){
+               this.screen = screen
+          },
+          showUserSettings:function(show){
+               this.showSettings = show;
+               if (show) this.screen = 'settings'
+               else this.screen = 'main'
+          },
+          login:function(){
+               let email = this.loginemail
+               let password = this.loginpass
+
+               console.log('longin', email, password)
+
+               const tosend = {email, password}, self = this
+
+               let xhr = new XMLHttpRequest()
+               xhr.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {      console.log('received',this.responseText)
+                              
+                              self.log(`You rock'n'hop! logged iN`)
+                              window.localStorage.setItem('deviceUserEmail', email)
+                              createDeviceUser(this.responseText)
+                              self.userName = this.responseText
+                              self.screen = 'main'
+
+                    } else if (this.readyState == 4 && this.status == 400){
+
+                         self.log(`something went wrong`)
+                    }
+               }
+               xhr.open("POST", serverURL + "API/login", true)
+               xhr.send(JSON.stringify( tosend))
+
+          },
+          signUp: function($event){
+               $event.preventDefault()
+               let self = this
+                    let email = document.querySelector('input[name="reg-useremail"').value
+                    let username = document.querySelector('input[name="reg-username"').value
+                    let password  = document.querySelector('input[name="reg-userpassword"').value
+               
+                    const tosend = {email, username, password}
+                    //console.log('email', tosend)
+
+               if (!email || !username || ! password) return console.error('email or name or pass missing')
+
+               let xhr = new XMLHttpRequest()
+               xhr.onreadystatechange = function() {
+                    
+                    if (this.readyState == 4 && this.status == 200) {  //this.responseText;
+                              //console.log(this.responseText,this.status)
+
+                              self.log(`You rock'n'b! Account created, check your email, spam etc`)
+                              window.localStorage.setItem('deviceUserEmail', email)
+                              createDeviceUser(username)
+                              self.getDeviceUser().then(name=>self.userName = name)
+                              self.screen = 'main'
+
+                    } else if (this.readyState == 4 && this.status ==400)
+
+                              self.log(`Email address '${email}' is already used..`)
+                    else {}
+
+                  };
+
+               xhr.open("POST", serverURL + "API/signup", true)
+               //xhr.setRequestHeader('Access-Control-Allow-Origin', true)  //Access-Control-Allow-Origin
+               xhr.send(JSON.stringify( tosend))
+          },
+          logout: function($ev){
+               console.log('>> logouted <<')
+               this.userName = null
+               window.localStorage.removeItem('deviceUserEmail')
+          },
+          requestUsers:function(){
+               let string = this.searchText
+               const self = this
+               console.log('search for:', string)
+
+               const xhr = new XMLHttpRequest()
+               xhr.onreadystatechange = function(){
+                    if (this.readyState == 4 && this.status == 200) { 
+
+                         console.log('recevide', this.responseText, typeof this.responseText)
+                         const users = JSON.parse(this.responseText)
+                         console.log(users)
+                         self.searchResults = users
+                    }
+               }
+               xhr.open('GET', serverURL + 'API/search?string=' + string + "&useremail=" + window.localStorage.getItem('deviceUserEmail'), true)
+               xhr.send( string)
+
+          },
+          log: function(msg){
+               this.console = msg
+
+               setTimeout(()=>{
+                    this.console = undefined
+               },5000)
+          },
           getDeviceUser:function(){
                return new Promise((resolve, reject)=>{
                     let data = JSON.parse(window.localStorage.getItem('deviceUser'))
-                    console.log('user', data)
+                    //console.log('user', data)
                     if (data) resolve(data.userName)
                     else resolve(null)  //createDeviceUser() //can have default string
                     
@@ -324,19 +441,18 @@ const app = new Vue({
                const self = this
                const selects = ['countries', 'cities', 'shops','products'],
                      currents= ['currentCountry','currentCity','currentShop']
-               //console.log('index', index, selects[index])
-
-               // improve this nonsense
-               //if (event && event.timeStamp>2000) setLastSelection(selects[index], event.srcElement.selectedOptions[0].text)
+               
                const name = event.srcElement.selectedOptions[0].text
 
-               //if (event && event.srcElement.selectedOptions[0])
                setLastSelection(event.srcElement.getAttribute('data-saveas'), name)
 
 
-               if (index< selects.length-1)  getSubsetItems(this,index,name)
+               //if (index< selects.length-1)  
+               
+               getSubsetItems(this,index,name)
 
-                                                  .then(result =>{  // save last locations to local storage
+                                                  .then(result =>{  
+                                                       // save last locations to local storage rather here?
                                                        console.log('----- products:', result)
 
                                                        // displays products on screen
@@ -404,11 +520,25 @@ const app = new Vue({
                          )
                     })
                }
+          },
+          openNewProductForm:function(open){
+               this.newProductForm = open
+          },
+          newProductSubmit: function($event){
+               $event.preventDefault()
+               
+               //const form = document.querySelector('form[name="newProductForm"')
+               const rating = document.querySelector('input[name="newRating"]:checked').value
+
+               const fileName = `${this.userName}_D${getFormattedDate(null)}`
+               console.log('submit', fileName)
           }
      },
      mounted: function(){
-          this.getDeviceUser().then(username=>{
-               this.username = username
+          this.getDeviceUser().then(userName=>{
+               this.userName = userName
+               console.log('this uname', this.userName)
+               //if (userName === null) this.userName = 'anonymous'
 
                this.getOwnDBData().then( ownCountries =>{
                     //console.log('resolved',countries)
@@ -417,9 +547,9 @@ const app = new Vue({
                     if (ownCountries.length===0){
                               this.storeInitialDBData()
                               .then( initialData => 
-                                   //console.log('-->>  initialData', initialData)
+                                   
                                    initializeCountriesState(this, initialData) )
-                              //return
+
                          }
                          
 
@@ -429,8 +559,11 @@ const app = new Vue({
                          console.log('users', users)
 
                          if (users) copyUserData(users).then(final=>{
-                                   console.log('\n\n')
-                                   console.log('final data', final)
+                                   console.log('\n\nfinal data', final)
+
+                                   // save each updated country to device user IDB
+                                   final.forEach( country=>user_locations.countries.put(country) )
+
                                    return initializeCountriesState(this, final)
                          })
                          else console.log('NO FOLLOWED USERS')
@@ -590,21 +723,16 @@ function getFormattedDate(date){
          hours = date.getHours(),
          minutes = date.getMinutes(),
          secs = date.getSeconds()
+
      const obj = {
-          year,month, day, hours, minutes, secs
-     }
-     for (let num in obj){
-          
-          if (obj[num]<10) {
-               
-               obj[num] =  String('0' + obj[num] ) 
-               //console.log('short ',obj[num]) 
-          }
-          
+          year, month, day, hours, minutes, secs
      }
 
-     return `${obj.year}-${obj.month}-${obj.day} ${obj.hours}-${obj.minutes}-${obj.secs}`
-     
+     for (let num in obj){
+          if (obj[num]<10) obj[num] =  String('0' + obj[num] ) 
+     }
+
+     return `${obj.year}-${obj.month}-${obj.day}_T${obj.hours}-${obj.minutes}-${obj.secs}`
 }
 },{}],0:[function(require,module,exports) {
 var global = (1, eval)('this');
@@ -624,7 +752,7 @@ function Module() {
 module.bundle.Module = Module;
 
 if (!module.bundle.parent && typeof WebSocket !== 'undefined') {
-  var ws = new WebSocket('ws://localhost:59885/');
+  var ws = new WebSocket('ws://localhost:59705/');
   ws.onmessage = function(event) {
     var data = JSON.parse(event.data);
 
@@ -725,4 +853,4 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.require, id)
   });
 }
-},{}]},{},[0,3])
+},{}]},{},[0,2])

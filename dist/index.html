@@ -12,51 +12,135 @@
 </head>
 <body>
      <div id="app">
-          <div v-show="username===null || username === null">you are not logged in</div>
-          <div v-show="username">logged in as {{username}}</div>
-          <h1>my shopping history</h1>
-
-          <div id="locButtons">
-                      <button v-on:click="openLocationInput('country',$event)">add country</button>
-                      <button v-on:click="openLocationInput('city',$event)">add city</button>
-                      <button v-on:click="openLocationInput('shop',$event)">add shop</button>
-          </div>
-       
-          <div id="locations">
-       
-               <select id="CountrySel" v-model="currentCountry" data-forlabel="currentCountry" data-saveas="countries" v-on:change="updateLocationSelect(0, $event)">
-                    <option v-for="country in countries">{{country.name}}</option>
-               </select>
-
-               <select id="CitySel" v-model="currentCity" data-forlabel="currentCity" data-saveas="cities" v-on:change="updateLocationSelect(1, $event)">
-                    <option v-for="city in cities">{{city.name}}</option>
-               </select>
-
-               <select id="ShopSel" v-model="currentShop" data-forlabel="currentShop" data-saveas="shops" v-on:change="updateLocationSelect(2, $event)">
-                    <option v-for="shop in shops">{{shop.name}}</option>
-               </select>
-                   
+          
+          <div v-show="userName===null">anonymous</div>
+          <div style="width: 100%; display: flex; justify-content: space-around;">
+               <div v-show="userName">using app as {{userName}}</div>
+               <button v-show="screen=='settings' && userName" @click="logout">logout {{userName}}</button>
+               
+               <button id="" @click="switchScreen('settings')" v-show="screen=='main'">show settings</button>
           </div>
           <br><br>
+          <h1>my shopping history</h1>
 
-          <div id="locationInput" v-show="locationInputShown" class="vertical">
-                   
-               <button id="locationInputHide" v-on:click="locationInputShown=false">hide</button>
-                   
-               <label>add {{locationSet}}</label>
-               <input id="addCountryIn" type="text" v-model="newLocation">
-               <button id="confCountryBut" v-on:click="addNewLocation()">confirm</button>
+          <div id="settings" v-show="screen=='settings' || screen== 'signup'" class="vertical marginAround30">
+               <button @click="screen='signup'" v-show="screen=='settings' && !userName">create account</button>
 
+               <button @click="screen='settings'" v-show="screen=='signup'">back</button>
+               
+               <!-- search users -->
+               <div style="display: flex">
+                    <input type="text" v-model="searchText" placeholder="find love of your life">
+                    <button @click="requestUsers">search</button>
+               </div>
+               <div v-show="searchResults">
+                    {{searchResults}}
+               </div>
+               
+               <!-- sign up -->
+               <div v-show="screen=='signup'" class="vertical marginAround30">
+                    <h2>sign down</h2>
+                    <form name="signUpForm" class="vertical">     
+                         <input type="text" name="reg-username" placeholder="username" required="">
+                         <input type="email" name="reg-useremail" placeholder="your email" required="">
+                         <input type="password" name="reg-userpassword" placeholder="password" required="">
+                         <button @click="signUp($event)">sign up</button>
+                    </form>
+               </div>
+               <!-- login-->
+               <div class="vertical" v-show="screen!=='main' && screen!='signup' && userName === null">
+                    <h2>count me in</h2>
+                    <input type="email" placeholder="email" v-model="loginemail">
+                    <p>your password</p>
+                    <input type="password" placeholder="pass" v-model="loginpass">
+                    <button @click="login($event)">login</button>
+               </div>
+               <br><br><br><br>
+
+               <h2>settings</h2>
+               <button @click="switchScreen('main')">close settings</button>
           </div>
 
-          <div id="addProductDiv">
-               {{currentCountry}} - {{currentCity}} - {{currentShop}}
+
+          
+          <br>
+
+          <div v-show="screen==='main'" class="vertical">
+                  <div id="locButtons" v-show="screen==='main'">
+                              <button v-on:click="openLocationInput('country',$event)">add country</button>
+                              <button v-on:click="openLocationInput('city',$event)">add city</button>
+                              <button v-on:click="openLocationInput('shop',$event)">add shop</button>
+                  </div>
+               
+                  <div id="locations" v-show="screen==='main'">
+               
+                       <select id="CountrySel" v-model="currentCountry" data-forlabel="currentCountry" data-saveas="countries" v-on:change="updateLocationSelect(0, $event)">
+                            <option v-for="country in countries">{{country.name}}</option>
+                       </select>
+        
+                       <select id="CitySel" v-model="currentCity" data-forlabel="currentCity" data-saveas="cities" v-on:change="updateLocationSelect(1, $event)">
+                            <option v-for="city in cities">{{city.name}}</option>
+                       </select>
+        
+                       <select id="ShopSel" v-model="currentShop" data-forlabel="currentShop" data-saveas="shops" v-on:change="updateLocationSelect(2, $event)">
+                            <option v-for="shop in shops">{{shop.name}}</option>
+                       </select>
+                           
+                  </div>
+                  <br><br>
+        
+                  <div id="locationInput" v-show="locationInputShown" class="vertical">
+                           
+                       <button id="locationInputHide" v-on:click="locationInputShown=false">hide</button>
+                           
+                       <label>add {{locationSet}}</label>
+                       <input id="addCountryIn" type="text" v-model="newLocation">
+                       <button id="confCountryBut" v-on:click="addNewLocation()">confirm</button>
+        
+                  </div>
+        
+                  <div id="" v-show="newProductForm === false">
+                       {{currentCountry}} - {{currentCity}} - {{currentShop}}
+                  </div>
+        
+        
+                  <div id="products" v-show="newProductForm === false">
+                            {{ currentDisplayedProducts }}
+                  </div>
+                  
+        
+                  <button id="addProductButton" v-on:click="openNewProductForm(true)">add product</button>
+                  <div id="newProductFormContainer" v-show="newProductForm === true">
+                       <form name="newProductForm">
+                            <!--img id="productPreview" src=""-->
+                            <input type="file" accept="img/*" capture="environment">
+        
+                            <p>product type</p>
+                            <input type="text" name="productType">
+                            <p>product name</p>
+                            <input type="text" name="productName">
+                            <p>product description</p>
+                            <input type="text" name="productDescription">
+                            <p>product price (EUR)</p>
+                            <input type="number" name="productPrice">
+                            <p>rate product</p>
+                            <div id="newProductRatingContainer">
+                                 <input type="radio" name="newRating" value="0">
+                                 <input type="radio" name="newRating" value="1">
+                                 <input type="radio" name="newRating" value="2" checked="">
+                                 <input type="radio" name="newRating" value="3">
+                                 <input type="radio" name="newRating" value="4">
+                            </div>
+                            <br>
+                            <button @click="newProductSubmit($event)">submit</button>
+                       </form>
+                       <button id="closeNewProductForm" v-show="newProductForm===true" v-on:click="openNewProductForm(false)">close</button>
+                  </div>
           </div>
-
-          {{ currentDisplayedProducts }}
-
-          <button id="addProductButton">add product</button>
-     </div>
+          
+     <div id="console" v-show="console" class="vertical just_center">{{console}}</div>
+          
+     </div><!-- end vue app -->
         
      <script src="/dist/f5aae4de8850086766762a04dc4862fc.js"></script>
      <script src="/dist/e6abc6390b18e55608b4011e95c4e1e9.js"></script>

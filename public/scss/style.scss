@@ -22,14 +22,43 @@ h1{
      right: 20px;
      background-color: aquamarine;
 }
+#newProductFormContainer{
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     form{
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+     }
+}
 
+
+#console{
+     width: 80vw;
+     margin-left: 10vw;
+     height: 20vh;
+
+     position: fixed;
+     left: 0;
+     top: 40vh;
+     background-color: white;
+     box-shadow: 3px 10px 10px 15px gray;
+}
 .vertical{
      display: flex;
      flex-direction: column;
      align-items: center;
 }
+.just_center{
+     justify-content: center;
+}
 
 .hidden{
      display: none;
      font-weight: 200;
+}
+
+.marginAround30{
+     margin: 30px;
 }
