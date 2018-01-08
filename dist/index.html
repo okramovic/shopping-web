@@ -23,6 +23,7 @@
           <br><br>
           <h1>my shopping history</h1>
 
+
           <div id="settings" v-show="screen=='settings' || screen== 'signup'" class="vertical marginAround30">
                <button @click="screen='signup'" v-show="screen=='settings' && !userName">create account</button>
 
@@ -34,7 +35,12 @@
                     <button @click="requestUsers">search</button>
                </div>
                <div v-show="searchResults">
-                    {{searchResults}}
+                    <div v-for="user in searchResults" class="center just_around">
+                         <h4>{{user.username}}</h4>
+                         <button v-if="isFollowed(user.email)===false" @click="followUser(user.email, user.username)">follow</button>
+                         <br>
+                         <p v-if="isFollowed(user.email)===true">you followdee</p>
+                    </div>
                </div>
                
                <!-- sign up -->
@@ -56,6 +62,13 @@
                     <button @click="login($event)">login</button>
                </div>
                <br><br><br><br>
+               <div v-show="followedUsers.length>0" class="vertical">
+                    <h4>users you follow</h4>
+                    <div v-for="user in followedUsers">{{user.username}}</div>
+               </div>
+               <br><br>
+               <h4 v-show="followedUsers.length==0">you dont follow any users yet</h4>
+
 
                <h2>settings</h2>
                <button @click="switchScreen('main')">close settings</button>

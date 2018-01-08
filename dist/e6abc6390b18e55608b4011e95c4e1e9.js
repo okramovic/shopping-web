@@ -68,7 +68,7 @@ require = (function (modules, cache, entry) {
 
   // Override the current require with this new one
   return newRequire;
-})({2:[function(require,module,exports) {
+})({3:[function(require,module,exports) {
 /**
  *        simple state management http://vuetips.com/simple-state-management-vue-stash
  * 
@@ -157,6 +157,7 @@ const app = new Vue({
 
           searchText: null,
           searchResults: null,
+          followedUsers: [],
 
           showSettings: false,
           userName: undefined,
@@ -277,6 +278,36 @@ const app = new Vue({
                setTimeout(()=>{
                     this.console = undefined
                },5000)
+          },
+          followUser:function(email,username){
+               console.log('follow', email,username)
+               const self = this
+
+               const xhr = new XMLHttpRequest()
+               xhr.onreadystatechange = function(){
+                    if (this.readyState == 4 && this.status == 200) { 
+                         console.log('follow sekces')
+                         // store new followdee in local storage
+                         addUserToDeviceLS({username, email})
+
+                    } else if (this.readyState == 4 && this.status == 400) { 
+                         console.error('TRY AGAIN LATER')
+                         // finish this part
+                    }
+               }
+               xhr.open('POST', serverURL + 'API/followuser', true)
+               xhr.send(JSON.stringify({  email:email, 
+                                          addTo: window.localStorage.getItem('deviceUserEmail')
+                                       })
+               )
+
+          },
+          isFollowed:function(email){
+                    let users = window.localStorage.getItem('followedUsers')
+                    users = JSON.parse(users)
+                    console.log(email, 'LS followed users', users)
+                    if (!users || users.some(user=>user.email== email)===false) return false
+                    else return true
           },
           getDeviceUser:function(){
                return new Promise((resolve, reject)=>{
@@ -539,6 +570,9 @@ const app = new Vue({
                this.userName = userName
                console.log('this uname', this.userName)
                //if (userName === null) this.userName = 'anonymous'
+               this.followedUsers = getLSfollowedUsers()
+
+               // try to update followdees data in IDB from MDB (if online)
 
                this.getOwnDBData().then( ownCountries =>{
                     //console.log('resolved',countries)
@@ -734,6 +768,25 @@ function getFormattedDate(date){
 
      return `${obj.year}-${obj.month}-${obj.day}_T${obj.hours}-${obj.minutes}-${obj.secs}`
 }
+
+function getLSfollowedUsers(){
+     let users = window.localStorage.getItem('followedUsers')
+     users = JSON.parse(users)
+     return users
+}
+function addUserToDeviceLS(newUser){
+
+     let users = window.localStorage.getItem('followedUsers')
+     users = JSON.parse(users)
+
+     if (users===null) users = [newUser]
+     else if (users.some(user=>user.email==newUser.email)===false) users.push(newUser) // add new user only if he isnt there yet
+
+     console.log('LS users now', users)
+
+     return window.localStorage.setItem('followedUsers', JSON.stringify(users))
+}
+
 },{}],0:[function(require,module,exports) {
 var global = (1, eval)('this');
 var OldModule = module.bundle.Module;
@@ -752,7 +805,7 @@ function Module() {
 module.bundle.Module = Module;
 
 if (!module.bundle.parent && typeof WebSocket !== 'undefined') {
-  var ws = new WebSocket('ws://localhost:59705/');
+  var ws = new WebSocket('ws://localhost:58610/');
   ws.onmessage = function(event) {
     var data = JSON.parse(event.data);
 
@@ -853,4 +906,4 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.require, id)
   });
 }
-},{}]},{},[0,2])
+},{}]},{},[0,3])

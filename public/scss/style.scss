@@ -50,8 +50,15 @@ h1{
      flex-direction: column;
      align-items: center;
 }
+.center{
+     display: flex;
+     align-items: center;
+}
 .just_center{
      justify-content: center;
+}
+.just_around{
+     justify-content: space-around;
 }
 
 .hidden{
