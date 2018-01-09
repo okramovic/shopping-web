@@ -1,0 +1,22 @@
+body{}
+
+h3{
+  text-decoration: underline;
+  color: dodgerblue;
+}
+
+input[type="file"]{
+  
+    border: 1px solid green;
+    min-height: 50px;
+
+}
+
+#preview{
+  display: none;
+}
+
+img{
+  height: 200px;
+  width: 200px;
+}
