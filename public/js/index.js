@@ -58,11 +58,10 @@ function getOtherUsersLocalData(){
           })
           .then(()=>users_followed.userData.toArray())
           .then(users =>{ 
-               console.log('otherUsers',otherUsers)
-               let others = []
-               users.forEach(user=>others.push(user))
-               console.log('otherUsers',others)
-               res(others)
+               //let others = []
+               //users.forEach(user=>others.push(user))
+               //console.log('otherUsers',others)
+               res(users)
 
           })
           .catch(er=>alert('error opening following', er))
@@ -288,7 +287,7 @@ const app = new Vue({
           getLocalStoredUsersData: function(){
                return new Promise((resolve, reject)=>{
                     getOtherUsersLocalData().then(result=>{
-                         result = result.map(el=>el.countries)
+                         //result = result.map(el=>el.countries)
                          //console.log(result)
                          if (result.length>0) resolve(result)
                          else resolve(null)
@@ -410,14 +409,38 @@ const app = new Vue({
                //if (index< selects.length-1)  
                
                getSubsetItems(this,index,name)
+                    .then(userOwnProducts =>{  
+                         // save last locations to local storage rather here?
+                         console.log('----- user own products:', userOwnProducts.length, userOwnProducts)
 
-                                                  .then(result =>{  
-                                                       // save last locations to local storage rather here?
-                                                       console.log('----- products:', result)
-
-                                                       // displays products on screen
-                                                       this.currentDisplayedProducts = result
+                         // get products from each user in IDB: for current city, shop etc
+                         getOtherUsersLocalData()
+                         .then(users=>{
+                              
+                              //const their_countries = data.map(user=>user.countries)
+                              //console.log('their_countries', their_countries)
+                              let newProds = users.map(user=>{
+                                   const countryI = user.countries.findIndex(cntry=>{
+                                                            //console.log(self.currentCountry, cntry.name)
+                                                            return cntry.name === self.currentCountry
                                                   })
+                                   //console.log('i ?', countryI)
+                                   if (countryI > -1){
+                                        //console.log(self.currentCity)
+                                        const cityI = user.countries[countryI].cities.findIndex(city=>city.name === self.currentCity )
+                                        
+                                        const shop = user.countries[countryI].cities[cityI].shops.find(shop=>shop.name===self.currentShop)
+                                        //console.log('shop', shop)
+                                        return shop.products
+                                   }
+                              }).filter(prods=>prods!==undefined)
+                              console.log('|||| ', newProds)
+
+                              // displays products on screen
+                              this.currentDisplayedProducts = userOwnProducts.concat(newProds)
+                         })
+                         
+                    })
                function getSubsetItems(self, outerIndex, name){
                     
                     if (outerIndex>4) return false;
@@ -434,9 +457,6 @@ const app = new Vue({
                                
                          //console.log('self[currentX]', currentX, self[currentX])
                          //console.log('set', set)
-                         
-                         // get current Country without DOM
-                         //console.log('!!',currents[outerIndex-1])
 
                          //const name = event.srcElement.selectedOptions[0].text
                          if (set == 'products'){
@@ -446,10 +466,7 @@ const app = new Vue({
                               return alert('oops')
                          }
 
-                         let a = self[set].find(el=>{
-                                   //console.log('el.name', el.name)
-                                   return el.name===name
-                         })
+                         let a = self[set].find(el=>{ return el.name===name })
                          
                          
 
@@ -464,7 +481,7 @@ const app = new Vue({
                          
                          //console.log('---',currents[outerIndex+1])
                          if (currents[outerIndex+1]=== undefined) {
-                              //console.log('products?')
+                              //console.log('products?', a.name, a[subSet])
                               resolve(a[subSet]) 
                               return //console.log('test')
                          }
@@ -475,8 +492,7 @@ const app = new Vue({
                          //console.log('[subSet]', self[subSet][0])  // name of default item to set
                          
                          resolve(
-                         getSubsetItems(self, outerIndex + 1, a[subSet][0].name)  //  || a[subSet][0].products
-                                        //. then(()=> setLastSelection(currentX, name))
+                              getSubsetItems(self, outerIndex + 1, a[subSet][0].name)          
                          )
                     })
                }
@@ -504,48 +520,74 @@ const app = new Vue({
                // try to update followdees data in IDB from MDB (if online)
 
                this.getOwnDBData().then( ownCountries =>{
-                    //console.log('resolved',countries)
+                    console.log('resolved was length:',ownCountries.length, ownCountries)
 
                     // = user opened app for first time or has deleted browser memory
                     if (ownCountries.length===0){
                               this.storeInitialDBData()
                               .then( initialData => 
-                                   
-                                   initializeCountriesState(this, initialData) )
-
-                         }
-                         
+                                     initializeCountriesState(this, initialData) )
+                    }     
 
                     this.getLocalStoredUsersData().then(users=>{
                                    
-                         //let allCountries = [...ownCountries]
-                         console.log('users', users)
+                         let own = [...ownCountries]
+                         let Users = users.map(user=>user.countries)
+                         console.log('users', Users)
 
-                         if (users) copyUserData(users).then(final=>{
-                                   console.log('\n\nfinal data', final)
+                         
+                         // copies all others' locations to save them in IDB of device
+                         if (Users) copyUserData(Users, own)
+                                        .then(final=>{
+                                             console.log('location data to save', final===own, final)
 
-                                   // save each updated country to device user IDB
-                                   final.forEach( country=>user_locations.countries.put(country) )
+                                             // save each country without to device user IDB
+                                             //final.forEach( country => user_locations.countries.put(country) )
 
-                                   return initializeCountriesState(this, final)
-                         })
+                                             return initializeCountriesState(this, final)
+                                        })
+
                          else console.log('NO FOLLOWED USERS')
                          return initializeCountriesState(this, ownCountries)
 
-                         function copyUserData(users){
+
+
+                         function copyUserData(users, owndata){
+                              //console.log('EQUAL', ownCountries == owndata)
+                              
                               return new Promise((resolve, reject)=>{
                                    const sets = ['countries','cities','shops','products']
                                    let index = 0
-                                   users.forEach(other_countries=>{
-                                                  console.log('------------------ checking another user:')//, other_countries.name)
+                                   users.forEach(other_countries => {
 
-                                                  copyEntries(index, ownCountries, other_countries)
-                                                  .then(newCountries=>{
-                                                       resolve(newCountries) 
-                                                  })  
+                                             // remove products from each country
+                                             const others_cleaned = other_countries.map( country => removeProducts(country,0))     
+
+                                             copyEntries(index, owndata, others_cleaned) //users.countries)
+
+                                             .then(newCountries=> resolve(newCountries) )  
                                    })
 
-                         
+                                   function removeProducts(entry,index){
+                                        //if (index>3) return;
+
+                                        if (entry.hasOwnProperty('products')){
+                                             //console.log('in SHOP', entry.name)
+                                             return {name: entry.name, products: []} //entry.products = []
+
+                                        } else if (entry.name){
+                                             //console.log('|||| not shop', index, entry.name, sets[index])
+                                             let name = entry.name
+                                             let prop = sets[index+1]  // cities shops
+                                             let y 
+                                             entry[prop] = entry[prop].map(entry => {
+                                                            //console.log('-- going into',entry.name, sets[index+1])
+                                                            return removeProducts(entry, index+1)
+                                                           })
+                                             //console.log('filtered ',prop,'of',entry.name, entry[prop])
+                                             return entry
+                                        } 
+                                   }
                                    function copyEntries(outerIndex, ownEntries, otherEntries){
                                         
                                         function emptyspace(ind){
@@ -557,61 +599,52 @@ const app = new Vue({
                                         }
                                         let index = outerIndex +1
                                         let set = sets[outerIndex], subset = sets[index]
-                                        //console.log(emptyspace(outerIndex),'index', index, subset)
-                                        //if (subset===undefined) return false;
-                                        //else 
+                                        //console.log(emptyspace(outerIndex),'index', index, set, subset)
+                                        // if its shops now
+
                                         return new Promise((resolve,rej)=>{
                                              otherEntries.forEach(other_entry=>{
-
+                                                  
                                                   //console.log( emptyspace(outerIndex),`checking others '${other_entry.name}'`)
 
-                                                  if (ownEntries.some(ownEntry=> ownEntry.name == other_entry.name)===false) {
-                                                       // not among own ones
-                                                       console.log(emptyspace(outerIndex),'NOT THERE -> ADDING ',other_entry.name )
+                                                  if (ownEntries.some(ownEntry=> ownEntry.name == other_entry.name)=== false ) {
+                                                       // not on device -> add it there
+                                                       //console.log(emptyspace(outerIndex),set, 'NOT THERE -> ADDING ',other_entry.name )
+                                                        //console.log(emptyspace(outerIndex),'- doing -', other_entry.name) 
+                                                        //let locations = removeProducts( other_entry, index)
+                                                        //console.log('without products',set, locations, subset)
+                                                        //other_entry[subset] = location
                                                        ownEntries.push(other_entry)
+                                                        //console.log(other_entry.name,'updated?',other_entry)
+                                                        //console.log( other_entry.name, 'updated?',locations )
+
+                                                  // if this entry is already there
                                                   } else{
-                                                       //const subindex = index + 1
                                                        ownEntries.forEach( own_entry=>{
+                                                            //console.log(emptyspace(outerIndex),'checking >>>',subset, 'of',own_entry.name, own_entry)
+                                                            //console.log(emptyspace(outerIndex),set, 'is there checking >>>',own_entry.name, own_entry)
                                                             // take others subentries and add them to Own
                                                             if (own_entry.name === other_entry.name){
                                                                  //console.log(emptyspace(outerIndex),`duplicates ${own_entry.name} = ${other_entry.name}`)
-                                                                 //console.log(emptyspace(outerIndex),'subset',subset,'<<')
-                                                                 if (subset!==undefined) // if subset is undefined, can it even reach this deep? i.e. - if the condition neccessary
+                                                                 //console.log(emptyspace(outerIndex),index, 'subset',subset,'<<')
+                                                                 if (index<3)//subset!==undefined) // if subset is undefined, can it even reach this deep? i.e. - if the condition neccessary
                                                                  copyEntries(index, own_entry[subset], other_entry[subset] )
 
-                                                                 else if (subset===undefined) console.log(emptyspace(outerIndex),'done -------')
-                                                            }
+                                                                 else if (subset===undefined) {
+                                                                      
+                                                                      //console.log(emptyspace(outerIndex),'??',own_entry)
+                                                                      //let smt = removeProducts(own_entry,index)
+                                                                      //console.log(emptyspace(outerIndex),'done ------- with', set)
+                                                                 }
+
+                                                            } //it gets added above
                                                        })
                                                   }
                                              })
                                              resolve(ownEntries)
                                         })
-                                        /*return new Promise((resolve,rej)=>{
-                                                       ownEntries.forEach(own_entry=>{
-                                                            console.log('own - checking ', own_entry.name)
-                         
-                                                            // if its not already among Own entries 
-                                                            otherEntries.forEach( other_entry=>{
-                                                                 //console.log('       ', other_entry.name)//, other_entry[subset])
-                                                                 console.log('     ',own_entry.name, other_entry.name)
-                                                                 if (ownEntries.some(ownEntry=> ownEntry.name == other_entry.name)===false) {
-                                                                      // not among own ones
-                                                                      console.log('      not there -> adding ',other_entry.name )
-                                                                      ownEntries.push(other_entry)
-                                                                      
-                                                                 } else {
-                                                                      // take others subentries and add them to Own
-                                                                      console.log(`     '${other_entry.name}'  is there, checking ${subset}`)
-                                                                      console.log(`     own ${subset}->`, own_entry[subset])
-                                                                      console.log(`     oth ${subset}->`, other_entry[subset])
-                                                                      // get all [subset] from own entry
-                                                                      // get all [subset] from other entries
-                                                                 }
-                                                            })
-                                                       })
-                                                       console.log('!! final ownEntries', ownEntries)
-                                                       resolve(ownEntries)
-                                        })*/
+                                        
+                                        
                                    }
                               })
                          }
@@ -644,9 +677,6 @@ const app = new Vue({
 
                     self.currentDisplayedProducts = self.shops.find(shop=>shop.name = self.currentShop).products
           }
-          function updateNextSelect(items){
-
-          }
      },
      created:function(){
           //console.log('CREATED')
@@ -656,9 +686,6 @@ const app = new Vue({
 
 
 
-function updateSubsetSelect(){
-
-}
 function setLastSelection(set, value){
      //console.log('>> saving', set, value)
      window.localStorage.setItem(set, value.toString() )

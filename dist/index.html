@@ -118,7 +118,9 @@
         
         
                   <div id="products" v-show="newProductForm === false">
-                            {{ currentDisplayedProducts }}
+                            <div v-show="currentDisplayedProducts.length>0">{{ currentDisplayedProducts }}</div>
+                                   
+                            <h4 v-show="currentDisplayedProducts.length==0">no products to display</h4>
                   </div>
                   
         
