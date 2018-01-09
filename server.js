@@ -18,37 +18,39 @@ app.use(express.static('public'));
 
 // http://expressjs.com/en/starter/basic-routing.html
 app.get("/", function (request, response) {
-  response.sendFile(__dirname + '/views/index.html');
+  response.sendFile(__dirname + '/views/index2.html');
 });
 
 app.post('/API/getCountriesOfUser',(req, res)=>{
     res.setHeader('Access-Control-Allow-Origin',clientOrigin)
   
     let user = ""
-    //req.setEncoding('utf8')
     req.on('data', chunk=>{
         user += chunk
     })
     req.on('end', ()=>{
         console.log('requested user',user, typeof user)
+      
         mongo.connect(process.env.mongo, function(er, DB){
-            if (er) throw new Error(er) 
-            const users = DB.db('shopping_app').collection("users"),
-                  countries = DB.db('shopping_app').collection("users-countries")
-
-            users.findOne({email:user},{'email':false},(er, user)=>{
-                console.log(user)
-                countries.findOne({_id: new ObjectId(user._id)},(er, countryData)=>{
-                      console.log(countryData)
-                })
-                res.sendStatus(200)
-                res.end()
+            if (er) { //throw new Error(er)
+                     res.sendStatus(500)
+                     return res.end()
+            }
+            const countries = DB.db('shopping_app').collection("users_countries")
+                  
+            countries.findOne({email: user},(er, countries)=>{
+                      console.log('cntryData',countries)
+              
+                      if (!er && countries!==null) {
+                        delete countries._id
+                        //res.setHeader('Content-Type', 'application/json');
+                        res.json(countries)  
+                      } else res.sendStatus(500)
+                      
+                      res.end()
             })
         })
-        
     })
-    
-
 })
 app.get ('/API/search',(req,res)=>{
     
