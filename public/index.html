@@ -124,8 +124,11 @@
         
         
                   <div id="products" v-show="newProductForm === false">
-                            <div v-show="currentDisplayedProducts.length>0"
-                                   >{{ currentDisplayedProducts }}</div>
+                            <div v-show="currentDisplayedProducts.length>0" class="vertical">
+                                   <br>
+                                   <div v-for="prod in currentDisplayedProducts"
+                                   >{{prod.name}}</div>
+                            </div>
                                    
                             <h4 v-show="currentDisplayedProducts.length==0"
                                    >no products to display</h4>

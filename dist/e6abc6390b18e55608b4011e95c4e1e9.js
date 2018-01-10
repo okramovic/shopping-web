@@ -68,7 +68,7 @@ require = (function (modules, cache, entry) {
 
   // Override the current require with this new one
   return newRequire;
-})({4:[function(require,module,exports) {
+})({2:[function(require,module,exports) {
 /**
  *        simple state management http://vuetips.com/simple-state-management-vue-stash
  * 
@@ -476,39 +476,43 @@ const app = new Vue({
 
                setLastSelection(event.srcElement.getAttribute('data-saveas'), name)
 
-
-               //if (index< selects.length-1)  
                
                getSubsetItems(this,index,name)
                     .then(userOwnProducts =>{  
                          // save last locations to local storage rather here?
-                         console.log('----- user own products:', userOwnProducts.length, userOwnProducts)
+                         console.log('----- user own products:', userOwnProducts.length, Array.isArray(userOwnProducts) , userOwnProducts)
 
                          // get products from each user in IDB: for current city, shop etc
                          getOtherUsersLocalData()
                          .then(users=>{
                               
-                              //const their_countries = data.map(user=>user.countries)
-                              //console.log('their_countries', their_countries)
-                              let newProds = users.map(user=>{
-                                   const countryI = user.countries.findIndex(cntry=>{
-                                                            //console.log(self.currentCountry, cntry.name)
-                                                            return cntry.name === self.currentCountry
-                                                  })
-                                   //console.log('i ?', countryI)
+                              let otherProds = users.map(user=>{
+
+                                   const countryI = user.countries.findIndex(cntry => cntry.name === self.currentCountry)
+
                                    if (countryI > -1){
-                                        //console.log(self.currentCity)
-                                        const cityI = user.countries[countryI].cities.findIndex(city=>city.name === self.currentCity )
                                         
+                                        const cityI = user.countries[countryI].cities.findIndex(city=>city.name === self.currentCity )
+                                        //console.log('cityI', cityI)
                                         const shop = user.countries[countryI].cities[cityI].shops.find(shop=>shop.name===self.currentShop)
                                         //console.log('shop', shop)
-                                        return shop.products
+                                        if (shop && shop.products) return shop.products
                                    }
                               }).filter(prods=>prods!==undefined)
-                              console.log('|||| ', newProds)
 
+
+                              console.log('|||| to add', Array.isArray(otherProds), otherProds)
+                              let finals = []
+                              if (userOwnProducts.length>0) finals = [...userOwnProducts]
+                              console.log('finals1', finals.length)
+
+                              if (otherProds.length>0) finals = finals.concat(...otherProds)
+                              //finals = [...finals, ...otherProds]
+                              console.log('finals2', finals.length)
                               // displays products on screen
-                              this.currentDisplayedProducts = userOwnProducts.concat(newProds)
+                              this.currentDisplayedProducts = finals//[...finals]
+                              //userOwnProducts.concat(otherProds)
+                              console.log('curr prods',this.currentDisplayedProducts)
                          })
                          
                     })
@@ -542,7 +546,7 @@ const app = new Vue({
                          
 
                          self[currentX] = name
-                         //console.log(currentX, name)
+                         console.log(currentX, name)
                          //console.log('    save ?', set, name)
                          setLastSelection(set, name)
 
@@ -584,7 +588,7 @@ const app = new Vue({
      mounted: function(){
           this.getDeviceUser().then(userName=>{
                this.userName = userName
-               console.log('this uname', this.userName)
+               console.log('this user name', this.userName)
                //if (userName === null) this.userName = 'anonymous'
                this.followedUsers = getLSfollowedUsers()
 
@@ -592,29 +596,39 @@ const app = new Vue({
 
                this.getOwnDBData().then( ownCountries =>{
                     console.log('resolved was length:',ownCountries.length, ownCountries)
-
+                    let somethingChanged = false
                     // = user opened app for first time or has deleted browser memory
                     if (ownCountries.length===0){
                               this.storeInitialDBData()
                               .then( initialData => 
                                      initializeCountriesState(this, initialData) )
-                    }     
+                    }  
+
+                    // try to get MDB data to update LocSto
+                    if (navigator.onLine){
+                         this.followedUsers.forEach(user=>{
+                              fetchUserCountries(user)
+                         })
+
+                    } else {}
 
                     this.getLocalStoredUsersData().then(users=>{
                                    
                          let own = [...ownCountries]
                          let Users = users.map(user=>user.countries)
+                         console.log('my own', ownCountries)
                          console.log('users', Users)
 
                          
                          // copies all others' locations to save them in IDB of device
                          if (Users) copyUserData(Users, own)
                                         .then(final=>{
+                                             console.log('somethingChanged? ',somethingChanged)
                                              console.log('location data to save', final===own, final)
 
                                              // save each country without to device user IDB
-                                             //final.forEach( country => user_locations.countries.put(country) )
-
+                                             if (somethingChanged) final.forEach( country => user_locations.countries.put(country) )
+                                             /*else {}*/
                                              return initializeCountriesState(this, final)
                                         })
 
@@ -634,7 +648,7 @@ const app = new Vue({
                                              // remove products from each country
                                              const others_cleaned = other_countries.map( country => removeProducts(country,0))     
 
-                                             copyEntries(index, owndata, others_cleaned) //users.countries)
+                                             copyEntries(index, owndata, others_cleaned)
 
                                              .then(newCountries=> resolve(newCountries) )  
                                    })
@@ -686,6 +700,7 @@ const app = new Vue({
                                                         //console.log('without products',set, locations, subset)
                                                         //other_entry[subset] = location
                                                        ownEntries.push(other_entry)
+                                                       somethingChanged = true
                                                         //console.log(other_entry.name,'updated?',other_entry)
                                                         //console.log( other_entry.name, 'updated?',locations )
 
@@ -726,8 +741,7 @@ const app = new Vue({
 
 
           function initializeCountriesState(self, countries){
-                    //console.log('this',self,"\n", countries)
-                    //it doenst seem to reflect the content unless its refreshed by user
+                    //it doesnt seem to reflect the content unless its refreshed by user
 
                     self.countries = countries
                     self.currentCountry = getLastSelection('countries')
@@ -746,7 +760,7 @@ const app = new Vue({
                     self.shops = lastCity.shops
                     self.currentShop=  getLastSelection('shops') 
 
-                    self.currentDisplayedProducts = self.shops.find(shop=>shop.name = self.currentShop).products
+                    self.currentDisplayedProducts = self.shops.find(shop=>shop.name === self.currentShop).products
           }
      },
      created:function(){
@@ -756,6 +770,19 @@ const app = new Vue({
 
 
 
+function fetchUserCountries(user){
+     console.log(`geeting data of ${user.email}`)
+
+     const xhr = new XMLHttpRequest()
+     xhr.onreadystatechange = function(){
+          if (this.readyState == 4 && this.status == 200) {     // console.log(this.status,'received',typeof this.responseText)
+                    const result = JSON.parse(this.responseText)
+                    console.log(result.email, result, typeof this.responseText)
+          }
+     }
+     xhr.open('POST',serverURL + 'API/getCountriesOfUser',true)
+     xhr.send(user.email)
+}
 
 function setLastSelection(set, value){
      //console.log('>> saving', set, value)
@@ -814,6 +841,8 @@ function addUserToDeviceLS(newUser){
      return window.localStorage.setItem('followedUsers', JSON.stringify(users))
 }
 
+
+
 },{}],0:[function(require,module,exports) {
 var global = (1, eval)('this');
 var OldModule = module.bundle.Module;
@@ -832,7 +861,7 @@ function Module() {
 module.bundle.Module = Module;
 
 if (!module.bundle.parent && typeof WebSocket !== 'undefined') {
-  var ws = new WebSocket('ws://localhost:64454/');
+  var ws = new WebSocket('ws://localhost:56929/');
   ws.onmessage = function(event) {
     var data = JSON.parse(event.data);
 
@@ -933,4 +962,4 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.require, id)
   });
 }
-},{}]},{},[0,4])
+},{}]},{},[0,2])

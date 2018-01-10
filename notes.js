@@ -1,7 +1,10 @@
 
 // on mobile   http://www.syntaxxx.com/accessing-user-device-photos-with-the-html5-camera-api/
 //  on web  https://developers.google.com/web/fundamentals/media/capturing-images/
-
+/**
+ *        try Image object - new Image()
+ * 
+ */
 
 /*
 
@@ -31,6 +34,10 @@ user stories:
 
 done:
 - i can create account, that gets stored in central db
+
+
+
+
 
 
 */
