@@ -40,8 +40,8 @@
                <!-- search results -->
                <div v-show="searchResults">
                     <div v-for="user in searchResults" class="center just_around">
-                         <h4>{{user.username}}</h4>
-                         <button v-if="isFollowed(user.email)===false" @click="followUser(user.email, user.username)">follow</button>
+                         <h4>{{user.userName}}</h4>
+                         <button v-if="isFollowed(user.email)===false" @click="followUser(user.email, user.userName)">follow</button>
                          <br>
                          <p v-if="isFollowed(user.email)===true">you followdee</p>
                     </div>

@@ -13,6 +13,23 @@
 'use strict'
 //import {addLocationToDB2} from './copy.js';
 //console.log('hey', typeof addLocationToDB2)
+let somelet = 44
+const funText = 'console.log("hi " + somelet)'
+function fun(){
+
+     let somelet = 33
+     let f2 = new Function(funText) 
+     let f3 = function(){
+          let somelet = 33
+          let f4 = new Function(funText) 
+          return f4()
+     }
+     console.log(f3)
+     //hi = function(){ console.log('oh ' + somelet)} 
+     return f3()    //hi()
+}
+//fun()
+
 
 const initalCountryData = [{
      name: 'all countries' , 
@@ -50,11 +67,10 @@ window.deviceUserData.open()
 
 const users_followed = new Dexie('users_followed')
 
-     users_followed.version(1).stores({ userData: 'userName, countries'})
+     users_followed.version(1).stores({ userData: 'email, userName , countries'})
      //const user1data = require('./testUserData1.json'), user2data = require('./testUserData2.json')
      //users_followed.userData.put(user1data)
      //users_followed.userData.put(user2data)
-     //console.log('user1data',user2data.userName)
 
 
 const serverURL = 'https://shopp.glitch.me/'
@@ -149,9 +165,11 @@ const app = new Vue({
                     let email = document.querySelector('input[name="reg-useremail"').value
                     let userName = document.querySelector('input[name="reg-username"').value
                     let password  = document.querySelector('input[name="reg-userpassword"').value
+
+               if (userName==0) return alert(`sorry, '${userName}' can't be accepted as username`) // 0 is reserved for unregistered user in IDB
+
+               const tosend = {email, userName, password}
                
-                    const tosend = {email, userName, password}
-                    //console.log('email', tosend)
 
                if (!email || !userName || ! password) return console.error('email or name or pass missing')
 
@@ -180,9 +198,18 @@ const app = new Vue({
           },
           logout: function($ev){
                console.log('>> logouted <<')
+               
+               let items = ['deviceUserEmail', 'deviceUser', 
+               'followedUsers', 'countries',
+               'cities', 'shops']
+
+               items.forEach(item=>
+                    //console.log('item to remove', item)
+                    window.localStorage.removeItem(item))
+               
                this.userName = undefined
-               window.localStorage.removeItem('deviceUserEmail')
-               window.localStorage.removeItem('deviceUser')
+
+               return this.startApp()
           },
           requestUsers:function(){
                let string = this.searchText
@@ -216,13 +243,22 @@ const app = new Vue({
 
                const xhr = new XMLHttpRequest()
                xhr.onreadystatechange = function(){
+
                     if (this.readyState == 4 && this.status == 200) { 
                          console.log('follow sekces')
                          // store new followdee in local storage
                          addUserToDeviceLS({userName, email})
 
+                         fetchCountriesOfUser({userName, email})
+                         .then(setOtherUserIDBData)
+                         // then it should copy new data to deviceUser IDB??
+                         //
+                         .then(self.startApp)
+                         //.then(initializeCountriesState(self, countries))
+
                     } else if (this.readyState == 4 && this.status == 400) { 
                          console.error('TRY AGAIN LATER')
+                         this.log('TRY AGAIN LATER')
                          // finish this part
                     }
                }
@@ -239,6 +275,10 @@ const app = new Vue({
                     console.log(email, 'LS followed users', users)
                     if (!users || users.some(user=>user.email== email)===false) return false
                     else return true
+          },
+          unfollowUser:function(email){
+
+               // delete local storage country data of that user only if he isnt followed by any other deviceUser in IDB
           },
           /*getLocalStoredUsersData: function(){
                return new Promise((resolve, reject)=>{
@@ -265,7 +305,7 @@ const app = new Vue({
                console.log(`new ${this.locationSet} is ${this.newLocation}`)
                if (!this.newLocation) return alert('no name?');
 
-               const addLocation = addLocationToDB.bind(this)
+               const addLocation = addNewLocationToDB.bind(this)
                
                return addLocation(this.locationSet, this.newLocation)
           },
@@ -273,7 +313,7 @@ const app = new Vue({
                //console.log('slct', event.srcElement.selectedIndex)
                //console.log('label', event,'\n', event.srcElement.getAttribute('data-saveas')  )
 
-               if (event.srcElement.selectedIndex<0) return      // protection against DOM load events 
+               if (event.srcElement.selectedIndex<0) return      // protection against DOM load events ?
 
                const self = this
                const selects = ['countries', 'cities', 'shops','products'],
@@ -287,41 +327,46 @@ const app = new Vue({
                getSubsetItems(this,index,name)
                     .then(userOwnProducts =>{  
                          // save last locations to local storage rather here?
-                         console.log('----- user own products:', userOwnProducts.length, Array.isArray(userOwnProducts) , userOwnProducts)
+                         console.log('----- user own products:', userOwnProducts.length, userOwnProducts)
 
                          // get products from each user in IDB: for current city, shop etc
                          getOtherUsersLocalData()
                          .then(users=>{
-                              
-                              let otherProds = users.map(user=>{
+                              console.log('users to add products from', users)
 
-                                   const countryI = user.countries.findIndex(cntry => cntry.name === self.currentCountry)
-
-                                   if (countryI > -1){
-                                        
-                                        const cityI = user.countries[countryI].cities.findIndex(city=>city.name === self.currentCity )
-                                        //console.log('cityI', cityI)
-                                        const shop = user.countries[countryI].cities[cityI].shops.find(shop=>shop.name===self.currentShop)
-                                        //console.log('shop', shop)
-                                        if (shop && shop.products) return shop.products
-                                   }
-                              }).filter(prods=>prods!==undefined)
-
-
-                              console.log('|||| to add', Array.isArray(otherProds), otherProds)
                               let finals = []
-                              if (userOwnProducts.length>0) finals = [...userOwnProducts]
+                              if (userOwnProducts.length>0) 
+                                   finals = [...userOwnProducts]
+
                               console.log('finals1', finals.length)
 
-                              if (otherProds.length>0) finals = finals.concat(...otherProds)
-                              //finals = [...finals, ...otherProds]
+
+                              if (users){
+                                   let otherProds = users.map(user=>{
+
+                                        const countryI = user.countries.findIndex(cntry => cntry.name === self.currentCountry)
+
+                                        if (countryI > -1){
+                                             
+                                             const cityI = user.countries[countryI].cities.findIndex(city=>city.name === self.currentCity )
+                                             //console.log('cityI', cityI)
+                                             const shop = user.countries[countryI].cities[cityI].shops.find(shop=>shop.name===self.currentShop)
+                                             //console.log('shop', shop)
+                                             if (shop && shop.products) return shop.products
+                                        }
+                                   }).filter(prods=>prods!==undefined)
+
+                                   console.log('|||| to add', Array.isArray(otherProds), otherProds)
+
+                                   if (otherProds.length>0) finals = finals.concat(...otherProds)
+                              }
+                              
                               console.log('finals2', finals.length)
                               // displays products on screen
                               this.currentDisplayedProducts = finals//[...finals]
-                              //userOwnProducts.concat(otherProds)
-                              console.log('curr prods',this.currentDisplayedProducts)
+
+                              return console.log('curr prods',this.currentDisplayedProducts)
                          })
-                         
                     })
                function getSubsetItems(self, outerIndex, name){
                     
@@ -392,7 +437,7 @@ const app = new Vue({
                console.log('submit', fileName)
           },
           startApp:function(){
-
+               //this.screen = 'main'
 
                this.userName = getDeviceUser()
                //if (this.userName===null) this.userName = 'null'  // because of IDB so user can be found, it doesnt store null as value
@@ -401,7 +446,7 @@ const app = new Vue({
                if (this.userName!==undefined){ 
                     this.followedUsers = getLSfollowedUsers() 
                }
-               console.log('followedUsers len', this.followedUsers.length, this.followedUsers)
+               console.log('followedUsers', this.followedUsers)
                // try to update followdees data in IDB from MDB (if online)
                
                getOwnDBData(this.userName)
@@ -422,34 +467,37 @@ const app = new Vue({
 
                     getOtherUsersLocalData()
                     .then(users=>{
-
-                         let somethingChanged = false
-                         let own = [...ownCountries]
-                         let Users = users.map(user=>user.countries)
+                         
                          console.log('my own', ownCountries)
-                         console.log('users', Users)
-
-                         //return;
-                         if (!Users){
-                              //console.log('-------    testing screen init    -------')
+                         console.log('users', users)
+                         
+                         if (!users){
                               console.log('NO FOLLOWED USERS')
-                              return initializeCountriesState(this, own)
+                              return initializeCountriesState(this, ownCountries)
                          }
+                         let somethingChanged = false,
+                             own = [...ownCountries],
+                             Users = users.map(user=>user.countries)
+                         console.log('users', Users)
 
                          // copies all others' locations to save them in IDB of device
                          copyUserData(Users, own)
-                              .then(final=>{
+                         .then(final=>{
                                    console.log('somethingChanged? ',somethingChanged)
-                                   console.log('location data to save', final===own, final)
+                                   if (somethingChanged) console.log('location data to save', final===own, final)
 
                                    // save each country without prods to device user IDB
-                                   //if (somethingChanged) final.forEach( country => deviceUserData.countries.put(country) )
-                                   return initializeCountriesState(this, final)
+                                   if (somethingChanged) {
+                                        updateDeviceUserCountries(this.userName, final)   // store everything to deviceUser IDB
+                                        .then(initializeCountriesState(this, final))      // update screen w new data available
+
+                                   } else return initializeCountriesState(this, final)
+                                   //final.forEach( country => deviceUserData.countries.put(country) )
                          })
 
 
-                         /*function copyUserData(users, owndata){
-                              //console.log('EQUAL', ownCountries == owndata)
+                         function copyUserData(users, owndata){
+                              console.log('EQUAL', ownCountries == owndata)
                               
                               return new Promise((resolve, reject)=>{
                                    const sets = ['countries','cities','shops','products']
@@ -541,7 +589,7 @@ const app = new Vue({
                                         })
                                    }
                               })
-                         }*/
+                         }
                     })
                })
                .catch( er => {
@@ -563,6 +611,7 @@ const app = new Vue({
           }
      },
      mounted: function(){
+          window.initializeCountriesState = initializeCountriesState.bind(this)  // its used on few occasions w different contexts
           this.startApp()
      },
      created:function(){
@@ -570,7 +619,10 @@ const app = new Vue({
      }
 })
 
-function addLocationToDB(set, newName){
+
+
+
+function addNewLocationToDB(set, newName){
      console.log('add', set)
      //   under what country to add it
      //   should i update whole country document?
@@ -627,7 +679,7 @@ function addLocationToDB(set, newName){
           let countryData = this.countries.find(cntry=> cntry.name ===this.currentCountry)
           
           let cityData = countryData.cities.find(city=> city.name === this.currentCity)
-          console.log( '   adding shop',cityData.name)
+          console.log( '   adding shop ', newName, 'to', cityData.name)
 
           // check its not there already
           if (cityData.shops.findIndex(shop=>shop.name===newName) > -1)
@@ -641,7 +693,7 @@ function addLocationToDB(set, newName){
                                    }
                               )
 
-          console.log('   new cntry original',this.currentCountry, countryData)
+          console.log('   new entry now', this.currentCountry, countryData)
           
           toSave = [[countryData]]
           
@@ -672,21 +724,40 @@ function addLocationToDB(set, newName){
 }
 
 
+function fetchCountriesOfUser(user){
 
+     return new Promise((resolve, reject)=>{
+          console.log(`geeting data of ${user.email}`)
 
+          const xhr = new XMLHttpRequest()
+          xhr.onreadystatechange = function(){
+               if (this.readyState == 4 && this.status == 200) {     // console.log(this.status,'received',typeof this.responseText)
 
-function fetchUserCountries(user){
-     console.log(`geeting data of ${user.email}`)
+                         const result = JSON.parse(this.responseText)
+                         result.userName = user.userName
 
-     const xhr = new XMLHttpRequest()
-     xhr.onreadystatechange = function(){
-          if (this.readyState == 4 && this.status == 200) {     // console.log(this.status,'received',typeof this.responseText)
-                    const result = JSON.parse(this.responseText)
-                    console.log(result.email, result, typeof this.responseText)
+                         //console.log(result.email, typeof result, result)
+                         resolve(result)
+
+               } else if (this.readyState == 4 && this.status!=200) reject()
           }
-     }
-     xhr.open('POST',serverURL + 'API/getCountriesOfUser',true)
-     xhr.send(user.email)
+          xhr.open('POST',serverURL + 'API/getCountriesOfUser',true)
+          xhr.send(user.email)
+     })
+}
+function setOtherUserIDBData(allData){
+     console.log('allData to IDB >', allData)
+     return new Promise((resolve, reject)=>{
+
+          users_followed.userData.put(allData)
+          .then(result=>{
+               console.log(result)  // this returns primary key i.e. email
+               resolve()
+          }).catch(er=>{
+               console.error(er)
+               reject()
+          })
+     })
 }
 
 function setLastSelection(set, value){
@@ -830,10 +901,9 @@ function getOtherUsersLocalData(){
           })
           .then(()=>users_followed.userData.toArray())
           .then(users =>{ 
-               //let others = []
-               //users.forEach(user=>others.push(user))
-               //console.log('otherUsers',others)
-               res(users)
+               //console.log('otherUsers',users)
+               if (users.length==0) res(null)
+               else res(users)
 
           })
           .catch(er=>alert('error opening following', er))
@@ -992,10 +1062,11 @@ const copyUserData_text = `
           let index = 0
           users.forEach(other_countries => {
                     console.log(other_countries)
-                    // remove products from each country
-                    const others_cleaned = other_countries.map( country => removeProducts(country,0))     
+                    // remove products from each country  
+                    // not if its used to store new location
+                    //const others_cleaned = other_countries//.map( country => removeProducts(country,0))     
 
-                    copyEntries(index, owndata, others_cleaned)
+                    copyEntries(index, owndata, other_countries)//others_cleaned)
 
                     .then(newCountries=> resolve(newCountries) )  
           })
