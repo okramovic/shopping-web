@@ -13,8 +13,9 @@
 <body>
      <div id="app" >
           
-          <div v-show="userName===null">anonymous</div>
+          <div v-show="!userName">using app as unregistered</div>
           <div style="width: 100%; display: flex; justify-content: space-around;">
+
                <div v-show="userName">using app as {{userName}}</div>
                <button v-show="screen=='settings' && userName"  @click="logout"
                     >logout {{userName}}</button>
@@ -22,6 +23,7 @@
                <button id="" @click="switchScreen('settings')" v-show="screen=='main'">show settings</button>
           </div>
           <br><br>
+
           <h1>my shopping history</h1>
 
 
@@ -33,10 +35,12 @@
                     >back</button>
                
                <!-- search users -->
-               <div style="display: flex">
+               <div style="display: flex" v-show="userName">
                     <input type="text" v-model="searchText" placeholder="find love of your life">
                     <button @click=requestUsers>search</button>
                </div>
+               <div v-if="!userName">you cannot follow anyone without creating account</div>
+               <!-- search results -->
                <div v-show="searchResults">
                     <div v-for="user in searchResults" class="center just_around">
                          <h4>{{user.username}}</h4>
@@ -57,7 +61,7 @@
                     </form>
                </div>
                <!-- login-->
-               <div class="vertical" v-show="screen!=='main' && screen!='signup' && userName === null">
+               <div class="vertical" v-show="screen!=='main' && screen!='signup' && !userName">
                     <h2>count me in</h2>
                     <input type="email" placeholder="email" v-model="loginemail">
                     <p>your password</p>
@@ -65,12 +69,12 @@
                     <button @click="login($event)">login</button>
                </div>
                <br><br><br><br>
-               <div v-show="followedUsers.length>0" class="vertical">
+               <div v-show="followedUsers && followedUsers.length>0" class="vertical">
                     <h4>users you follow</h4>
                     <div v-for="user in followedUsers">{{user.username}}</div>
                </div>
                <br><br>
-               <h4 v-show="followedUsers.length==0">you dont follow any users yet</h4>
+               <h4 v-show="followedUsers && followedUsers.length==0">you dont follow any users yet</h4>
 
 
                <h2>settings</h2>

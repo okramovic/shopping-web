@@ -68,70 +68,126 @@ require = (function (modules, cache, entry) {
 
   // Override the current require with this new one
   return newRequire;
-})({6:[function(require,module,exports) {
-var bundleURL = null;
-function getBundleURLCached() {
-  if (!bundleURL) {
-    bundleURL = getBundleURL();
-  }
+})({7:[function(require,module,exports) {
+"use strict";
 
-  return bundleURL;
-}
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
-function getBundleURL() {
-  // Attempt to find the URL of the current script and use that as the base URL
-  try {
-    throw new Error;
-  } catch (err) {
-    var matches = ('' + err.stack).match(/(https?|file|ftp):\/\/[^)\n]+/g);
-    if (matches) {
-      return getBaseURL(matches[0]);
+function addLocationToDB(set, newName) {
+  console.log('this', this);
+  /*   under what country to add it
+       should i update whole country document?
+  */
+  const self = this;
+
+  if (set == 'country') {
+    //console.log('vue locs', deviceUserData)
+
+    let index = this.countries.findIndex(country => country.name == newName);
+
+    if (index > -1) {
+      alert(`${newName}\nis already in your database`);
+      return;
     }
-  }
+    const obj = [{ name: newName,
+      cities: [{
+        name: 'all cities',
+        shops: [{
+          name: 'all shops',
+          products: []
+        }]
+      }]
+    }];
 
-  return '/';
-}
-
-function getBaseURL(url) {
-  return ('' + url).replace(/^((?:https?|file|ftp):\/\/.+)\/[^/]+$/, '$1') + '/';
-}
-
-exports.getBundleURL = getBundleURLCached;
-exports.getBaseURL = getBaseURL;
-
-},{}],5:[function(require,module,exports) {
-var bundle = require('./bundle-url');
-
-function updateLink(link) {
-  var newLink = link.cloneNode();
-  newLink.onload = function () {
-    link.remove();
-  };
-  newLink.href = link.href.split('?')[0] + '?' + Date.now();
-  link.parentNode.insertBefore(newLink, link.nextSibling);
-}
-
-var cssTimeout = null;
-function reloadCSS() {
-  if (cssTimeout) {
-    return;
-  }
-
-  cssTimeout = setTimeout(function () {
-    var links = document.querySelectorAll('link[rel="stylesheet"]');
-    for (var i = 0; i < links.length; i++) {
-      if (bundle.getBaseURL(links[i].href) === bundle.getBundleURL()) {
-        updateLink(links[i]);
-      }
+    //window.
+    //var somethingChanged = false
+    //const  = 
+    function copyUserDataI() {
+      var somethingChanged = false;
+      var somevar = 1;
+      return copyUserData([obj], self.countries);
+      //const xx = function(){ console.log('hi', somevar)}//test1
+      //return xx
+      //console.log( typeof test1)
+      //return copyUserData//([obj], self.countries)
     }
 
-    cssTimeout = null;
-  }, 50);
+    console.log('copyUserDataI', typeof copyUserDataI);
+    let idk = copyUserDataI();
+    //copyUserDataI([obj], self.countries)
+
+    /*.then(final=>{
+         console.log('somethingChanged B? ',somethingChanged)
+         console.log('location data to save', final===this.countries, final)
+          // save each country without prods to device user IDB
+         //if (somethingChanged) final.forEach( country => deviceUserData.countries.put(country) )
+         //return initializeCountriesState(this, final)
+    })*/
+
+    //deviceUserData.userData.put({userName: this.userName || 0, countries: obj})
+    //window.deviceUserData.userData.add(obj)
+    /*     .then(status => { console.log('status',status)
+              //getOwnDBData(this.userName)
+         })
+              .then(data => {
+                        //initalCountryData(this, data)
+                        //this.countries = data
+              }) // then select newly added thing
+    //\ )*/
+
+    //})
+  } else if (set == 'city') {
+    let countryData = this.countries.find(cntry => cntry.name == this.currentCountry);
+    console.log('   adding city', this.countries, "\n", countryData);
+
+    // check if this city is already there
+    let index = countryData.cities.findIndex(city => city == newName);
+
+    if (index > -1) {
+      alert(`${newName}\nis already in your database`);
+      return;
+    }
+    countryData.cities.push({
+      name: newName,
+      shops: [{
+        name: 'all shops',
+        products: []
+      }]
+    });
+    window.deviceUserData.countries.put(countryData).then(status => {
+
+      this.getOwnDBData().then(data => this.countries = data);
+      console.log('updated Vue data', this.countries);
+    });
+  } else if (set == 'shop') {
+    let countryData = this.countries.find(cntry => cntry.name === this.currentCountry);
+
+    let cityData = countryData.cities.find(city => city.name === this.currentCity);
+    console.log('   adding shop', cityData);
+    // check its not there already
+    if (cityData.shops.findIndex(shop => shop.name === newName) > -1) {
+      alert(`${newName}\nis already in your database`);
+      return;
+    }
+
+    cityData.shops.push({
+      name: newName,
+      products: []
+    });
+    console.log('   new cntry data', this.currentCountry, countryData);
+    window.deviceUserData.countries.put(countryData).then(status => {
+      console.log('   updated Vue data', this.countries);
+      this.getOwnDBData().then(data => this.countries = data); // then select newly added thing
+    });
+  }
+  //this.locationInputShown= false
+  //this.newLocation = ""
 }
 
-module.exports = reloadCSS;
-
-},{"./bundle-url":6}],0:[function(require,module,exports) {
+exports.addLocationToDB = addLocationToDB;
+},{}],0:[function(require,module,exports) {
 var global = (1, eval)('this');
 var OldModule = module.bundle.Module;
 function Module() {
@@ -149,7 +205,7 @@ function Module() {
 module.bundle.Module = Module;
 
 if (!module.bundle.parent && typeof WebSocket !== 'undefined') {
-  var ws = new WebSocket('ws://localhost:51489/');
+  var ws = new WebSocket('ws://localhost:56814/');
   ws.onmessage = function(event) {
     var data = JSON.parse(event.data);
 
@@ -250,4 +306,4 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.require, id)
   });
 }
-},{}]},{},[0])
+},{}]},{},[0,7])
