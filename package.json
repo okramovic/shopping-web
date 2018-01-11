@@ -1,0 +1,24 @@
+{
+  "name": "shopping-app",
+  "version": "0.0.1",
+  "description": "shopping memory",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.16.2",
+    "node-sass": "^4.7.2"
+  },
+  "engines": {
+    "node": "*"
+  },
+  "repository": {
+    "url": "https://github.com/okramovic/"
+  },
+  "license": "MIT",
+  "keywords": [
+    "node"
+  ],
+  "devDependencies": {}
+}
