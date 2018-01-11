@@ -21,6 +21,7 @@ app.get("/", function (request, response) {
   response.sendFile(__dirname + '/views/index2.html');
 });
 
+
 app.post('/API/getCountriesOfUser',(req, res)=>{
     res.setHeader('Access-Control-Allow-Origin',clientOrigin)
   
@@ -42,11 +43,11 @@ app.post('/API/getCountriesOfUser',(req, res)=>{
                       console.log('cntryData',countries)
               
                       if (!er && countries!==null) {
-                        delete countries._id
-                        //res.setHeader('Content-Type', 'application/json');
-                        res.json(countries)  
+                          delete countries._id
+                          //res.setHeader('Content-Type', 'application/json');
+                          res.json(countries)  // sends user's email and country data
+                        
                       } else res.sendStatus(500)
-                      
                       res.end()
             })
         })
@@ -95,7 +96,7 @@ app.post('/API/followuser', (req, res)=>{
                     let followed = user.followedUsers
 
                     // search for newly requested user and add only if not already present
-                    if (followed && followed.find(email=>email==data.email)===undefined) followed.push(data.email)
+                    if (followed && followed.find(email=>email==data.email)===undefined) followed.push({userName: user.userName,email:data.email})
                     else if (!followed) followed = [data.email]
 
                     console.log('    ',user.followedUsers)
@@ -129,10 +130,13 @@ app.post('/API/login', (req,res)=>{
 
             col.findOne({email:data.email, password: data.password},function(er, result){
                 console.log('result', result)
-                if (er) res.sendStatus(400)
-              
-                result = result
-                res.end(result.username)
+                if (er || !result) return res.sendStatus(400)
+                
+                const toSend = { userName: result.userName, followedUsers:result.followedUsers}
+                
+                res.setHeader('Content-Type', 'application/json')
+                res.json(toSend)
+                res.end()
             })
           })
     })
