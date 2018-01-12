@@ -61,13 +61,13 @@ window.deviceUserData.open()
      });
 
 
-
-
-
-
 const users_followed = new Dexie('users_followed')
-
      users_followed.version(1).stores({ userData: 'email, userName , countries'})
+     users_followed.open()
+          .catch(error => {
+               console.error('Uh oh : error opening Users_followed db' + error);
+     });
+     
      //const user1data = require('./testUserData1.json'), user2data = require('./testUserData2.json')
      //users_followed.userData.put(user1data)
      //users_followed.userData.put(user2data)
@@ -263,16 +263,17 @@ const app = new Vue({
                     }
                }
                xhr.open('POST', serverURL + 'API/followuser', true)
-               xhr.send(JSON.stringify({  email:email, 
+               xhr.send(JSON.stringify({  email, 
+                                          userName,
                                           addTo: window.localStorage.getItem('deviceUserEmail')
                                        })
                )
 
           },
           isFollowed:function(email){
-                    let users = window.localStorage.getItem('followedUsers')
-                    users = JSON.parse(users)
-                    console.log(email, 'LS followed users', users)
+                    let users = JSON.parse(  window.localStorage.getItem('followedUsers')  )
+                    //console.log('search for',email, 'LS followed users', users)
+
                     if (!users || users.some(user=>user.email== email)===false) return false
                     else return true
           },
@@ -280,17 +281,6 @@ const app = new Vue({
 
                // delete local storage country data of that user only if he isnt followed by any other deviceUser in IDB
           },
-          /*getLocalStoredUsersData: function(){
-               return new Promise((resolve, reject)=>{
-                    getOtherUsersLocalData().then(result=>{
-                         //result = result.map(el=>el.countries)
-                         //console.log(result)
-                         if (result.length>0) resolve(result)
-                         else resolve(null)
-
-                    })
-               })   
-          },*/
           openLocationInput: function(set,ev){
                this.locationInputShown = true
                //console.log('event', set, ev)
@@ -330,7 +320,7 @@ const app = new Vue({
                          console.log('----- user own products:', userOwnProducts.length, userOwnProducts)
 
                          // get products from each user in IDB: for current city, shop etc
-                         getOtherUsersLocalData()
+                         getOtherUsersLocalData(this.followedUsers)
                          .then(users=>{
                               console.log('users to add products from', users)
 
@@ -451,8 +441,7 @@ const app = new Vue({
                
                getOwnDBData(this.userName)
                .then( ownCountries =>{
-                    console.log('resolved length:',ownCountries.length, ownCountries)
-
+                    
                     // try to get MDB data to update LocSto
                     if (navigator.onLine){
                          /*this.followedUsers.forEach(user=>{
@@ -462,23 +451,24 @@ const app = new Vue({
                     } else {}
 
                     //let somethingChanged = false
-                    if (!this.userName) return initializeCountriesState(this, ownCountries)
-                    //else return console.log('can follow others')
+                    if (!this.userName || !this.followedUsers) return initializeCountriesState(this, ownCountries)
+                    
+                    
 
-                    getOtherUsersLocalData()
+                    getOtherUsersLocalData(this.followedUsers)
                     .then(users=>{
                          
                          console.log('my own', ownCountries)
                          console.log('users', users)
                          
-                         if (!users){
+                         if (!users){   // this cant happen now
                               console.log('NO FOLLOWED USERS')
                               return initializeCountriesState(this, ownCountries)
                          }
                          let somethingChanged = false,
                              own = [...ownCountries],
                              Users = users.map(user=>user.countries)
-                         console.log('users', Users)
+                         //console.log('users', Users)
 
                          // copies all others' locations to save them in IDB of device
                          copyUserData(Users, own)
@@ -497,7 +487,7 @@ const app = new Vue({
 
 
                          function copyUserData(users, owndata){
-                              console.log('EQUAL', ownCountries == owndata)
+                              //console.log('EQUAL', ownCountries == owndata)
                               
                               return new Promise((resolve, reject)=>{
                                    const sets = ['countries','cities','shops','products']
@@ -891,22 +881,22 @@ function storeInitialDBData(userName = 0){
      })
 }
 
-function getOtherUsersLocalData(){
+function getOtherUsersLocalData(localUsers){
 
      return new Promise((res,rej)=>{
-               
-          users_followed.open(x=>{
-               console.log('x',x)
-               return //x.userData.toArray()
-          })
-          .then(()=>users_followed.userData.toArray())
+          if (!localUsers || localUsers.length==0) return res(null)
+
+          users_followed.userData.toArray()
           .then(users =>{ 
-               //console.log('otherUsers',users)
-               if (users.length==0) res(null)
+               
+               users = users.filter(user=> localUsers.find(lUser=>lUser.email==user.email)!==undefined )
+               console.log('||| filtered users',users)
+
+               if (users.length==0) res(null)     // when can this happen?
                else res(users)
 
           })
-          .catch(er=>alert('error opening following', er))
+          .catch(er=>console.error('error opening following', er))
      })
 }
 
@@ -1051,7 +1041,6 @@ function updateDeviceUserCountries(userName=0, countries){
 
           }).catch(er=>{})
      })
-     
 }
 const copyUserData_text = `
      console.log('newdata, owndata', users, owndata)
