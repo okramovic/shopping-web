@@ -13,22 +13,7 @@
 'use strict'
 //import {addLocationToDB2} from './copy.js';
 //console.log('hey', typeof addLocationToDB2)
-let somelet = 44
-const funText = 'console.log("hi " + somelet)'
-function fun(){
 
-     let somelet = 33
-     let f2 = new Function(funText) 
-     let f3 = function(){
-          let somelet = 33
-          let f4 = new Function(funText) 
-          return f4()
-     }
-     console.log(f3)
-     //hi = function(){ console.log('oh ' + somelet)} 
-     return f3()    //hi()
-}
-//fun()
 
 
 const initalCountryData = [{
@@ -124,31 +109,37 @@ const app = new Vue({
                else this.screen = 'main'
           },
           login:function(){
-               let email = this.loginemail
-               let password = this.loginpass
+               let email = this.loginemail,
+                   password = this.loginpass
 
                console.log('longin', email, password)
 
-               const tosend = {email, password}, self = this
+               const tosend = {email, password}, self = this,
 
-               let xhr = new XMLHttpRequest()
+               xhr = new XMLHttpRequest()
                xhr.onreadystatechange = function() {
+
                     if (this.readyState == 4 && this.status == 200) {      console.log('received',typeof this.responseText, this.responseText)
-                              
-                              let loginResponse
+
+                         let LSitems = ['deviceUserEmail', 'deviceUser', 
+                                        'followedUsers', 'countries',
+                                        'cities', 'shops']
+                         LSitems.forEach(item=> window.localStorage.removeItem(item) )
+
+                         let loginResponse
                               
                          if (typeof this.responseText==='string') loginResponse = JSON.parse(this.responseText)
 
-                              window.localStorage.setItem('deviceUserEmail', email)
-                              updateDeviceUser(loginResponse.userName)
+                         window.localStorage.setItem('deviceUserEmail', email)
+                         updateDeviceUser(loginResponse.userName)
                               
-                              if (loginResponse.followedUsers) 
+                         if (loginResponse.followedUsers) // this doesnt store their country data
                                    loginResponse.followedUsers.forEach(user=>addUserToDeviceLS(user))
 
-                              self.userName = loginResponse.userName
-                              self.screen = 'main'
-                              self.startApp()
-                              return self.log(`You rock'n'hop! logged iN`)
+                         self.userName = loginResponse.userName
+                         self.screen = 'main'
+                         self.startApp()
+                         return self.log(`You hip roll! Now logged iN`) // rock'n'hop
 
                     } else if (this.readyState == 4 && this.status == 400){
 
@@ -181,9 +172,14 @@ const app = new Vue({
 
                               self.log(`You rock'n'b! Account created, check your email, spam etc`)
                               window.localStorage.setItem('deviceUserEmail', email)
-                              createDeviceUser(username)
-                              self.getDeviceUser().then(name=>self.userName = name)
+
+                              updateDeviceUser(userName)
+                              
+                              self.userName = getDeviceUser()
+                              //.then(name=>self.userName = name)
                               self.screen = 'main'
+
+                              return self.startApp()
 
                     } else if (this.readyState == 4 && this.status ==400)
 
@@ -203,12 +199,12 @@ const app = new Vue({
                'followedUsers', 'countries',
                'cities', 'shops']
 
-               items.forEach(item=>
-                    //console.log('item to remove', item)
-                    window.localStorage.removeItem(item))
+               items.forEach(item=>{
+                    console.log('item to remove', item)
+                    return window.localStorage.removeItem(item) })
                
-               this.userName = undefined
-
+               //this.userName = undefined
+               console.log('now will reload app')
                return this.startApp()
           },
           requestUsers:function(){
@@ -246,15 +242,12 @@ const app = new Vue({
 
                     if (this.readyState == 4 && this.status == 200) { 
                          console.log('follow sekces')
-                         // store new followdee in local storage
-                         addUserToDeviceLS({userName, email})
+                         
+                         addUserToDeviceLS({userName, email})    // store new followdee in local storage
 
                          fetchCountriesOfUser({userName, email})
-                         .then(setOtherUserIDBData)
-                         // then it should copy new data to deviceUser IDB??
-                         //
-                         .then(self.startApp)
-                         //.then(initializeCountriesState(self, countries))
+                         .then(setOtherUserIDBData)              // hard-replaces whole document with new data
+                         .then(self.startApp)                    // here it copies data(countries etc) to device users
 
                     } else if (this.readyState == 4 && this.status == 400) { 
                          console.error('TRY AGAIN LATER')
@@ -299,20 +292,26 @@ const app = new Vue({
                
                return addLocation(this.locationSet, this.newLocation)
           },
-          updateLocationSelect:function(index, event){
+          updateLocationSelect:function(index, event,someArg){
                //console.log('slct', event.srcElement.selectedIndex)
-               //console.log('label', event,'\n', event.srcElement.getAttribute('data-saveas')  )
+               //console.log('event','>',someArg,'<')//'\n', event.srcElement.getAttribute('data-saveas')  )
 
-               if (event.srcElement.selectedIndex<0) return      // protection against DOM load events ?
+               if (event && event.srcElement.selectedIndex<0) return;      // protection against DOM load events ?
 
                const self = this
                const selects = ['countries', 'cities', 'shops','products'],
                      currents= ['currentCountry','currentCity','currentShop']
-               
-               const name = event.srcElement.selectedOptions[0].text
+               let name
+               if (event) {
+                    //console.log('select change')
+                    name = event.srcElement.selectedOptions[0].text
+                    setLastSelection(event.srcElement.getAttribute('data-saveas'), name)
 
-               setLastSelection(event.srcElement.getAttribute('data-saveas'), name)
-
+               } else {
+                    //console.log('when initializing app')
+                    name = someArg
+               }
+               //return console.log('name', name, 'event', event)
                
                getSubsetItems(this,index,name)
                     .then(userOwnProducts =>{  
@@ -322,7 +321,7 @@ const app = new Vue({
                          // get products from each user in IDB: for current city, shop etc
                          getOtherUsersLocalData(this.followedUsers)
                          .then(users=>{
-                              console.log('users to add products from', users)
+                              //console.log('users to add products from', users)
 
                               let finals = []
                               if (userOwnProducts.length>0) 
@@ -346,7 +345,7 @@ const app = new Vue({
                                         }
                                    }).filter(prods=>prods!==undefined)
 
-                                   console.log('|||| to add', Array.isArray(otherProds), otherProds)
+                                   //console.log('|||| to add', Array.isArray(otherProds), otherProds)
 
                                    if (otherProds.length>0) finals = finals.concat(...otherProds)
                               }
@@ -355,12 +354,12 @@ const app = new Vue({
                               // displays products on screen
                               this.currentDisplayedProducts = finals//[...finals]
 
-                              return console.log('curr prods',this.currentDisplayedProducts)
+                              //return console.log('curr prods',this.currentDisplayedProducts)
                          })
                     })
                function getSubsetItems(self, outerIndex, name){
                     
-                    if (outerIndex>4) return false;
+                    if (outerIndex>4) return console.error('outerIndex>4  !!!',outerIndex) // this doesnt seem to ever happen
 
                     //console.log('getting items of', name)
                     //console.log('continue -- outerIndex, name',outerIndex, name)
@@ -383,34 +382,34 @@ const app = new Vue({
                               return alert('oops')
                          }
 
-                         let a = self[set].find(el=>{ return el.name===name })
+                         let a = self[set].find(el=> el.name===name )
                          
                          
 
                          self[currentX] = name
-                         console.log(currentX, name)
+                         console.log('current',currentX, name)
                          //console.log('    save ?', set, name)
                          setLastSelection(set, name)
 
                          self[subSet] = a[subSet]
-                         //console.log(`subset`, a[subSet])
                          //console.log('subSet', subSet)
                          
                          //console.log('---',currents[outerIndex+1])
                          if (currents[outerIndex+1]=== undefined) {
                               //console.log('products?', a.name, a[subSet])
                               resolve(a[subSet]) 
-                              return //console.log('test')
+                              //return
                          }
-
-                         let string = currents[outerIndex+1].toString()
-                         self[string]= a[subSet][0].name    // 'currentCountry' 'currentCity' 'currentShop'
-                         
-                         //console.log('[subSet]', self[subSet][0])  // name of default item to set
-                         
-                         resolve(
-                              getSubsetItems(self, outerIndex + 1, a[subSet][0].name)          
-                         )
+                         else {
+                              let string = currents[outerIndex+1].toString()
+                              self[string]= a[subSet][0].name    // 'currentCountry' 'currentCity' 'currentShop'
+                              
+                              //console.log('[subSet]', self[subSet][0])  // name of default item to set
+                              
+                              resolve(
+                                   getSubsetItems(self, outerIndex + 1, a[subSet][0].name)          
+                              )
+                         }
                     })
                }
           },
@@ -433,38 +432,35 @@ const app = new Vue({
                //if (this.userName===null) this.userName = 'null'  // because of IDB so user can be found, it doesnt store null as value
                console.log('userName', this.userName)
                
-               if (this.userName!==undefined){ 
-                    this.followedUsers = getLSfollowedUsers() 
-               }
+               if (this.userName) this.followedUsers = getLSfollowedUsers()
+               else this.followedUsers = null
                console.log('followedUsers', this.followedUsers)
-               // try to update followdees data in IDB from MDB (if online)
+               
                
                getOwnDBData(this.userName)
                .then( ownCountries =>{
-                    
-                    // try to get MDB data to update LocSto
+
+                    // try to get MDB data to update IDB
                     if (navigator.onLine){
                          /*this.followedUsers.forEach(user=>{
                               fetchUserCountries(user)
                          })*/
-
                     } else {}
 
                     //let somethingChanged = false
                     if (!this.userName || !this.followedUsers) return initializeCountriesState(this, ownCountries)
                     
                     
-
-                    getOtherUsersLocalData(this.followedUsers)
+                    getOtherUsersLocalData(this.followedUsers)  // to copy locations into users data so user can add products there too
                     .then(users=>{
                          
                          console.log('my own', ownCountries)
-                         console.log('users', users)
                          
-                         if (!users){   // this cant happen now
+                         /*if (!users){   // this cant happen now
                               console.log('NO FOLLOWED USERS')
                               return initializeCountriesState(this, ownCountries)
-                         }
+                         }*/
+
                          let somethingChanged = false,
                              own = [...ownCountries],
                              Users = users.map(user=>user.countries)
@@ -750,6 +746,7 @@ function setOtherUserIDBData(allData){
      })
 }
 
+
 function setLastSelection(set, value){
      //console.log('>> saving', set, value)
      window.localStorage.setItem(set, value.toString() )
@@ -761,33 +758,7 @@ function getLastSelection(set){
      return val
 }
 
-function getFormattedDate(date){
-     //console.log('typeof Date',typeof date, date)
- 
-     if (typeof date === 'number' || !date){
-         date = new Date()
-         //var d = new Date();
-         //d.setTime(1332403882588);
-         //console.log(date)
-     }
- 
-     let year = date.getFullYear(),
-         month = date.getMonth()+1,
-         day = date.getDate(),
-         hours = date.getHours(),
-         minutes = date.getMinutes(),
-         secs = date.getSeconds()
 
-     const obj = {
-          year, month, day, hours, minutes, secs
-     }
-
-     for (let num in obj){
-          if (obj[num]<10) obj[num] =  String('0' + obj[num] ) 
-     }
-
-     return `${obj.year}-${obj.month}-${obj.day}_T${obj.hours}-${obj.minutes}-${obj.secs}`
-}
 
 function getLSfollowedUsers(){
      let users = window.localStorage.getItem('followedUsers')
@@ -882,18 +853,19 @@ function storeInitialDBData(userName = 0){
 }
 
 function getOtherUsersLocalData(localUsers){
+     //console.log('    localUsers', localUsers)
 
-     return new Promise((res,rej)=>{
-          if (!localUsers || localUsers.length==0) return res(null)
+     return new Promise((resolve,rej)=>{
+          if (!localUsers || localUsers.length==0) return resolve(null)
 
           users_followed.userData.toArray()
           .then(users =>{ 
                
                users = users.filter(user=> localUsers.find(lUser=>lUser.email==user.email)!==undefined )
-               console.log('||| filtered users',users)
+               console.log('|||     filtered users',users)
 
-               if (users.length==0) res(null)     // when can this happen?
-               else res(users)
+               if (users.length==0) resolve(null)     // when can this happen?
+               else resolve(users)
 
           })
           .catch(er=>console.error('error opening following', er))
@@ -902,8 +874,6 @@ function getOtherUsersLocalData(localUsers){
 
 function initializeCountriesState(self, countries){
      console.log('initializing countries\n')
-
-     //it doesnt seem to reflect the content unless its refreshed by user
 
      self.countries = countries
      self.currentCountry = getLastSelection('countries') || 'all countries'
@@ -915,16 +885,25 @@ function initializeCountriesState(self, countries){
      self.cities = lastCntry.cities
      //console.log('self.cities',self.cities)
 
-     self.currentCity =  self.cities.find(city => city.name ==  getLastSelection('cities') || 'all cities' )
-     self.currentCity = self.currentCity.name
-     //console.log(self.currentCity)
+     
+     self.currentCity = getLastSelection('cities') || 'all cities' 
+     //console.log('currentCity', self.currentCity)
+     let lastCity = self.cities.find(city => city.name ==  self.currentCity)
 
      // shop
-     let lastCity = self.cities.find(city => city.name === self.currentCity )
+     //let lastCity = self.cities.find(city => city.name === self.currentCity )
      self.shops = lastCity.shops
      self.currentShop =  getLastSelection('shops')  || 'all shops'
      //console.log(self.currentShop)
 
+     let gz = self.updateLocationSelect(2, null,self.currentShop)
+
+     console.log('promise?', gz)
+     /*gz.then(x=>{  //it doesnt return promise
+          console.log('after updated loaction', x)
+     })*/
+     //console.log('this happens last')
+     // this is probably not needed anymore
      self.currentDisplayedProducts = self.shops.find(shop=>shop.name === self.currentShop).products
      //console.log('curr prods',self.currentDisplayedProducts)
 }
@@ -1136,3 +1115,48 @@ const copyUserData_text = `
           }
      })`
 //
+
+function getFormattedDate(date){
+     //console.log('typeof Date',typeof date, date)
+ 
+     if (typeof date === 'number' || !date){
+         date = new Date()
+         //var d = new Date();
+         //d.setTime(1332403882588);
+         //console.log(date)
+     }
+ 
+     let year = date.getFullYear(),
+         month = date.getMonth()+1,
+         day = date.getDate(),
+         hours = date.getHours(),
+         minutes = date.getMinutes(),
+         secs = date.getSeconds()
+
+     const obj = {
+          year, month, day, hours, minutes, secs
+     }
+
+     for (let num in obj){
+          if (obj[num]<10) obj[num] =  String('0' + obj[num] ) 
+     }
+
+     return `${obj.year}-${obj.month}-${obj.day}_T${obj.hours}-${obj.minutes}-${obj.secs}`
+}
+
+/*let somelet = 44
+const funText = 'console.log("hi " + somelet)'
+function fun(){
+
+     let somelet = 33
+     let f2 = new Function(funText) 
+     let f3 = function(){
+          let somelet = 33
+          let f4 = new Function(funText) 
+          return f4()
+     }
+     console.log(f3)
+     //hi = function(){ console.log('oh ' + somelet)} 
+     return f3()    //hi()
+}*/
+//fun()

@@ -33,7 +33,7 @@ user stories:
 to do
 
 - if browsing in private mode, show message that all saved data will be deleted when tab is closed (browsers act like that)  https://developer.mozilla.org/en-US/docs/Web/API/Storage/LocalStorage
-- disallow username 0 (number or string) so there arent bugs with initial unregistered user being stored under key 0 as well
+
 
 
 
@@ -46,11 +46,11 @@ done:
           = products are kept under their users data, they dont get copied
 
 11 Jan
+- disallow username 0 (number or string) so there arent bugs with initial unregistered user being stored under key 0 as well
 - at some point, users data (products only?) get rewritten by others -> products get deleted?
-
 
 12 Jan
 - i can find other users to follow and follow them
-
+- solved / it doesnt seem to reflect the content unless its refreshed by user
 
 */
