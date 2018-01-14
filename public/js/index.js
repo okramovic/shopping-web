@@ -322,7 +322,7 @@ const app = new Vue({
                //return console.log('name', name, 'event', event)
                
                getSubsetItems(this,index,name)
-                    .then(userOwnProducts =>{  
+                    .then(userOwnProducts =>{
                          // save last locations to local storage rather here?
                          console.log('----- user own products:', userOwnProducts.length, userOwnProducts)
 
@@ -353,16 +353,40 @@ const app = new Vue({
                                         }
                                    }).filter(prods=>prods!==undefined)
 
-                                   //console.log('|||| to add', Array.isArray(otherProds), otherProds)
-
                                    if (otherProds.length>0) finals = finals.concat(...otherProds)
                               }
                               
+                              return new Promise((resolve, reject)=>{
+                                   // display products on screen
+                                   resolve (this.currentDisplayedProducts = finals ) //[...finals]
+                                   //return console.log('curr prods',this.currentDisplayedProducts)
+                              })
+                               
+                         })
+                         .then(finals=>{
                               console.log('finals2', finals.length)
-                              // displays products on screen
-                              this.currentDisplayedProducts = finals//[...finals]
 
-                              //return console.log('curr prods',this.currentDisplayedProducts)
+                              let prodsWImages = finals
+                                                  .filter(prod=>!!prod.imgName)
+                                                  .map(prod=>prod.imgName)
+
+                              /*let imgNames = document.querySelectorAll('div.product p.prodImgData')
+                                   let onlyNames = nodeListToArray(imgNames)*/
+                                   //console.log(imgNames, 'onlyNames', onlyNames)
+
+
+                              //
+                              return getImagesData(prodsWImages)
+                              
+                         })
+                         // give images their data
+                         .then(urls=>{
+                              let els = document.querySelectorAll('div.product img'),
+                              images = nodeListToArray(els)
+                              
+                              
+                              //console.log('??urls??', urls)
+                              images.map((image,i)=>image.src = urls[i])
                          })
                     })
                function getSubsetItems(self, outerIndex, name){
@@ -706,7 +730,22 @@ const app = new Vue({
      }
 })
 
+function getImagesData(names){
 
+     //console.log('getting img data', names)
+
+     const promises = names.map(name=>
+          new Promise((resolve, reject)=>
+               
+               picturesDB.item.get({fileName:name})
+
+               .then(result=>{ resolve(result.data) })
+               .catch(er=>{ resolve(null) })
+
+          )
+     )
+     return Promise.all(promises)
+}
 
 
 function addNewLocationToDB(set, toAdd){
@@ -1260,6 +1299,13 @@ function saveImageToIDB(fileName){
           .catch(er=>{console.error(er)})
      })
 }
+
+function nodeListToArray(list){
+     let result = []
+     for (let item of list) result.push(item)
+     
+     return result
+}
 /*let somelet = 44
 const funText = 'console.log("hi " + somelet)'
 function fun(){
@@ -1276,3 +1322,42 @@ function fun(){
      return f3()    //hi()
 }*/
 //fun()
+
+
+
+
+
+/* templating attempt
+//import App from './templ1.Vue'
+//const tem1 = require('./templ1.Vue')
+//console.log(tem1)
+
+let templ1 = new Vue({
+     el: '#templ1',
+     data: {
+          msg: 'hoho'
+     }
+     //render: h => h(App)
+})
+
+let productTemplate = Vue.component('product',{
+     data:{
+          pname: 'jezisek'
+     },
+     props:{
+          pname: 'jezisek'
+     },
+     created:function(){
+          this.pname = 'babuska'
+     },
+     mounted:function(){
+          this.pname = 'babuska'
+     },
+     render:function(createElement){
+          return createElement(
+               'p',
+               `omg product ${this.pname} `
+               //this.$slots.default
+          )
+     }
+})*/

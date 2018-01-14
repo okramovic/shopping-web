@@ -121,14 +121,30 @@
                   </div>
         
         
-                  <div id="products" v-show="newProductForm === false">
-                            <div v-show="currentDisplayedProducts.length>0" class="vertical">
-                                   <br>
-                                   <div v-for="prod in currentDisplayedProducts">{{prod.name}}</div>
-                            </div>
+               
+               <div id="products" v-show="newProductForm === false && currentDisplayedProducts.length" class="vertical">
+                         <br>
+                         <div v-for="prod in currentDisplayedProducts" class="product">
+                              <div class="imgContainer" v-if="prod.imgName">
+                                   <img alt="img here">
+                              </div>
+                              <div class="prodDataContainer vertical">
+                                   <!--p v-if="prod.imgName" class="prodImgData" style="visibility: hidden"
+                                        >{{prod.imgName}}</p-->
+                                   <p>{{prod.type}}</p>
+                                   <p>{{prod.name}}</p>
+                                   <p>{{prod.descr}}</p>
+                                   <p>{{prod.descrLong}}</p>
+                                   <p>{{prod.price}}</p>
+                                   <p>{{prod.type}}</p>
+                                   <p>rating: {{prod.rating}}</p>
+                              </div>
+                              
+                         </div>
+               </div>
                                    
-                            <h4 v-show="currentDisplayedProducts.length==0">no products to display</h4>
-                  </div>
+               <h4 v-show="newProductForm === false && currentDisplayedProducts.length==0">no products to display</h4>
+
                   
         
 
@@ -167,6 +183,10 @@
           
      <div id="console" v-show="console" class="vertical just_center">{{console}}</div>
           
+     <!--div id="templ1">
+          <slot></slot> hi? {{msg}} <product></product>
+     </div-->
+
      </div><!-- end vue app -->
         
      <script src="/dist/f5aae4de8850086766762a04dc4862fc.js"></script>
