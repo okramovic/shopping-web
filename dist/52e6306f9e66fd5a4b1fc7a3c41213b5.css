@@ -3,6 +3,7 @@ h1 {
 
 #app {
   max-width: 500px;
+  width: 100vw;
   margin: auto;
   display: flex;
   flex-direction: column;
@@ -10,7 +11,7 @@ h1 {
 
 #addProductButton {
   position: fixed;
-  bottom: 20px;
+  bottom: 200px;
   right: 20px;
   background-color: aquamarine; }
 
@@ -22,6 +23,10 @@ h1 {
     display: flex;
     flex-direction: column;
     align-items: center; }
+  #newProductFormContainer #closeNewProductForm {
+    position: absolute;
+    bottom: 20px;
+    left: 20px; }
 
 #console {
   width: 80vw;

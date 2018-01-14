@@ -68,7 +68,7 @@ require = (function (modules, cache, entry) {
 
   // Override the current require with this new one
   return newRequire;
-})({3:[function(require,module,exports) {
+})({4:[function(require,module,exports) {
 /**
  *        simple state management http://vuetips.com/simple-state-management-vue-stash
  * 
@@ -77,9 +77,7 @@ require = (function (modules, cache, entry) {
 
 // for each product do display in DOM, use Component or template
 
-/**  DONE
- *   -    save last open locations to loc stor
- */
+
 
 'use strict'
 //import {addLocationToDB2} from './copy.js';
@@ -118,17 +116,22 @@ window.deviceUserData.open()
 
 
 const users_followed = new Dexie('users_followed')
-     users_followed.version(1).stores({ userData: 'email, userName , countries'})
-     users_followed.open()
-          .catch(error => {
+      users_followed.version(1).stores({ userData: 'email, userName, countries'})
+      users_followed.open()
+      .catch(error => {
                console.error('Uh oh : error opening Users_followed db' + error);
-     });
+      });
      
      //const user1data = require('./testUserData1.json'), user2data = require('./testUserData2.json')
      //users_followed.userData.put(user1data)
      //users_followed.userData.put(user2data)
 
 
+const picturesDB = new Dexie('product_img')
+      picturesDB.version(1).stores({item: 'fileName, userName, data'})  // filename contains email
+      picturesDB.open()
+      .catch(er=>console.error('couldnt open DB',er))
+      
 const serverURL = 'https://shopp.glitch.me/'
 
 
@@ -162,7 +165,15 @@ const app = new Vue({
           shops: [],
           currentDisplayedProducts: [],
 
-          newProductForm: false
+          newProductForm: false,
+          newProductPreview: false,
+          newProductPreviewLastModified: null,
+          newProductType: null,
+          newProductName: null,
+          newProductDescription: null,
+          newProductDescriptionLong: null,
+          newProductPrice: null,
+
      },
      methods:{
           switchScreen:function(screen){
@@ -210,11 +221,11 @@ const app = new Vue({
                          self.userName = loginResponse.userName
                          self.screen = 'main'
                          self.startApp()
-                         return self.log(`You hip roll! Now logged iN`) // rock'n'hop
+                         return self.informUser(`You hip roll! Now logged iN`) // rock'n'hop
 
                     } else if (this.readyState == 4 && this.status == 400){
 
-                         self.log(`something went wrong`)
+                         self.informUser(`something went wrong, try again later`)
                     }
                }
                xhr.open("POST", serverURL + "API/login", true)
@@ -241,7 +252,7 @@ const app = new Vue({
                     if (this.readyState == 4 && this.status == 200) {  //this.responseText;
                               //console.log(this.responseText,this.status)
 
-                              self.log(`You rock'n'b! Account created, check your email, spam etc`)
+                              self.informUser(`You rock'n'b! Account created, check your email, spam etc`)
                               window.localStorage.setItem('deviceUserEmail', email)
 
                               updateDeviceUser(userName)
@@ -254,7 +265,7 @@ const app = new Vue({
 
                     } else if (this.readyState == 4 && this.status ==400)
 
-                              self.log(`Email address '${email}' is already used..`)
+                              self.informUser(`Email address '${email}' is already used..`)
                     else {}
 
                   };
@@ -297,7 +308,7 @@ const app = new Vue({
                xhr.send( string)
 
           },
-          log: function(msg){
+          informUser: function(msg){
                this.console = msg
 
                setTimeout(()=>{
@@ -322,7 +333,7 @@ const app = new Vue({
 
                     } else if (this.readyState == 4 && this.status == 400) { 
                          console.error('TRY AGAIN LATER')
-                         this.log('TRY AGAIN LATER')
+                         this.informUser('TRY AGAIN LATER')
                          // finish this part
                     }
                }
@@ -360,8 +371,8 @@ const app = new Vue({
                if (!this.newLocation) return alert('no name?');
 
                const addLocation = addNewLocationToDB.bind(this)
-               
-               return addLocation(this.locationSet, this.newLocation)
+               return addLocation(this.locationSet, this.newLocation.toString() )
+               //return addNewLocationToDB(this.locationSet, this.newLocation)
           },
           updateLocationSelect:function(index, event,someArg){
                //console.log('slct', event.srcElement.selectedIndex)
@@ -374,14 +385,11 @@ const app = new Vue({
                      currents= ['currentCountry','currentCity','currentShop']
                let name
                if (event) {
-                    //console.log('select change')
                     name = event.srcElement.selectedOptions[0].text
                     setLastSelection(event.srcElement.getAttribute('data-saveas'), name)
 
-               } else {
-                    //console.log('when initializing app')
-                    name = someArg
-               }
+               } else name = someArg
+               
                //return console.log('name', name, 'event', event)
                
                getSubsetItems(this,index,name)
@@ -490,11 +498,100 @@ const app = new Vue({
           newProductSubmit: function($event){
                $event.preventDefault()
                
+               if (!this.newProductPreview) return this.informUser(`picture of product is required`)
                //const form = document.querySelector('form[name="newProductForm"')
                const rating = document.querySelector('input[name="newRating"]:checked').value
 
-               const fileName = `${this.userName}_D${getFormattedDate(null)}`
+               const fileName =`${window.localStorage.getItem('deviceUserEmail')
+                               }_D${getFormattedDate(this.newProductPreviewLastModified)}`.toString()
+
                console.log('submit', fileName)
+               console.log(this.newProductType, this.newProductName, this.newProductDescription, this.newProductPrice, rating)
+               const fieldnames=['descr','descrLong','price'],
+                     otherFields = [this.newProductDescription, this.newProductDescriptionLong, this.newProductPrice]
+
+               const productToAdd = {
+                    imgName: fileName,
+                    type: this.newProductType,
+                    name: this.newProductName,
+                    rating
+               }
+               let voluntaryFields = otherFields.map(field=>{ 
+                                             if (!!field && field.toString().trim()!=='') return field
+                                             else return null 
+               })
+               
+               voluntaryFields.forEach((field,i)=>{
+                                   if (field) productToAdd[fieldnames[i]] = field.toString().trim()
+               })
+               console.log('product to add\n', productToAdd)
+
+               // save image
+               saveImageToIDB(fileName)
+               .then(x=>{
+                    console.log('result 2', x)
+                    if (x) return x
+               })
+               .then(y=>{
+                    addProduct('product', productToAdd)
+                    this.newProductForm = false
+                    this.newProductPreview = false
+
+               }).catch(er=>alert('huge arror storing new product'))
+               
+               const addProduct = addNewLocationToDB.bind(this)
+
+               
+          },
+          imageAdded:function(ev){
+
+                    const reader = new FileReader(),
+                         self = this,
+                         file = ev.target.files[0]
+                    
+                    this.newProductPreviewLastModified = file.lastModified  // when storing pic to IDB, its part of filename
+                    console.log(file)
+
+                    reader.onload = function(fileObj){
+                         let img = new Image()
+
+                         //let data = fileObj.target.result
+                         
+                         img.onload = function(y){
+
+                              if (this.width>this.height) return alert(`take image with vertical orientation please`)
+
+                              let fract = 10
+                              let wid = 300     //parseInt(  this.width/fract),
+                                  //,hei = 300  //parseInt(  this.height/fract)
+                              
+
+                              const canvas = document.querySelector('canvas'),
+                                   ctx = canvas.getContext('2d'),
+                                   start = Math.floor( (this.height-this.width)/2 )
+                              canvas.width = wid
+                              canvas.height = wid
+
+
+                                             //  sX  sY     sW          sH                       
+                              ctx.drawImage(this,0,  start, this.width, this.width,  0,0, wid, wid)
+
+                              console.log(' canvas len', canvas.toDataURL().length/1024)
+                              console.log('preview len',img.src.toString().length/1024)
+
+                              self.newProductPreview = true
+
+                              window.canvasData = canvas.toDataURL() // canvas data for new image to save to IDB
+
+                              //let w = window.open()
+                              //w.document.write(`<img src="${canvas.toDataURL()}" >`)
+                         }
+                         img.src = fileObj.target.result
+                         
+                    }
+                    
+                    reader.readAsDataURL(ev.target.files[0])
+                    //this.newProductForm = false
           },
           startApp:function(){
                //this.screen = 'main'
@@ -669,6 +766,10 @@ const app = new Vue({
      },
      mounted: function(){
           window.initializeCountriesState = initializeCountriesState.bind(this)  // its used on few occasions w different contexts
+          
+          //window.addNewLocationToDB = addNewLocationToDB.bind(this)
+          //console.log( window.addNewLocationToDB == addNewLocationToDB, addNewLocationToDB)
+
           this.startApp()
      },
      created:function(){
@@ -679,10 +780,12 @@ const app = new Vue({
 
 
 
-function addNewLocationToDB(set, newName){
+function addNewLocationToDB(set, toAdd){
      console.log('add', set)
+     //return console.log('this', this)
      //   under what country to add it
      //   should i update whole country document?
+     
      let somethingChanged = '333' //false
      const copyData = new Function('users', 'owndata', copyUserData_text)
      const self = this
@@ -691,12 +794,12 @@ function addNewLocationToDB(set, newName){
 
      if (set =='country'){
                     console.log(`this happens 1`)
-                    let index = this.countries.findIndex(country=>country.name == newName)
+                    let index = this.countries.findIndex(country=>country.name == toAdd)
 
-                    if (index>-1) { return alert(`'${newName}' is already in your database`) }
+                    if (index>-1) { return alert(`'${toAdd}' is already in your database`) }
 
                     const newCountry = 
-                              [{   name: newName, 
+                              [{   name: toAdd, 
                                    cities: [{
                                         name: 'all cities', 
                                         shops:[{
@@ -714,13 +817,13 @@ function addNewLocationToDB(set, newName){
                let countryData = this.countries.find(cntry=> cntry.name == this.currentCountry)
                
                // check if this city is already there
-               let index = countryData.cities.findIndex(city=>city.name == newName)
+               let index = countryData.cities.findIndex(city=>city.name == toAdd)
 
-               if (index>-1){ return alert(`'${newName}' is already in your database`) }
+               if (index>-1){ return alert(`'${toAdd}' is already in your database`) }
                
 
                countryData.cities.push({
-                                   name: newName, 
+                                   name: toAdd, 
                                    shops:[{
                                         name: 'all shops',
                                         products: []
@@ -736,16 +839,16 @@ function addNewLocationToDB(set, newName){
           let countryData = this.countries.find(cntry=> cntry.name ===this.currentCountry)
           
           let cityData = countryData.cities.find(city=> city.name === this.currentCity)
-          console.log( '   adding shop ', newName, 'to', cityData.name)
+          console.log( '   adding shop ', toAdd, 'to', cityData.name)
 
           // check its not there already
-          if (cityData.shops.findIndex(shop=>shop.name===newName) > -1)
-                    return alert(`'${newName}' is already in your database`)
+          if (cityData.shops.findIndex(shop=>shop.name===toAdd) > -1)
+                    return alert(`'${toAdd}' is already in your database`)
           
 
           cityData.shops.push(
                                    {
-                                     name: newName,
+                                     name: toAdd,
                                      products: []
                                    }
                               )
@@ -754,13 +857,16 @@ function addNewLocationToDB(set, newName){
           
           toSave = [[countryData]]
           
-          /*window.deviceUserData.countries.put(countryData).then(status => {
-                                   console.log('   updated Vue data',this.countries) 
-                                   this.getOwnDBData().then(data => this.countries = data) // then select newly added thing
-          })*/
+     } else if (set=='product'){
+          let countryData = this.countries.find(cntry=> cntry.name=== this.currentCountry)
+          let cityData = countryData.cities.find(city=> city.name === this.currentCity)
+          let shopData = cityData.shops.find(shop=> shop.name=== this.currentShop)
 
+          shopData.products.push(toAdd)
+          console.log('shopData', shopData)
+          console.log('countryData', countryData)
+          toSave = [[countryData]]
      }
-     console.log(`this happens last`)
      
 
      copyData( toSave, [...this.countries] )
@@ -774,7 +880,7 @@ function addNewLocationToDB(set, newName){
                console.log('result', result)
                return initializeCountriesState(this, result)
      })
-
+     .catch(er=>{alert('add Loc to DB er' + er)})
 
 
      return this.switchScreen('main')
@@ -849,7 +955,7 @@ function addUserToDeviceLS(newUser){
      return window.localStorage.setItem('followedUsers', JSON.stringify(users))
 }
 
-//createDeviceUser('app Owner')
+
 function updateDeviceUser(name = 0){
      //if ( window.localStorage.getItem('deviceUser') === null){
           name = name.toString().trim()
@@ -1190,12 +1296,8 @@ const copyUserData_text = `
 function getFormattedDate(date){
      //console.log('typeof Date',typeof date, date)
  
-     if (typeof date === 'number' || !date){
-         date = new Date()
-         //var d = new Date();
-         //d.setTime(1332403882588);
-         //console.log(date)
-     }
+     if (typeof date == 'number') date = new Date(date)
+     else if (!date) date = new Date()
  
      let year = date.getFullYear(),
          month = date.getMonth()+1,
@@ -1214,7 +1316,21 @@ function getFormattedDate(date){
 
      return `${obj.year}-${obj.month}-${obj.day}_T${obj.hours}-${obj.minutes}-${obj.secs}`
 }
+function saveImageToIDB(fileName){
+     console.log(getDeviceUser(), fileName)
 
+     return new Promise((resolve, reject)=>{
+          if (!fileName || !window.canvasData) reject(null)
+          let user = getDeviceUser()
+                  //{data: fileName, userName,                  data
+          picturesDB.item.put({ 'fileName': fileName, 'userName': user, 'data': window.canvasData })
+          .then(result=>{
+               console.log('result',result)
+               resolve(result)
+          })
+          .catch(er=>{console.error(er)})
+     })
+}
 /*let somelet = 44
 const funText = 'console.log("hi " + somelet)'
 function fun(){
@@ -1249,7 +1365,7 @@ function Module() {
 module.bundle.Module = Module;
 
 if (!module.bundle.parent && typeof WebSocket !== 'undefined') {
-  var ws = new WebSocket('ws://localhost:57891/');
+  var ws = new WebSocket('ws://localhost:62651/');
   ws.onmessage = function(event) {
     var data = JSON.parse(event.data);
 
@@ -1350,4 +1466,4 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.require, id)
   });
 }
-},{}]},{},[0,3])
+},{}]},{},[0,4])

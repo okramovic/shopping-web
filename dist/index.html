@@ -131,33 +131,38 @@
                   </div>
                   
         
-                  <button id="addProductButton" v-on:click="openNewProductForm(true)">add product</button>
+
+                  <button id="addProductButton" v-show="!newProductForm" v-on:click="openNewProductForm(true)">add product</button>
+
                   <div id="newProductFormContainer" v-show="newProductForm === true">
                        <form name="newProductForm">
-                            <!--img id="productPreview" src=""-->
-                            <input type="file" accept="img/*" capture="environment">
-        
+                            <canvas v-show="newProductPreview==true" width="300" height="300"></canvas>
+                            <input type="file" accept="img/*" capture="environment" v-on:change="imageAdded($event)">
+                         
                             <p>product type</p>
-                            <input type="text" name="productType">
+                            <input type="text" name="productType" v-model="newProductType" required="" placeholder="e.g. Rice milk">
                             <p>product name</p>
-                            <input type="text" name="productName">
+                            <input type="text" name="productName" v-model="newProductName" required="" placeholder="e.g. Natur Pur Reis milch">
                             <p>product description</p>
-                            <input type="text" name="productDescription">
+                            <input type="text" name="productDescription" v-model="newProductDescription">
+                              <textarea cols="40" rows="4" v-model="newProductDescriptionLong" placeholder="Here you can be verbose"></textarea>
                             <p>product price (EUR)</p>
-                            <input type="number" name="productPrice">
+                            <input type="number" name="productPrice" v-model="newProductPrice">
                             <p>rate product</p>
-                            <div id="newProductRatingContainer">
-                                 <input type="radio" name="newRating" value="0">
+                            <div id="newProductRatingContainer" class="">
+                                 <input type="radio" name="newRating" value="0">bad
                                  <input type="radio" name="newRating" value="1">
                                  <input type="radio" name="newRating" value="2" checked="">
                                  <input type="radio" name="newRating" value="3">
-                                 <input type="radio" name="newRating" value="4">
+                                 <input type="radio" name="newRating" value="4">great
                             </div>
                             <br>
                             <button @click="newProductSubmit($event)">submit</button>
                        </form>
                        <button id="closeNewProductForm" v-show="newProductForm===true" v-on:click="openNewProductForm(false)">close</button>
                   </div>
+                  
+                  <img id="preview">
           </div>
           
      <div id="console" v-show="console" class="vertical just_center">{{console}}</div>

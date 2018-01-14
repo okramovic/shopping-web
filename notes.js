@@ -12,14 +12,6 @@ user stories:
 
 - app auto-fetches followdees data (store them on my device local storage) - when? on app start or login/registration
 
-- i can add product (to currently open location)
-          - information contains
-                    product type *
-                    product name *
-                    description
-                    price
-                    rating *
-                    
 
 
 
@@ -31,13 +23,14 @@ user stories:
 
 
 to do
-
+- on mobile, user can choose to upload picture taken previously, or to take new one with camera (to enable user to store also old pictures)
 - if browsing in private mode, show message that all saved data will be deleted when tab is closed (browsers act like that)  https://developer.mozilla.org/en-US/docs/Web/API/Storage/LocalStorage
 
 
 
 
 done:
+- save last open locations to loc stor
 - i can create account, that gets stored in central db
 
 10 Jan
@@ -52,5 +45,17 @@ done:
 12 Jan
 - i can find other users to follow and follow them
 - solved / it doesnt seem to reflect the content unless its refreshed by user
+
+14 Jan
+- i can add product (to currently open location)
+          - information contains (* are required)
+                    product type *
+                    product name *
+                    description
+                    description Long
+                    price
+                    rating *
+                    picture *
+
 
 */
