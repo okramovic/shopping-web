@@ -10,15 +10,8 @@
 
 user stories:
 
-- app auto-fetches followdees data (store them on my device local storage) - when? on app start or login/registration
-
-
-
-
-
-
-
-- user can delete products
+- i can change my products
+- i can delete my products
 
 
 
@@ -57,5 +50,7 @@ done:
                     rating *
                     picture *
 
+15 Jan
+- on app start app auto-fetches followdees data (store them on my device local storage)
 
 */
