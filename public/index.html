@@ -4,7 +4,7 @@
      <meta charset="UTF-8">
      <meta name="viewport" content="width=device-width, initial-scale=1.0">
      <meta http-equiv="X-UA-Compatible" content="ie=edge">
-     <title>shop app</title>
+     <title>shppp</title>
      <link rel="stylesheet" type="text/css" href="scss/style.scss">
      
           <script src="https://cdn.jsdelivr.net/npm/vue"></script>
@@ -13,7 +13,9 @@
 </head>
 <body>
      <div id="app" >
-          
+          <img id="preview">
+
+
           <div v-show="!userName">using app as unregistered</div>
           <div style="width: 100%; display: flex; justify-content: space-around;">
 
@@ -79,6 +81,7 @@
 
 
                <h2>settings</h2>
+               <button @click="requestDropbox()">connect my Dropbox</button>
                <button @click="switchScreen('main')">close settings</button>
           </div>
 
@@ -194,7 +197,7 @@
                     <button id="closeNewProductForm" v-show="newProductForm===true" v-on:click="openNewProductForm(false)">cancel</button>
                     </div>
                   
-                    <img id="preview">
+                    
           </div>
           
      <div id="console" v-show="console" class="vertical just_center">{{console}}</div>

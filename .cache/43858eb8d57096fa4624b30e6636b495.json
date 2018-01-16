@@ -1,0 +1,1 @@
+{"dependencies":[{"name":"./dropbox","loc":{"line":1,"column":22}}],"generated":{"js":"var Dropbox = require('./dropbox');\n\nmodule.exports = Dropbox;\n"},"hash":"7409b6bdbfe30813f62b5df9b466c6dd"}

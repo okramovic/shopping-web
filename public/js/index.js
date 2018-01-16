@@ -15,6 +15,118 @@
 
 //import {addLocationToDB2} from './copy.js';
 
+//const token = 'qAZQ0ocdGioAAAAAAAACs8r7cWwxjlWLJx6b-qwlQOGEURMf-srx2X1wS_RnHari'
+
+var Dropbox = require('dropbox');
+//let dbx //= new Dropbox({ accessToken: token });
+
+
+/*dbx.filesListFolder({path: ''})
+  .then(function(response) {
+     console.log('DBDBDBDBDBD')
+     console.log(response);
+     //getfileThumb(response.entries[0])
+     response.entries.forEach(entry=>{
+          getPicURL(entry)
+          .then(url=>{
+               let img = new Image()
+               img.onload = function(){
+                    this.width=144
+                    this.height=256
+               }
+                    
+               img.src = url
+               let body = document.querySelector('body')
+               body.appendChild(img)
+          })
+     })
+     //  convert url to file?  https://stackoverflow.com/questions/28042535/converting-image-object-to-file-object-javascript
+  })
+  .catch(function(error) {
+    console.log(error);
+  });
+*/
+const getfileThumb = function(fileEntry){
+          
+          const id = fileEntry.id
+
+          //let obj = { "path": id , format: "jpeg", size: "w128h128" }
+          let obj = {"path": fileEntry.path_display }
+          obj = JSON.stringify( obj) 
+          console.log(obj)
+
+          const xhr = new XMLHttpRequest()
+          xhr.onreadystatechange = function(){
+               if (this.readyState == 4 && this.status == 200) {
+
+                    console.log('SUKCES', this.response, this.responseText)
+                    
+                    let img = document.querySelector('#preview')
+                    img.src = this.responseText
+                    //const URL = window.URL || window.webkitURL
+                    //img.src = URL.createObjectURL(this.response) 
+
+               } else
+
+               console.log('header', this.getAllResponseHeaders())
+          }
+          //xhr.open('POST','https://content.dropboxapi.com/2/files/get_thumbnail',true)
+          xhr.open('POST','https://api.dropboxapi.com/2/files/get_temporary_link', true)
+          xhr.setRequestHeader('Access-Control-Allow-Origin', '*')
+          xhr.setRequestHeader("Access-Control-Allow-Headers", "X-Requested-With");
+          //xhr.setRequestHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+          xhr.setRequestHeader("Authorization", "Bearer qAZQ0ocdGioAAAAAAAACt4axxwChUOZ5U2XLXB1hvSzxXai4btwbq7O3LjzMst5c")
+          //xhr.setRequestHeader("Dropbox-API-Arg", obj)
+          //xhr.responseType = 'blob';
+          //xhr.send()
+          xhr.setRequestHeader('Content_Type','application/json')
+          
+          xhr.send(obj)
+}
+
+
+/*let getDropToken = function(){
+     const xhr = new XMLHttpRequest()
+     xhr.onreadystatechange = function(){
+                    if (this.readyState == 4 && this.status == 200) {
+
+                         console.log('SUKCES', this.response, this.responseText)
+                         
+                         
+
+                    } else console.log('header',this.status, this.getAllResponseHeaders())
+     }
+          //let url = 'https://www.dropbox.com/oauth2/authorize?' + 'response_type=token&' + 'client_id=hqdb69ima3zv29t&' + 'redirect_uri=http://localhost:1234/'
+     let url = 'https://api.dropboxapi.com/oauth2/token'
+     xhr.open('POST',url, true)
+     //xhr.send(   )
+
+}*/
+
+const checkDrBxToken = function(){
+
+     if (window.location.hash){
+          // #access_token=qAZQ0ocdGioAAAAAAAACvzPeVzvTqmMsfEDCwQap8UvEMVAu8F0Zqatd1IypdhAt
+          // &token_type=bearer  // &uid=300342838  // &account_id=dbid%3AAAC5NUHLEil2GAOA3Si3wQmQ2pBC6qKCsEo
+
+          let str = window.location.hash.substr(1)
+          let arr = decodeURI(str).split('&')
+          //console.log(str,'arr',arr)
+          const accessToken = arr[0].replace('access_token=','')
+
+          window.dbx = new Dropbox({accessToken})
+
+          dbx.filesListFolder({path: ''})
+          .then(function(response) {
+               console.log('DBDBDBDBDBD')
+               console.log(response);
+
+          })
+          //window.DropToken
+     } else console.log('####   no DropBox token   ####')
+}
+
 
 const initalCountryData = [{
      name: 'all countries' , 
@@ -222,6 +334,29 @@ const app = new Vue({
                //this.userName = undefined
                console.log('now will reload app')
                return this.startApp() // this.reloadView()//
+          },
+          requestDropbox:function(){
+               console.log('dropbox requested')
+               
+               const xhr = new XMLHttpRequest()
+               xhr.onreadystatechange = function(){
+                    if (this.readyState == 4 && this.status == 200) {
+
+                         console.log('SUKCES', this.response, this.responseText)
+                         
+                         
+
+                    } else console.log('header',this.status, this.getAllResponseHeaders())
+               }
+               let url = 'https://www.dropbox.com/oauth2/authorize?' + 
+                         'response_type=token&' +
+                         'client_id=hqdb69ima3zv29t&' +
+                         'redirect_uri=http://localhost:1234/'
+               //xhr.open('GET',url, true)
+               //xhr.send()
+               //const w = window.open(url)
+               window.location.href = url
+
           },
           requestUsers:function(){
                let string = this.searchText
@@ -939,6 +1074,8 @@ const app = new Vue({
      mounted: function(){
           window.initializeLocationSelects = initializeLocationSelects.bind(this)  // its used on few occasions w different contexts
           
+          checkDrBxToken()
+
           //window.addNewLocationToDB = addNewLocationToDB.bind(this)
           //console.log( window.addNewLocationToDB == addNewLocationToDB, addNewLocationToDB)
 
@@ -1527,6 +1664,36 @@ function nodeListToArray(list){
      
      return result
 }
+
+
+
+const getPicURL = function(entry){
+
+     return new Promise((resolve, reject)=>{
+
+          let obj = {"path": entry.path_display }
+          obj = JSON.stringify( entry) 
+          const xhr = new XMLHttpRequest()
+          xhr.onreadystatechange = function(){
+
+               if (this.readyState == 4 && this.status == 200) {
+
+                         console.log('SUKCES', this.status)//this.response, this.responseText)
+                         resolve(this.responseText)
+
+               } else console.log(this.status)
+          }
+          xhr.open('POST', serverURL + '/API/getPicURL', true)
+          xhr.send(obj)
+     })
+}
+
+
+
+
+
+
+
 /*let somelet = 44
 const funText = 'console.log("hi " + somelet)'
 function fun(){
