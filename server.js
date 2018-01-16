@@ -5,10 +5,118 @@
 const express = require('express'),
    app = express()
 const mongo = require('mongodb').MongoClient
-const ObjectId = require('mongodb').ObjectId;
- 
+const ObjectId = require('mongodb').ObjectId,
+      Dropbox = require('dropbox'),
+      https = require('https')
+
+
 const clientOrigin = 'http://localhost:1234'
 
+
+
+var dbx = new Dropbox({ accessToken: process.env.token });
+dbx.filesListFolder({path: ''})
+  .then(function(response) {
+     console.log('DBDBDBDBDB')
+     //console.log(response.entries);
+     //getfile(response.entries[0])
+  })
+  .catch(function(error) {
+    console.log(error);
+  });
+
+
+const getfile = function(fileEntry){
+  
+    return new Promise((resolve, reject)=>{
+        console.log('file path to get', fileEntry.path_display)
+        const id = fileEntry.id
+        
+        const options = {
+            host: 'api.dropboxapi.com',
+            path: '/2/files/get_temporary_link',
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer qAZQ0ocdGioAAAAAAAACt4axxwChUOZ5U2XLXB1hvSzxXai4btwbq7O3LjzMst5c'
+                ,'Content-Type': 'application/json'
+            }
+        }  
+
+        var req = https.request(options, function(res) {
+              console.log('STATUS: ' + res.statusCode);
+              console.log('HEADERS: ' + JSON.stringify(res.headers));
+
+              // Buffer the body entirely for processing as a whole.
+              var bodyChunks = [];
+              res.on('data', function(chunk) {
+                // You can process streamed parts here...
+                bodyChunks.push(chunk);
+              })
+              .on('end', function() {
+                var body = Buffer.concat(bodyChunks);
+                //console.log('BODY: ' + body)
+                let result = JSON.parse(body)
+                console.log( typeof result, result.link);
+                
+                resolve(result.link)
+              })
+        });
+
+        req.on('error', function(e) {
+          console.log('ERROR: ' + e.message);
+        });
+  
+        let obj = JSON.stringify({path: fileEntry.path_display })
+        console.log(typeof obj, obj)
+  
+  
+        req.write(obj, (x)=>{  //console.log('x',x)
+        }); 
+        req.end();
+        
+     })   
+          /*const xhr = new XMLHttpRequest()
+          xhr.onreadystatechange = function(){
+               if (this.readyState == 4 && this.status == 200) {
+
+                    console.log('SUKCES', this.response, this.responseText)
+                    
+                    let img = document.querySelector('#preview')
+                    img.src = this.responseText
+                    //const URL = window.URL || window.webkitURL
+                    //img.src = URL.createObjectURL(this.response) 
+
+               } else
+
+               console.log('header', this.getAllResponseHeaders())
+          }
+          //xhr.open('POST','https://content.dropboxapi.com/2/files/get_thumbnail',true)
+          xhr.open('POST','https://api.dropboxapi.com/2/files/get_temporary_link', true)
+          xhr.setRequestHeader('Access-Control-Allow-Origin', '*')
+          xhr.setRequestHeader("Access-Control-Allow-Headers", "X-Requested-With");
+          //xhr.setRequestHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+          xhr.setRequestHeader("Authorization", "Bearer qAZQ0ocdGioAAAAAAAACt4axxwChUOZ5U2XLXB1hvSzxXai4btwbq7O3LjzMst5c")
+          xhr.setRequestHeader('Content_Type','application/json')
+          
+          xhr.send(obj)*/
+}
+app.post('/API/getPicURL',(req, res)=>{
+    res.setHeader('Access-Control-Allow-Origin',clientOrigin)
+  
+    let data = ""
+    req.on('data', chunk=>{
+        data += chunk
+    })
+    req.on('end', ()=>{
+        
+      data = JSON.parse(data)
+      //console.log('requested user',data, typeof data)
+      const myfunc = getfile
+      myfunc(data).then(result=>res.send(result))
+    })
+      
+})
 
 // we've started you off with Express, 
 // but feel free to use whatever libs or frameworks you'd like through `package.json`.
@@ -96,8 +204,8 @@ app.post('/API/followuser', (req, res)=>{
                     let followed = user.followedUsers
 
                     // search for newly requested user and add only if not already present
-                    if (followed && followed.find(email=>email==data.email)===undefined) followed.push({userName: user.userName,email:data.email})
-                    else if (!followed) followed = [data.email]
+                    if (followed && followed.find(user=>user.email==data.email)===undefined) followed.push({userName: data.userName,email:data.email})
+                    else if (!followed) followed = [{userName: data.userName,email:data.email}]
 
                     console.log('    ',user.followedUsers)
 
