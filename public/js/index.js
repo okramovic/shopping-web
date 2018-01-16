@@ -10,8 +10,8 @@
 
 'use strict'
 
-const Dexie = require('./vendor/Dexie.2.0.1.js'),
-      Vue = require('./vendor/Vue.2.5.13.js')
+//const Dexie = require('./vendor/Dexie.2.0.1.js'),
+//      Vue = require('./vendor/Vue.2.5.13.js')
 
 //import {addLocationToDB2} from './copy.js';
 
@@ -105,6 +105,7 @@ const app = new Vue({
           newProductDescriptionLong: null,
           newProductPrice: null,
 
+          modifyingProduct: false
      },
      methods:{
           switchScreen:function(screen){
@@ -307,9 +308,9 @@ const app = new Vue({
                return addLocation(this.locationSet, this.newLocation.toString() )
                //return addNewLocationToDB(this.locationSet, this.newLocation)
           },
-          updateLocationSelect:function(index, event,someArg){
+          updateLocationSelect:function(index, event,requestedShopName){
                //console.log('slct', event.srcElement.selectedIndex)
-               //console.log('event','>',someArg,'<')//'\n', event.srcElement.getAttribute('data-saveas')  )
+               //console.log('event','>',requestedShopName,'<')//'\n', event.srcElement.getAttribute('data-saveas')  )
 
                if (event && event.srcElement.selectedIndex<0) return;      // protection against DOM load events ?
 
@@ -321,7 +322,7 @@ const app = new Vue({
                     name = event.srcElement.selectedOptions[0].text
                     setLastSelection(event.srcElement.getAttribute('data-saveas'), name)
 
-               } else name = someArg
+               } else name = requestedShopName
                
                //return console.log('name', name, 'event', event)
                
@@ -330,10 +331,11 @@ const app = new Vue({
                          // save last locations to local storage rather here?
                          console.log('----- user own products:', userOwnProducts.length, userOwnProducts)
 
+                         userOwnProducts = userOwnProducts.map(prod=>{prod.owner = this.userName || 0; return prod})
                          // get products from each user in IDB: for current city, shop etc
                          getOtherUsersIDBData(this.followedUsers)
                          .then(users=>{
-                              //console.log('users to add products from', users)
+                              console.log('users to add products from', users)
 
                               let finals = []
                               if (userOwnProducts.length>0) 
@@ -363,7 +365,8 @@ const app = new Vue({
                               return new Promise((resolve, reject)=>{
                                    // display products on screen
                                    resolve (this.currentDisplayedProducts = finals ) //[...finals]
-                                   //return console.log('curr prods',this.currentDisplayedProducts)
+
+                                   // check out vue cheatsheet (v-bind) to see how to attach classes
                               })
                                
                          })
@@ -387,7 +390,11 @@ const app = new Vue({
                          .then(urls=>{
                               let els = document.querySelectorAll('div.product img'),
                               images = nodeListToArray(els)
-                              
+
+                              /** from docs
+                               * <!-- bind an attribute -->
+                                 <img v-bind:src="imageSrc">
+                               */
                               
                               //console.log('??urls??', urls)
                               images.map((image,i)=>image.src = urls[i])
@@ -549,6 +556,56 @@ const app = new Vue({
                     
                     reader.readAsDataURL(ev.target.files[0])
                     //this.newProductForm = false
+          },
+          openProductForm:function(prod){
+               console.log('modify',prod)
+               if (!prod.owner) return alert(`You can only modify your own products`)
+
+               // let currCountry = this.currentCountry, etc...
+               //   get curr Country, City & Shop so if user would change them w form open,
+               //   take it as indication he wants to place product 
+               //   to new current country city shop
+
+               this.modifyingProduct = true // to show correct submit button
+
+               if (prod.type) this.newProductType = prod.type
+               if (prod.name) this.newProductName = prod.name
+               if (prod.descr) this.newProductDescription = prod.descr
+               if (prod.descrLong) this.newProductDescriptionLong =prod.descrLong
+               if (prod.price) this.newProductPrice = parseFloat( prod.price )
+               
+               if (prod.rating) document.querySelectorAll(`input[type="radio"][value="${prod.rating}"]`)[0].setAttribute('checked', true)
+               
+
+               if (prod.imgName) 
+               
+               getImagesData([prod.imgName])
+               .then(data=>{
+                    
+                    const self = this,
+                          img = new Image(),
+                          canv = document.querySelector('canvas'),
+                          ctx = canv.getContext('2d')
+
+                    img.onload = function(){
+                         ctx.drawImage(this,0,0,300,300)
+
+                         self.newProductPreview = true
+                    }
+                    img.src = data
+
+
+               })
+               this.newProductForm =true
+
+          },
+          applyProductChanges:function(ev){
+               ev.preventDefault()
+               console.log('prod change')
+          },
+          deleteProduct:function(ev){
+               ev.preventDefault()
+               console.log('delete')
           },
           reloadView:function(){
                     console.log('RELOADING VIEW')

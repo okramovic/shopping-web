@@ -7,8 +7,8 @@
      <title>shop app</title>
      <link rel="stylesheet" type="text/css" href="/dist/52e6306f9e66fd5a4b1fc7a3c41213b5.css">
      
-          <!--script src="https://cdn.jsdelivr.net/npm/vue"></script-->
-          <!--script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script-->
+          <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+          <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
           
 </head>
 <body>
@@ -125,13 +125,12 @@
                
                <div id="products" v-show="newProductForm === false && currentDisplayedProducts.length" class="vertical">
                          <br>
-                         <div v-for="prod in currentDisplayedProducts" class="product">
+                         <div v-for="prod in currentDisplayedProducts" v-on:click="openProductForm(prod)" class="product">
                               <div class="imgContainer" v-if="prod.imgName">
-                                   <img alt="img here">
+                                   <img alt="img not here">
                               </div>
                               <div class="prodDataContainer vertical">
-                                   <!--p v-if="prod.imgName" class="prodImgData" style="visibility: hidden"
-                                        >{{prod.imgName}}</p-->
+                                   <!--p v-if="prod.imgName" class="prodImgData" style="visibility: hidden">{{prod.imgName}}</p-->
                                    <p>{{prod.type}}</p>
                                    <p>{{prod.name}}</p>
                                    <p>{{prod.descr}}</p>
@@ -149,37 +148,42 @@
                   
         
 
-                  <button id="addProductButton" v-show="!newProductForm" v-on:click="openNewProductForm(true)">add product</button>
+               <button id="addProductButton" v-show="!newProductForm" v-on:click="openNewProductForm(true)">add product</button>
 
-                  <div id="newProductFormContainer" v-show="newProductForm === true">
-                       <form name="newProductForm">
-                            <canvas v-show="newProductPreview==true" width="300" height="300"></canvas>
-                            <input type="file" accept="img/*" capture="environment" v-on:change="imageAdded($event)">
-                         
-                            <p>product type</p>
-                            <input type="text" name="productType" v-model="newProductType" required="" placeholder="e.g. Rice milk">
-                            <p>product name</p>
-                            <input type="text" name="productName" v-model="newProductName" required="" placeholder="e.g. Natur Pur Reis milch">
-                            <p>product description</p>
-                            <input type="text" name="productDescription" v-model="newProductDescription">
-                              <textarea cols="40" rows="4" v-model="newProductDescriptionLong" placeholder="Here you can be verbose"></textarea>
-                            <p>product price (EUR)</p>
-                            <input type="number" name="productPrice" v-model="newProductPrice">
-                            <p>rate product</p>
-                            <div id="newProductRatingContainer" class="">
-                                 <input type="radio" name="newRating" value="0">bad
-                                 <input type="radio" name="newRating" value="1">
-                                 <input type="radio" name="newRating" value="2" checked="">
-                                 <input type="radio" name="newRating" value="3">
-                                 <input type="radio" name="newRating" value="4">great
-                            </div>
-                            <br>
-                            <button @click="newProductSubmit($event)">submit</button>
-                       </form>
-                       <button id="closeNewProductForm" v-show="newProductForm===true" v-on:click="openNewProductForm(false)">close</button>
-                  </div>
+               <div id="newProductFormContainer" v-show="newProductForm === true">
+                    <form name="newProductForm">
+                              <canvas v-show="newProductPreview==true" width="300" height="300"></canvas>
+                              <input type="file" accept="img/*" capture="environment" v-on:change="imageAdded($event)">
+                              
+                              <p>product type</p>
+                              <input type="text" name="productType" v-model="newProductType" required="" placeholder="e.g. Rice milk">
+                              <p>product name</p>
+                              <input type="text" name="productName" v-model="newProductName" required="" placeholder="e.g. Natur Pur Reis milch">
+                              <p>product description</p>
+                              <input type="text" name="productDescription" v-model="newProductDescription">
+                                   <textarea cols="40" rows="4" v-model="newProductDescriptionLong" placeholder="Here you can be verbose"></textarea>
+                              <p>product price (EUR)</p>
+                              <input type="number" name="productPrice" v-model="newProductPrice">
+                              <p>rate product</p>
+                              <div id="newProductRatingContainer" class="">
+                                   <input type="radio" name="newRating" value="0">bad
+                                   <input type="radio" name="newRating" value="1">
+                                   <input type="radio" name="newRating" value="2">
+                                   <input type="radio" name="newRating" value="3">
+                                   <input type="radio" name="newRating" value="4">great
+                              </div>
+                              <br>
+                              <div class="center just_around">
+                                   <button v-on:click="deleteProduct($event)" v-show="modifyingProduct===true">delete item</button>
+                                   <button @click="newProductSubmit($event)" v-show="!modifyingProduct">submit</button>
+                                   <button v-on:click="applyProductChanges($event)" v-show="modifyingProduct===true">apply changes</button>
+                              </div>
+                            
+                    </form>
+                    <button id="closeNewProductForm" v-show="newProductForm===true" v-on:click="openNewProductForm(false)">cancel</button>
+                    </div>
                   
-                  <img id="preview">
+                    <img id="preview">
           </div>
           
      <div id="console" v-show="console" class="vertical just_center">{{console}}</div>

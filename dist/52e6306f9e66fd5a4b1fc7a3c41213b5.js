@@ -149,7 +149,7 @@ function Module() {
 module.bundle.Module = Module;
 
 if (!module.bundle.parent && typeof WebSocket !== 'undefined') {
-  var ws = new WebSocket('ws://localhost:53567/');
+  var ws = new WebSocket('ws://localhost:52702/');
   ws.onmessage = function(event) {
     var data = JSON.parse(event.data);
 

@@ -31,6 +31,7 @@ h1{
           display: flex;
           flex-direction: column;
           align-items: center;
+          padding-bottom: 30px;
      }
      #closeNewProductForm{
 
@@ -109,5 +110,9 @@ h1{
           position: relative;
           left: 2000px; 
           top: 0px;
+     }
+     &:hover{
+          position: relative;
+          left: 10px;
      }
 }
