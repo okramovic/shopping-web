@@ -17,6 +17,29 @@ db.open()
 		alert('Uh oh : ' + error);
 });
 
+document.addEventListener('click',function(){
+               console.log('dropbox requested')
+               
+               const xhr = new XMLHttpRequest()
+               xhr.onreadystatechange = function(){
+                    if (this.readyState == 4 && this.status == 200) {
+
+                         console.log('SUKCES', this.response, this.responseText)
+                         
+                         
+
+                    } else console.log('header',this.status, this.getAllResponseHeaders())
+               }
+               let url = 'https://www.dropbox.com/oauth2/authorize?' + 
+                         'response_type=token&' +
+                         'client_id=hqdb69ima3zv29t&' +
+                         'redirect_uri=localhost:1234/'
+               //xhr.open('GET',url, true)
+               //xhr.send()
+               //const w = window.open(url)
+               window.location.href = url
+})
+
 document.addEventListener('DOMContentLoaded',ev=>{
         //console.log('loaded? \n', db)
   

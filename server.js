@@ -1,14 +1,14 @@
-// server.js
-// where your node app starts
-
-// init project
 const express = require('express'),
-   app = express()
-const mongo = require('mongodb').MongoClient
+      app = express()
+
+const mongo = require('mongodb').MongoClient,
+      bodyParser = require('body-parser')
 const ObjectId = require('mongodb').ObjectId,
       Dropbox = require('dropbox'),
-      https = require('https')
+      https = require('https') 
 
+//var jsonParser = bodyParser.json()
+app.use(bodyParser.json())
 
 const clientOrigin = 'http://localhost:1234'
 
@@ -16,14 +16,13 @@ const clientOrigin = 'http://localhost:1234'
 
 var dbx = new Dropbox({ accessToken: process.env.token });
 dbx.filesListFolder({path: ''})
-  .then(function(response) {
-     console.log('DBDBDBDBDB')
+.then(function(response) {
      //console.log(response.entries);
      //getfile(response.entries[0])
   })
-  .catch(function(error) {
+.catch(function(error) {
     console.log(error);
-  });
+});
 
 
 const getfile = function(fileEntry){
@@ -118,8 +117,93 @@ app.post('/API/getPicURL',(req, res)=>{
       
 })
 
-// we've started you off with Express, 
-// but feel free to use whatever libs or frameworks you'd like through `package.json`.
+app.post('/API/postPicToDrbx',(req, res)=>{
+    res.setHeader('Access-Control-Allow-Origin',clientOrigin)
+  
+    //let data = ""
+    var bodyChunks = [];
+    req.on('data', chunk =>{
+        //data += chunk
+        bodyChunks.push(chunk)
+    })
+    req.on('end', ()=>{
+      var body = Buffer.concat(bodyChunks);
+      //console.log(data.substr(0,100))
+      //console.log(typeof body)
+      postPicToDropbox(body)
+      res.end()
+      //console.log('requested user',data, typeof data)
+      
+    })
+  
+})
+const postPicToDropbox=(imgData)=>{
+  
+    return new Promise((resolve, reject)=>{
+        
+        
+          let params = {
+               "path": '/test' + new Date() + '.jpg',
+               "mode": "add"
+          }  // "autorename": true, "mute": false
+          params = JSON.stringify(params)  
+          console.log('params', typeof params, params)
+      
+      
+          let bearer = "Bearer " + process.env.token
+          //bearer = JSON.stringify(bearer)
+          console.log('bearer', bearer)
+        
+        const options = {
+            host: 'content.dropboxapi.com',
+            path: '/2/files/upload',
+            method: 'POST',
+            headers: {
+                'Authorization': bearer,
+                "Dropbox-API-Arg": params,
+                'Content-Type': 'application/octet-stream'
+            }
+        }  
+
+        var req = https.request(options, function(res) {
+              console.log('STATUS: ' + res.statusCode);
+              console.log('HEADERS: ' + JSON.stringify(res.headers));
+
+              // Buffer the body entirely for processing as a whole.
+              var bodyChunks = [];
+              res.on('data', function(chunk) {
+                // You can process streamed parts here...
+                bodyChunks.push(chunk);
+              })
+              .on('end', function() {
+                var body = Buffer.concat(bodyChunks);
+                //console.log('BODY: ' + body)
+                let result = JSON.parse(body)
+                console.log('result', typeof result, result);
+                
+                //resolve(result.link)
+              })
+        });
+
+        req.on('error', function(e) {
+          console.log('ERROR: ' + e.message);
+        });
+  
+        //let obj = ''
+        //console.log(typeof obj, obj)
+  
+  
+        req.write(imgData, (x)=>{  //console.log('x',x)
+        }); 
+        req.end();
+        
+     })   
+    
+}
+
+
+
+
 
 // http://expressjs.com/en/starter/static-files.html
 app.use(express.static('public'));
@@ -129,6 +213,29 @@ app.get("/", function (request, response) {
   response.sendFile(__dirname + '/views/index2.html');
 });
 
+app.post('/API/pushCountriesOfUser',(req, res)=>{
+    res.setHeader('Access-Control-Allow-Origin',clientOrigin)
+  
+    
+    let bodyChunks = [];
+    req.on('data', chunk => bodyChunks.push(chunk))
+    req.on('end', ()=>{
+      let body = Buffer.concat(bodyChunks);
+      body = JSON.parse(body)    //  https://hackernoon.com/https-medium-com-amanhimself-converting-a-buffer-to-json-and-utf8-strings-in-nodejs-2150b1e3de57
+      //return console.log(body)
+      
+      mongo.connect(process.env.mongo, (er, DB)=>{
+          const col = DB.db('shopping_app').collection('users_countries')
+          
+          col.findOneAndUpdate({email: body.email}, {$set:{countries: body.countries}},(er, result)=>{
+                console.log('   update result:',result.ok, result)
+                if (!er && result.ok === 1) res.send('ok')//res.sendStatus(200)
+                else res.sendStatus(400)
+                //res.end()
+          })
+      })
+    })
+})
 
 app.post('/API/getCountriesOfUser',(req, res)=>{
     res.setHeader('Access-Control-Allow-Origin',clientOrigin)
@@ -300,10 +407,49 @@ app.post('/API/signup',(req,res)=>{
   })
 })
 
+app.post('/API/updateDBXToken', (req,res)=>{
+        res.setHeader('Access-Control-Allow-Origin',clientOrigin)
 
+        console.log('updateDBXToken', req.body, req.query)
+        let data =""
+        req.on('data', chunk => data+= chunk)
+        req.on('end',()=>{
+          data = JSON.parse( data) 
+            
+          if (!data.token || data.token==='') return;
+          
+          mongo.connect(process.env.mongo, (er,DB)=>{
+                
+                const coll = DB.db('shopping_app').collection("users")
+                
+                coll.findOneAndUpdate(
+                      { "email" : data.email},
+                      { $set: { "dbxToken" : data.token}},
+                      (er, result)=>{
+                      /*
+                          { lastErrorObject: { updatedExisting: true, n: 1 },
+                            value: 
+                             { _id: 5a5211c15112802d4dca854c,
+                               email: 'okram@protonmail.ch',
+                               userName: 'app owner',
+                               password: 'nick s',
+                               followedUsers: [ [Object] ] },
+                            ok: 1 }
+                      */
+                      //console.log('    ', result.ok, result)
+
+                      if(!er && result.ok === 1) { 
+                        console.log('    alles ok')
+                        res.sendStatus(200)
+                        res.end()
+                      } else res.sendStatus(400)      
+                })
+            })
+        })
+})
 
 // listen for requests :)
-var listener = app.listen(process.env.PORT, function () {
+const listener = app.listen(process.env.PORT, function () {
   console.log('Your app is listening on port ' + listener.address().port);
 });
 
