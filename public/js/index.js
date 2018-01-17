@@ -126,7 +126,7 @@ const checkDrBxToken = function(){
 
           updateDBXToken(user, token)
 
-          window.dbx = new Dropbox({accessToken})
+          window.dbx = new Dropbox({accessToken:token})
 
           /*dbx.filesListFolder({path: ''})
           .then(function(response) {
@@ -651,7 +651,7 @@ const app = new Vue({
                const rating = document.querySelector('input[name="newRating"]:checked').value
 
                const fileName =`${window.localStorage.getItem('deviceUserEmail')
-                               }_D${getFormattedDate(this.newProductPreviewLastModified)}`.toString()
+                               }_D${getFormattedDate(this.newProductPreviewLastModified)}`
 
                console.log('submit', fileName)
                console.log(this.newProductType, this.newProductName, this.newProductDescription, this.newProductPrice, rating)
@@ -681,11 +681,20 @@ const app = new Vue({
                     if (x) return x
                })
                .then(y=>{
-                    addProduct('product', productToAdd)
+                    return addProduct('product', productToAdd)
+               })
+               .then(()=>{
+                    const upload = uploadImgToDropbox.bind(self)
+
+                    upload(fileName, window.toUploadToDropbox)
+                    .then(()=>{
+                         window.toUploadToDropbox = undefined
+                    })
+
                     this.newProductForm = false
                     this.newProductPreview = false
-
-               }).catch(er=>alert('huge arror storing new product'))
+               })
+               .catch(er=>alert('huge arror storing new product'))
                
                const addProduct = addNewLocationToDB.bind(this)
 
@@ -706,7 +715,7 @@ const app = new Vue({
 
                          //let data = fileObj.target.result
                          
-                         img.onload = function(y){
+                         img.onload = function(){
 
                               if (this.width>this.height) return alert(`take image with vertical orientation please`)
 
@@ -737,17 +746,17 @@ const app = new Vue({
                                    let reader = new FileReader()
                                    reader.onloadend = function(){
                                         console.log('binary result', reader.result)//, reader.result.substr(0,100) + '...')
+                                        window.toUploadToDropbox = reader.result
+
+                                        //const upload = uploadImgToDropbox.bind(self)
+
+                                        //upload(undefined, reader.result,  ev.target.files[0], blob)//,
                                         //uploadImgToDropbox(undefined, reader.result)
                                    }
-                                   reader.readAsArrayBuffer(blob)
-                                   //reader.readAsBinaryString(blob)
-
+                                   reader.readAsArrayBuffer(blob)    //reader.readAsBinaryString(blob)
                               })
-                              //let w = window.open()
-                              //w.document.write(`<img src="${canvas.toDataURL()}" >`)
                          }
                          img.src = fileObj.target.result
-                         
                     }
                     
                     reader.readAsDataURL(ev.target.files[0])
@@ -1155,56 +1164,70 @@ const app = new Vue({
 
 
 
-let uploadImgToDropbox = (newName='test', imgData)=>{
-          let fileName = '/' + newName + new Date()
-          console.log('fileName', fileName)
+let uploadImgToDropbox = function(newName='test', imgData, file, blobb){
+     return new Promise((resolve, reject)=>{
+
+          let fileName = newName// + new Date()
+          //console.log(this.userName,'fileName', fileName, file, blobb)
+
+          const email = localStorage.getItem('deviceUserEmail')
+          const toSend = { email }//data: JSON.stringify(imgData)
+          
+          /*let fd = new FormData()
+               fd.append('json', JSON.stringify(toSend))
+               fd.append('imgData', imgData )  // stringify imgData didnt work
+               //fd.append('blob', new Blob([ file ] ))
+               fd.append('ffile',  file  )
+               fd.append('blobb', blobb )
+          */
+          /*fetch(serverURL + '/API/postPicToDrbx' + '?' + 'name='+ this.userName,{
+               method: 'POST',
+               body: imgData
+               })*/
+
+               /*fd.append('json_data', JSON.stringify({a: 1, b: 2}))
+               fd.append('binary_data', new Blob([binary.buffer])
+          */
 
           const xhr = new XMLHttpRequest()
           xhr.onreadystatechange = function(){
                if (this.readyState == 4 && this.status == 200) {
 
-                    console.log('SUKCES', this.response, this.responseText)
-                    
-                    //let img = document.querySelector('#preview')
-                    //img.src = this.responseText
-                    //const URL = window.URL || window.webkitURL
-                    //img.src = URL.createObjectURL(this.response) 
+                    console.log('SUKCES uploading to dbx', this.response, this.responseText)
+                    resolve(this.status)
 
                } else console.log('so?', this.status, this.responseText) //this.getAllResponseHeaders())
           }
-          // 
-          xhr.open('POST', serverURL + '/API/postPicToDrbx', true)
+          xhr.open('POST', serverURL + '/API/postPicToDrbx' + `?email=${email}&fileName=${fileName}` , true)
           xhr.send(imgData)
-          /** 
-           curl -X POST https://content.dropboxapi.com/2/files/upload \
-               --header "Authorization: Bearer <get access token>" \
-               --header "Dropbox-API-Arg: {\"path\": \"/Homework/math/Matrices.txt\",\"mode\": \"add\",\"autorename\": true,\"mute\": false}" \
-               --header "Content-Type: application/octet-stream" \
-               --data-binary @local_file.txt
-          */
-          /*let params = {
-               "path": fileName,
-               "mode": "add"
-          }  // "autorename": true, "mute": false
-          params = JSON.stringify(params)  
+          // 
+          //
+          //xhr.send(fd) // imgData
+          
+               /*let params = {
+                    "path": fileName,
+                    "mode": "add"
+               }  // "autorename": true, "mute": false
+               params = JSON.stringify(params)  
 
-          let bearer = "Bearer " + window.accessToken
-          bearer = JSON.stringify(bearer)
-          console.log('bearer', bearer)
-          
-          xhr.open('POST','https://content.dropboxapi.com/2/files/upload', true)
-          xhr.setRequestHeader("Authorization", bearer)
-          xhr.setRequestHeader("Dropbox-API-Arg", params)
-          xhr.setRequestHeader('Content_Type','application/octet-stream')
+               let bearer = "Bearer " + window.accessToken
+               bearer = JSON.stringify(bearer)
+               console.log('bearer', bearer)
+               
+               xhr.open('POST','https://content.dropboxapi.com/2/files/upload', true)
+               xhr.setRequestHeader("Authorization", bearer)
+               xhr.setRequestHeader("Dropbox-API-Arg", params)
+               xhr.setRequestHeader('Content_Type','application/octet-stream')
 
-          //xhr.setRequestHeader("Authorization", "Bearer qAZQ0ocdGioAAAAAAAACt4axxwChUOZ5U2XLXB1hvSzxXai4btwbq7O3LjzMst5c")
-          //xhr.setRequestHeader("Dropbox-API-Arg", obj)
-          //xhr.responseType = 'blob';
-          //xhr.send()
-          
-          
+               //xhr.setRequestHeader("Authorization", "Bearer qAZQ0ocdGioAAAAAAAACt4axxwChUOZ5U2XLXB1hvSzxXai4btwbq7O3LjzMst5c")
+               //xhr.setRequestHeader("Dropbox-API-Arg", obj)
+               //xhr.responseType = 'blob';
+               //xhr.send()
+               
+               
           xhr.send(imgData)*/
           // later set images to be accessible from dropbox publicly?
+     })
 }
 
 
