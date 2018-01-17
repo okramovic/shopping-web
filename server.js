@@ -1,11 +1,19 @@
 const express = require('express'),
       app = express()
 
+
 const mongo = require('mongodb').MongoClient,
-      bodyParser = require('body-parser')
-const ObjectId = require('mongodb').ObjectId,
+      bodyParser = require('body-parser'),
+      ObjectId = require('mongodb').ObjectId,
       Dropbox = require('dropbox'),
-      https = require('https') 
+      https = require('https'),
+      multer  = require('multer')    //  https://www.npmjs.com/package/multer
+
+var multiparty = require('multiparty');
+var http = require('http');
+var util = require('util');
+
+let upload = multer()
 
 //var jsonParser = bodyParser.json()
 app.use(bodyParser.json())
@@ -14,15 +22,14 @@ const clientOrigin = 'http://localhost:1234'
 
 
 
-var dbx = new Dropbox({ accessToken: process.env.token });
+/*var dbx = new Dropbox({ accessToken: process.env.token });
 dbx.filesListFolder({path: ''})
-.then(function(response) {
-     //console.log(response.entries);
-     //getfile(response.entries[0])
+.then(function(response) { //getfile(response.entries[0])
   })
-.catch(function(error) {
-    console.log(error);
-});
+.catch(function(error) { console.log(error);
+});*/
+
+
 
 
 const getfile = function(fileEntry){
@@ -74,31 +81,7 @@ const getfile = function(fileEntry){
         req.end();
         
      })   
-          /*const xhr = new XMLHttpRequest()
-          xhr.onreadystatechange = function(){
-               if (this.readyState == 4 && this.status == 200) {
-
-                    console.log('SUKCES', this.response, this.responseText)
-                    
-                    let img = document.querySelector('#preview')
-                    img.src = this.responseText
-                    //const URL = window.URL || window.webkitURL
-                    //img.src = URL.createObjectURL(this.response) 
-
-               } else
-
-               console.log('header', this.getAllResponseHeaders())
-          }
-          //xhr.open('POST','https://content.dropboxapi.com/2/files/get_thumbnail',true)
-          xhr.open('POST','https://api.dropboxapi.com/2/files/get_temporary_link', true)
-          xhr.setRequestHeader('Access-Control-Allow-Origin', '*')
-          xhr.setRequestHeader("Access-Control-Allow-Headers", "X-Requested-With");
-          //xhr.setRequestHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-          xhr.setRequestHeader("Authorization", "Bearer qAZQ0ocdGioAAAAAAAACt4axxwChUOZ5U2XLXB1hvSzxXai4btwbq7O3LjzMst5c")
-          xhr.setRequestHeader('Content_Type','application/json')
           
-          xhr.send(obj)*/
 }
 app.post('/API/getPicURL',(req, res)=>{
     res.setHeader('Access-Control-Allow-Origin',clientOrigin)
@@ -117,42 +100,81 @@ app.post('/API/getPicURL',(req, res)=>{
       
 })
 
-app.post('/API/postPicToDrbx',(req, res)=>{
+
+
+app.post('/API/postPicToDrbx', (req, res)=>{  //  upload.single()
     res.setHeader('Access-Control-Allow-Origin',clientOrigin)
   
-    //let data = ""
-    var bodyChunks = [];
-    req.on('data', chunk =>{
-        //data += chunk
-        bodyChunks.push(chunk)
+     console.log('params', req.query, req.query.email) //  (imgData, fileName, email)
+     var bodyChunks = [];
+     req.on('data', chunk =>{
+         //data += chunk
+         bodyChunks.push(chunk)
+     })
+     req.on('end', ()=>{
+       var body = Buffer.concat(bodyChunks);
+       //console.log(data.substr(0,100))
+       //console.log(typeof body)
+         getToken(req.query.email)
+         .then(token=> postPicToDropbox(body, req.query.fileName, token) )
+         .then(link =>{
+           res.send(link) 
+         })
+       })
+     //})
+    /*var form = new multiparty.Form();
+    var c = 0
+    form.on('part', function(part) {
+        //console.log(part)
+        if (part.filename) {
+          c++
+          // filename is defined when this is a file 
+          //count++;
+          console.log('got file named ' + part.name);
+          console.log(part)
+          
+          postPicToDropbox(part)
+          .catch(er=>{
+            console.log('ERROR: ',er)
+          })
+          // ignore file's content here 
+          //part.resume();
+        }
     })
-    req.on('end', ()=>{
-      var body = Buffer.concat(bodyChunks);
-      //console.log(data.substr(0,100))
-      //console.log(typeof body)
-      postPicToDropbox(body)
-      res.end()
-      //console.log('requested user',data, typeof data)
-      
-    })
+    form.on('close', function() {
+      console.log('Upload completed!');
+      res.setHeader('text/plain');
+      res.end('Received ' + c + ' files');
+    });
+    form.parse(req);*/
   
+    /*form.parse(req, function(err, fields, files) {
+      console.log('fields')
+      console.log(fields)
+      console.log(files)
+      
+      
+      res.writeHead(200, {'content-type': 'text/plain'});
+      res.write('received upload:\n\n');
+      res.end(util.inspect({fields: fields, files: files}));
+    });*/
 })
-const postPicToDropbox=(imgData)=>{
+const postPicToDropbox=(imgData, fileName, token)=>{
   
     return new Promise((resolve, reject)=>{
         
-        
+                      //test' + new Date() + '.jpg',
           let params = {
-               "path": '/test' + new Date() + '.jpg',
+               "path": '/' + fileName + '.jpg',
                "mode": "add"
           }  // "autorename": true, "mute": false
           params = JSON.stringify(params)  
           console.log('params', typeof params, params)
       
       
-          let bearer = "Bearer " + process.env.token
+          let bearer = "Bearer " + token    // process.env.token
           //bearer = JSON.stringify(bearer)
-          console.log('bearer', bearer)
+          //console.log('bearer', bearer)
         
         const options = {
             host: 'content.dropboxapi.com',
@@ -181,7 +203,7 @@ const postPicToDropbox=(imgData)=>{
                 let result = JSON.parse(body)
                 console.log('result', typeof result, result);
                 
-                //resolve(result.link)
+                resolve(result.link)
               })
         });
 
@@ -200,6 +222,18 @@ const postPicToDropbox=(imgData)=>{
      })   
     
 }
+const getToken = (email) =>
+    new Promise((resolve, reject)=>
+        mongo.connect(process.env.mongo, (er, DB)=>{
+      
+            if (!er) DB.db('shopping_app').collection('users').findOne({email},(er,user)=>{
+              
+                  if (user.dbxToken) resolve(user.dbxToken)
+                  else reject()
+            })
+        })
+    )
+    
 
 
 
@@ -406,7 +440,6 @@ app.post('/API/signup',(req,res)=>{
       })
   })
 })
-
 app.post('/API/updateDBXToken', (req,res)=>{
         res.setHeader('Access-Control-Allow-Origin',clientOrigin)
 
