@@ -647,6 +647,7 @@ const app = new Vue({
           },
           openNewProductForm:function(open){
                this.newProductForm = open
+               //if (open)
 
                if (open === false){
                     this.modifyingProduct = false;
@@ -854,7 +855,7 @@ const app = new Vue({
 
                if (confirm('Delete this product?')){
                
-               console.log('delete', this.productModified)
+               //console.log('delete', this.productModified)
 
                // find product among my prods
                getOwnDBData(this.userName)
@@ -870,13 +871,21 @@ const app = new Vue({
                     console.log('    shop?', shop)
 
                     // if it has imgName, delete image data from IDB
-                    if (this.productModified.imgName) {
-                         deleteImageFromIDB(this.productModified.imgName)
-                         // delete it from dropbox too
-                    }
+                    if (this.productModified.imgName && navigator.onLine) {
+                         //deleteImageFromIDB(this.productModified.imgName)
 
-                    updateDeviceUserCountries(this.userName, ownData)
-                    .then(this.afterProductFormSubmitted)
+                         const email = localStorage.getItem('deviceUserEmail')
+
+                         deleteDropboxImg(email, this.productModified.imgName)
+                         .then(status=>{
+                              deleteImageFromIDB(this.productModified.imgName)
+                              updateDeviceUserCountries(this.userName, ownData).then(this.afterProductFormSubmitted)   
+                         })
+                    } else if (this.productModified.imgName && !navigator.onLine){
+
+                         // create queue of files to get deleted from Dropbox
+                    }
+                    
                })
                }
           },
@@ -1236,6 +1245,78 @@ const app = new Vue({
      }
 })
 
+const getMyPic = ()=>{
+          let dbximg = 'https://www.dropbox.com/s/jl15lcir35926i5/okram%40protonmail.ch_D2018-01-12_T22-09-07.jpg'
+          //  https://www.dropboxforum.com/t5/API-support/CORS-issue-when-trying-to-download-shared-file/td-p/82466/page/2
+
+          let d2 = 'https://dl.dropboxusercontent.com/s/jl15lcir35926i5/okram%40protonmail.ch_D2018-01-12_T22-09-07.jpg' 
+          const req1 = new Request(d2,{  // './test1.png'
+               headers: new Headers({
+                    //'Content-Type': 'image/png'
+               }),
+               method: 'GET'
+               
+               //body: JSON.stringify({ email, token })
+          })
+          var image = new Image(); //image.crossOrigin = "Anonymous"
+
+          fetch(req1)
+          .then(result=>{
+               console.log('img result',result)
+               return  result.blob()//result.arrayBuffer()//.blob()
+               
+               
+          }).then(blob=>{
+               console.log('res', blob)
+               let r = new FileReader()
+               r.onload = function(obj){
+                    
+                    
+                    //let x = fin.replace('data:text/html', 'data:image/png')
+                    image.src = obj.target.result //URL.createObjectURL(blob);
+                    //document.body.appendChild(image);
+               }
+               r.readAsDataURL(blob)
+               
+               
+               //const URL = window.URL || window.webkitURL;
+               //console.log(URL)
+               //image.src = URL.createObjectURL(blob);
+          })
+          
+          /*let xhr = new XMLHttpRequest()
+          if ("withCredentials" in xhr) { console.log('with creds') }
+          xhr.onreadystatechange = function(){
+               if (this.readyState == 4 && this.status == 200) {
+                    console.log(this.response, this.responseText, this.responseType)
+
+               } else console.log(this.status, this.response)
+          }
+          xhr.open('GET', CE + 'https://www.dropbox.com/s/jl15lcir35926i5/okram%40protonmail.ch_D2018-01-12_T22-09-07.jpg?dl=0', true)
+          console.log(xhr)
+          //xhr.send()*/
+}
+//getMyPic()
+
+const deleteDropboxImg = (email, fileName)=>{
+
+     return new Promise((resolve, reject)=>{
+          if (!email || ! fileName) reject(null)
+
+          const xhr = new XMLHttpRequest()
+          xhr.onreadystatechange = function(){
+               if (this.readyState == 4 && this.status == 200) {
+
+                    console.log('SUKCES deleting dbx image', this.response, this.responseText)
+                    resolve(this.status)
+
+               } else console.log('so?', this.status, this.responseText) //this.getAllResponseHeaders())
+          }
+          xhr.open('POST', serverURL + '/API/deleteDrbxImage' + `?email=${email}&fileName=${fileName}` , true)
+          xhr.send()
+     })
+}
+
 
 // set image property so its accessible publicly any time it ll be needed by others
 let uploadImgToDropbox = function(newName='test', imgData, file, blobb){
@@ -1480,7 +1561,7 @@ function fetchCountriesOfUser(user){
                          const result = JSON.parse(this.responseText)
                          result.userName = user.userName
 
-                         console.log('   got user data from server',result.email, result)
+                         //console.log('   got user data from server',result.email, result)
                          resolve(result)
 
                } else if (this.readyState == 4 && this.status!=200) reject()
@@ -1491,7 +1572,7 @@ function fetchCountriesOfUser(user){
 }
 
 function setOtherUserIDBData(allData){
-     console.log('allData to IDB >', allData)
+     console.log('allData to put to IDB >', allData)
      return new Promise((resolve, reject)=>{
 
           users_followed.userData.put(allData)

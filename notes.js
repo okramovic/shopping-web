@@ -3,19 +3,21 @@
 //  on web  https://developers.google.com/web/fundamentals/media/capturing-images/
 /**
  *        get a photo from dropbox
- *        post a photo to dropbox
+ *        i might need both thumbnails 
+ *             and full pic file   https://www.dropbox.com/developers/documentation/http/documentation#sharing-get_shared_link_file
+ *             in different situations
  */
 
 /*
 
 user stories:
 
-- i can change my products
-- i can delete my products
+
 
 
 
 to do
+- after new product submission - reset all form fields and canvas to empty
 - on mobile, user can choose to upload picture taken previously, or to take new one with camera (to enable user to store also old pictures)
 - if browsing in private mode, show message that all saved data will be deleted when tab is closed (browsers act like that)  https://developer.mozilla.org/en-US/docs/Web/API/Storage/LocalStorage
 
@@ -61,5 +63,9 @@ done:
 
 15 Jan
 - on app start app auto-fetches followdees data (store them on my device local storage)
+
+21 Jan
+- i can change my products
+- i can delete my products
 
 */
