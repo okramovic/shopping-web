@@ -1,17 +1,18 @@
 const express = require('express'),
-      app = express()
-
-
-const mongo = require('mongodb').MongoClient,
-      bodyParser = require('body-parser'),
+      app = express(),
+      mongo = require('mongodb').MongoClient,
       ObjectId = require('mongodb').ObjectId,
-      Dropbox = require('dropbox'),
       https = require('https'),
-      multer  = require('multer')    //  https://www.npmjs.com/package/multer
+      Dropbox = require('dropbox')
+      
+      
+const bodyParser = require('body-parser'),
+      multer  = require('multer'),    //  https://www.npmjs.com/package/multer
+      multiparty = require('multiparty')
 
-var multiparty = require('multiparty');
-var http = require('http');
-var util = require('util');
+const http = require('http')
+const util = require('util')
+
 
 let upload = multer()
 
@@ -101,80 +102,114 @@ app.post('/API/getPicURL',(req, res)=>{
 })
 
 
+app.post('/API/deleteDrbxImage',(req, res)=>{
+    res.setHeader('Access-Control-Allow-Origin',clientOrigin)
+    console.log('params', req.query, req.query.email, req.query.fileName)
+      const fileName = req.query.fileName
+  
+      getToken(req.query.email)
+         .then(token=>deleteImage(token, fileName))
+         .then(status=>{ res.sendStatus(200)})
+         .catch(er=>{
+            console.log('ERROR deleting file', er)
+            res.sendStatus(400)
+            res.end()
+         })
+               
+    
+})
+const deleteImage = (token, fileName) => new Promise((resolve, reject)=>{
+        
+          console.log('token', token, fileName)
+          const path = '/' + fileName + '.jpg',
+              bearer = "Bearer " + token
+          
+          let params = { 'path': path }
+          
+          const options = {
+              host: 'api.dropboxapi.com',
+              path: '/2/files/delete_v2',
+              method: 'POST',
+              headers: {
+                  'Authorization': bearer,
+                  'Content-Type': 'application/json'
+              }
+          }  
 
-app.post('/API/postPicToDrbx', (req, res)=>{  //  upload.single()
+          var req = https.request(options, function(res) {
+                console.log('STATUS: ' + res.statusCode);
+                console.log('HEADERS: ' + JSON.stringify(res.headers));
+
+                var bodyChunks = [];
+                res.on('data', chunk => bodyChunks.push(chunk) )
+                .on('end', function() {
+                  let body = Buffer.concat(bodyChunks),
+                    result = JSON.parse(body)
+                  
+                  console.log('result', typeof result, result);
+                  //res.sendStatus(200)
+                  resolve(200)
+                })
+          });
+
+          req.on('error', function(e) {
+              console.log('ERROR: ' + e.message);
+              reject(400)
+              //res.sendStatus(400)
+          });
+
+          req.write(JSON.stringify(params), (x)=>{  //console.log('x',x)
+          }); 
+          req.end();
+
+})
+
+
+app.post('/API/postPicToDrbx', (req, res)=>{
     res.setHeader('Access-Control-Allow-Origin',clientOrigin)
   
-     console.log('params', req.query, req.query.email) //  (imgData, fileName, email)
+     console.log('params', req.query, req.query.email)
      var bodyChunks = [];
-     req.on('data', chunk =>{
-         //data += chunk
-         bodyChunks.push(chunk)
-     })
+     req.on('data', chunk =>{ bodyChunks.push(chunk) })
      req.on('end', ()=>{
-       var body = Buffer.concat(bodyChunks);
-       //console.log(data.substr(0,100))
-       //console.log(typeof body)
+         let body = Buffer.concat(bodyChunks);
+       
          getToken(req.query.email)
          .then(token=> postPicToDropbox(body, req.query.fileName, token) )
-         .then(link =>{
-           res.send(link) 
+         .then(setFileToPublic)
+         .then(link => res.sendStatus(200) )
+         .catch(er=>{
+           console.error(er)
+           res.sendStatus(400)
          })
-       })
-     //})
-    /*var form = new multiparty.Form();
-    var c = 0
-    form.on('part', function(part) {
-        //console.log(part)
-        if (part.filename) {
-          c++
-          // filename is defined when this is a file 
-          //count++;
-          console.log('got file named ' + part.name);
-          console.log(part)
-          
-          postPicToDropbox(part)
-          .catch(er=>{
-            console.log('ERROR: ',er)
-          })
-          // ignore file's content here 
-          //part.resume();
-        }
-    })
-    form.on('close', function() {
-      console.log('Upload completed!');
-      res.setHeader('text/plain');
-      res.end('Received ' + c + ' files');
-    });
-    form.parse(req);*/
-  
-    /*form.parse(req, function(err, fields, files) {
-      console.log('fields')
-      console.log(fields)
-      console.log(files)
-      
-      
-      res.writeHead(200, {'content-type': 'text/plain'});
-      res.write('received upload:\n\n');
-      res.end(util.inspect({fields: fields, files: files}));
-    });*/
+     })
+    
 })
-const postPicToDropbox=(imgData, fileName, token)=>{
+const getToken = (email) =>
+    new Promise((resolve, reject)=>
+        mongo.connect(process.env.mongo, (er, DB)=>{
+      
+            if (!er) DB.db('shopping_app').collection('users').findOne({email},(er,user)=>{
+              
+                  if (user.dbxToken) resolve(user.dbxToken)
+                  else reject()
+            })
+        })
+)
+
+
+const postPicToDropbox = (imgData, fileName, token)=>{
   
     return new Promise((resolve, reject)=>{
         
-                      //test' + new Date() + '.jpg',
-          let params = {
-               "path": '/' + fileName + '.jpg',
+        const path = '/' + fileName + '.jpg'
+        let params = {
+               "path": path,
                "mode": "add"
-          }  // "autorename": true, "mute": false
-          params = JSON.stringify(params)  
-          console.log('params', typeof params, params)
+        }
+        params = JSON.stringify(params)  
       
-      
-          let bearer = "Bearer " + token    // process.env.token
-          //bearer = JSON.stringify(bearer)
-          //console.log('bearer', bearer)
+        const bearer = "Bearer " + token
         
         const options = {
             host: 'content.dropboxapi.com',
@@ -188,52 +223,98 @@ const postPicToDropbox=(imgData, fileName, token)=>{
         }  
 
         var req = https.request(options, function(res) {
+              console.log('STATUS: ' + res.statusCode)
+              console.log('HEADERS: ' + JSON.stringify(res.headers))
+
+              var bodyChunks = []
+              res.on('data', function(chunk) { bodyChunks.push(chunk) })
+              res.on('end', function() {
+                let body = Buffer.concat(bodyChunks)
+                let result = JSON.parse(body)
+                
+                resolve({path, bearer})
+              })
+        });
+
+        req.on('error', er => {
+            console.log('ERROR: ' + er.message)
+            reject(er)
+        })
+    
+        req.write(imgData, (x)=>{  /*console.log('x',x)*/ })
+        req.end();
+        
+     })   
+    
+}
+
+
+
+const setFileToPublic = settings => 
+  new Promise((resolve, reject)=>{
+        console.log('share file settings', settings)
+    
+        const settingsToSet = {
+            "path": settings.path,
+            "settings": {
+                "requested_visibility": "public"
+            }
+        }
+    
+        const options = {
+            host: 'api.dropboxapi.com',
+            path: '/2/sharing/create_shared_link_with_settings',
+            method: 'POST',
+            headers: {
+                'Authorization': settings.bearer,
+                'Content-Type': 'application/json'
+            }
+
+        }
+        
+        var req = https.request(options, function(res) {
               console.log('STATUS: ' + res.statusCode);
               console.log('HEADERS: ' + JSON.stringify(res.headers));
 
               // Buffer the body entirely for processing as a whole.
-              var bodyChunks = [];
+              let bodyChunks = [];
               res.on('data', function(chunk) {
                 // You can process streamed parts here...
                 bodyChunks.push(chunk);
               })
               .on('end', function() {
-                var body = Buffer.concat(bodyChunks);
+                let body = Buffer.concat(bodyChunks);
                 //console.log('BODY: ' + body)
                 let result = JSON.parse(body)
                 console.log('result', typeof result, result);
-                
-                resolve(result.link)
+                /*
+                { '.tag': 'file',
+                    url: 'https://www.dropbox.com/s/jl15lcir35926i5/okram%40protonmail.ch_D2018-01-12_T22-09-07.jpg?dl=0',
+                    id: 'id:dO0FGJQsFBAAAAAAAAAAFg',
+                    name: 'okram@protonmail.ch_D2018-01-12_T22-09-07.jpg',
+                    path_lower: '/okram@protonmail.ch_d2018-01-12_t22-09-07.jpg',
+                    link_permissions: 
+                     { resolved_visibility: { '.tag': 'public' },
+                       requested_visibility: { '.tag': 'public' },
+                       can_revoke: true },
+                    client_modified: '2018-01-21T19:23:09Z',
+                    server_modified: '2018-01-21T19:23:10Z',
+                    rev: '128344b660',
+                    size: 152276 }
+                */
+                resolve()
               })
         });
 
         req.on('error', function(e) {
           console.log('ERROR: ' + e.message);
         });
-  
-        //let obj = ''
-        //console.log(typeof obj, obj)
-  
-  
-        req.write(imgData, (x)=>{  //console.log('x',x)
+    
+        req.write(JSON.stringify(settingsToSet), (x)=>{  //console.log('x',x)
         }); 
         req.end();
-        
-     })   
-    
-}
-const getToken = (email) =>
-    new Promise((resolve, reject)=>
-        mongo.connect(process.env.mongo, (er, DB)=>{
-      
-            if (!er) DB.db('shopping_app').collection('users').findOne({email},(er,user)=>{
-              
-                  if (user.dbxToken) resolve(user.dbxToken)
-                  else reject()
-            })
-        })
-    )
-    
+
+  })
 
 
 
