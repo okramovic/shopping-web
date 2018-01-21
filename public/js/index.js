@@ -243,7 +243,8 @@ const app = new Vue({
           newProductDescriptionLong: null,
           newProductPrice: null,
 
-          modifyingProduct: false
+          modifyingProduct: false,
+          productModified: null,
      },
      methods:{
           switchScreen:function(screen){
@@ -253,6 +254,8 @@ const app = new Vue({
                     this.locationInputShown = false
                     this.locationSet = null
                     this.newLocation = null
+
+                    this.newProductForm = false;
                }
           },
           showUserSettings:function(show){
@@ -511,11 +514,12 @@ const app = new Vue({
                //return console.log('name', name, 'event', event)
                
                getSubsetItems(this,index,name)
-                    .then(userOwnProducts =>{
+                    .then(initialOwnProducts =>{
                          // save last locations to local storage rather here?
+
+                         const userOwnProducts = initialOwnProducts.map(prod=>{prod.owner = this.userName || 0; return prod})
                          console.log('----- user own products:', userOwnProducts.length, userOwnProducts)
 
-                         userOwnProducts = userOwnProducts.map(prod=>{prod.owner = this.userName || 0; return prod})
                          // get products from each user in IDB: for current city, shop etc
                          getOtherUsersIDBData(this.followedUsers)
                          .then(users=>{
@@ -545,7 +549,8 @@ const app = new Vue({
 
                                    if (otherProds.length>0) finals = finals.concat(...otherProds)
                               }
-                              
+                              console.log('finals', finals)
+
                               return new Promise((resolve, reject)=>{
                                    // display products on screen
                                    resolve (this.currentDisplayedProducts = finals ) //[...finals]
@@ -642,6 +647,10 @@ const app = new Vue({
           },
           openNewProductForm:function(open){
                this.newProductForm = open
+
+               if (open === false){
+                    this.modifyingProduct = false;
+               }
           },
           newProductSubmit: function($event){
                $event.preventDefault()
@@ -772,6 +781,7 @@ const app = new Vue({
                //   to new current country city shop
 
                this.modifyingProduct = true // to show correct submit button
+               this.productModified = prod
 
                if (prod.type) this.newProductType = prod.type
                if (prod.name) this.newProductName = prod.name
@@ -806,11 +816,75 @@ const app = new Vue({
           },
           applyProductChanges:function(ev){
                ev.preventDefault()
-               console.log('prod change')
+               console.log('prod change', this.productModified)
+
+               
+               getOwnDBData(this.userName)
+               .then(ownData=>{
+                    console.log('    ownData',ownData)
+
+                    let country = ownData.find(country=>country.name == this.currentCountry)
+                    let city = country.cities.find(city=> city.name == this.currentCity)
+                    let shop = city.shops.find(shop=>shop.name== this.currentShop)
+                    let prod = shop.products.find(prod=>prod.name === this.productModified.name)
+
+
+                    for (let prop in prod){
+                         if (prop!=='imgName') delete prod[prop]
+                    }
+               
+
+                    if ( this.newProductType) prod.type = this.newProductType
+                    if ( this.newProductName) prod.name = this.newProductName
+                    if ( this.newProductDescription) prod.descr = this.newProductDescription
+                    if ( this.newProductDescriptionLong)  prod.descrLong = this.newProductDescriptionLong
+                    if ( this.newProductPrice) prod.price = parseFloat(this.newProductPrice)
+
+                    prod.rating = document.querySelector('input[name="newRating"]:checked').value
+
+                    console.log('prod edited to:', prod)
+
+                    updateDeviceUserCountries(this.userName, ownData)
+                    .then(this.afterProductFormSubmitted)
+               })
+
           },
           deleteProduct:function(ev){
                ev.preventDefault()
-               console.log('delete')
+
+               if (confirm('Delete this product?')){
+               
+               console.log('delete', this.productModified)
+
+               // find product among my prods
+               getOwnDBData(this.userName)
+               .then(ownData=>{
+                    console.log('    ownData',ownData)
+
+                    let country = ownData.find(country=>country.name == this.currentCountry)
+                    let city = country.cities.find(city=> city.name == this.currentCity)
+                    let shop = city.shops.find(shop=>shop.name== this.currentShop)
+                    const i = shop.products.findIndex(prod=>prod.name === this.productModified.name)
+
+                    shop.products.splice(i,1)
+                    console.log('    shop?', shop)
+
+                    // if it has imgName, delete image data from IDB
+                    if (this.productModified.imgName) {
+                         deleteImageFromIDB(this.productModified.imgName)
+                         // delete it from dropbox too
+                    }
+
+                    updateDeviceUserCountries(this.userName, ownData)
+                    .then(this.afterProductFormSubmitted)
+               })
+               }
+          },
+          afterProductFormSubmitted:function(){
+               this.modifyingProduct = false    // hides Modify and Delete buttons
+               this.newProductPreview = false   // to hide canvas
+               this.reloadView()
+               return this.switchScreen('main')
           },
           reloadView:function(){
                     console.log('RELOADING VIEW')
@@ -1163,7 +1237,7 @@ const app = new Vue({
 })
 
 
-
+// set image property so its accessible publicly any time it ll be needed by others
 let uploadImgToDropbox = function(newName='test', imgData, file, blobb){
      return new Promise((resolve, reject)=>{
 
@@ -1173,6 +1247,10 @@ let uploadImgToDropbox = function(newName='test', imgData, file, blobb){
           const email = localStorage.getItem('deviceUserEmail')
           const toSend = { email }//data: JSON.stringify(imgData)
           
+          // https://stackoverflow.com/questions/9395911/send-a-file-as-multipart-through-xmlhttprequest
+          // https://stackoverflow.com/questions/15001822/sending-large-image-data-over-http-in-node-js
+          // https://stackoverflow.com/questions/5052165/streaming-an-octet-stream-from-request-to-s3-with-knox-on-node-js
+          // https://stackoverflow.com/questions/3146483/html5-file-api-read-as-text-and-binary
           /*let fd = new FormData()
                fd.append('json', JSON.stringify(toSend))
                fd.append('imgData', imgData )  // stringify imgData didnt work
@@ -1361,7 +1439,7 @@ const sendCountryDataOfUser = userObj =>
 
           getOwnDBData(userObj.userName)
           .then(countries=>{
-               //console.log(`data of - ${userObj.userName} - to be pushed to MDB`, countries)
+               console.log(`data of - ${userObj.userName} - to be pushed to MDB`, countries)
 
                const request = new Request(serverURL + 'API/pushCountriesOfUser',{
                     headers: new Headers({
@@ -1691,7 +1769,7 @@ function copyUserData(users, owndata){
 
 function updateDeviceUserCountries(userName=0, countries){
      console.log(`save to user: ${userName} ${countries}`)
-     let obj = {userName, countries }
+     let obj = { userName, countries }
      //console.log(obj)
      return new Promise((resolve, reject)=>{
 
@@ -1835,6 +1913,25 @@ function saveImageToIDB(fileName){
           })
           .catch(er=>{console.error(er)})
      })
+}
+
+//let testDel = 'okram@protonmail.ch_D2018-01-12_T22-09-07'
+//deleteImageFromIDB(testDel).then(()=>{console.log('deleted?')})
+
+function deleteImageFromIDB(fileName){
+     //console.log(fileName, picturesDB.item)
+     return new Promise((resolve, reject)=>{
+          
+
+          picturesDB.item.where('fileName').equals(fileName).delete() //(fileName)  
+          .then(something=>{
+
+               console.log('deleted?',something)
+               resolve(something)
+          })
+          .catch(er=>console.error(er))        
+     })
+
 }
 
 function nodeListToArray(list){

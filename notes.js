@@ -21,6 +21,15 @@ to do
 
 
 
+dropbox stuff
+     oauth guide    https://www.dropbox.com/developers/reference/oauth-guide
+     token etc      https://www.dropbox.com/developers/documentation/http/documentation#oauth2-token
+     my DB setup    https://www.dropbox.com/developers/apps/info/hqdb69ima3zv29t
+     api explorer   https://dropbox.github.io/dropbox-api-v2-explorer/
+     temp link      https://www.dropbox.com/developers/documentation/http/documentation#files-get_temporary_link
+
+     with each API request include header "Authorization: Bearer <YOUR_ACCESS_TOKEN_HERE>"
+
 
 done:
 - save last open locations to loc stor

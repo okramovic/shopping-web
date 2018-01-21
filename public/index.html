@@ -162,14 +162,14 @@
                     >no products to display</h4>
 
                   
-        
+
 
                <button id="addProductButton" v-show="!newProductForm" v-on:click="openNewProductForm(true)">add product</button>
 
                <div id="newProductFormContainer" v-show="newProductForm === true">
                     <form name="newProductForm">
                               <canvas v-show="newProductPreview==true" width="300" height="300"></canvas>
-                              <input type="file" accept="img/*" capture="environment" v-on:change="imageAdded($event)">
+                              <input v-show="!modifyingProduct" type="file" accept="img/*" capture="environment" v-on:change="imageAdded($event)">
                               
                               <p>product type</p>
                               <input type="text" name="productType" v-model="newProductType" required placeholder="e.g. Rice milk">

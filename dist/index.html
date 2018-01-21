@@ -7,8 +7,8 @@
      <title>shppp</title>
      <link rel="stylesheet" type="text/css" href="/dist/52e6306f9e66fd5a4b1fc7a3c41213b5.css">
      
-          <script src="https://cdn.jsdelivr.net/npm/vue"></script>
-          <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
+          <!--script src="https://cdn.jsdelivr.net/npm/vue"></script>
+          <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script-->
           
 </head>
 <body>
@@ -78,7 +78,13 @@
 
 
                <h2>settings</h2>
-               <button @click="requestDropbox()">connect my Dropbox</button>
+               <div>
+                    <button @click="fetchMyCountries()">&#10549; my countries</button>
+                    <button @click="pushMyCountries()">my countries &#10548;</button>
+               </div>
+               <br>
+               <button @click="requestDropboxAccess()">connect my Dropbox</button>
+               <br>
                <button @click="switchScreen('main')">close settings</button>
           </div>
 
@@ -139,7 +145,6 @@
                                    <p>{{prod.descr}}</p>
                                    <p>{{prod.descrLong}}</p>
                                    <p>{{prod.price}}</p>
-                                   <p>{{prod.type}}</p>
                                    <p>rating: {{prod.rating}}</p>
                               </div>
                               
@@ -149,14 +154,14 @@
                <h4 v-show="newProductForm === false && currentDisplayedProducts.length==0">no products to display</h4>
 
                   
-        
+
 
                <button id="addProductButton" v-show="!newProductForm" v-on:click="openNewProductForm(true)">add product</button>
 
                <div id="newProductFormContainer" v-show="newProductForm === true">
                     <form name="newProductForm">
                               <canvas v-show="newProductPreview==true" width="300" height="300"></canvas>
-                              <input type="file" accept="img/*" capture="environment" v-on:change="imageAdded($event)">
+                              <input v-show="!modifyingProduct" type="file" accept="img/*" capture="environment" v-on:change="imageAdded($event)">
                               
                               <p>product type</p>
                               <input type="text" name="productType" v-model="newProductType" required="" placeholder="e.g. Rice milk">
