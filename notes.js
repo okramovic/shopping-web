@@ -1,27 +1,38 @@
+/* img capt:
+     on mobile   http://www.syntaxxx.com/accessing-user-device-photos-with-the-html5-camera-api/
+     on web  https://developers.google.com/web/fundamentals/media/capturing-images/
 
-// on mobile   http://www.syntaxxx.com/accessing-user-device-photos-with-the-html5-camera-api/
-//  on web  https://developers.google.com/web/fundamentals/media/capturing-images/
-/**
- *        get a photo from dropbox
- *        i might need both thumbnails 
- *             and full pic file   https://www.dropbox.com/developers/documentation/http/documentation#sharing-get_shared_link_file
- *             in different situations
- */
+          get a photo from dropbox
+          i might need both thumbnails 
+              and full pic file   https://www.dropbox.com/developers/documentation/http/documentation#sharing-get_shared_link_file
+              in different situations
+ 
 
-/*
+
 
 user stories:
+- i can filter products viewed using text input
+- i can choose for each user (in settings menu) if to download his images to my device
 
 
 
+TODO
+
+- user cannot add item 'all countries'/'all cities'/'all shops' as new location // it would create mess in DB
+- make newly added country/city/shop selected one
+- when pushing my local country data to MDB, make sure they go without owner field
+- when adding/deleting products and user is not online, create queue of future requests to be sent when app is online
+          1) files to be uploaded
+          2) files to be deleted
+
+- add small status bar at bottom, that indicate suxess uploading to DBX or removing file from DBX
 
 
-to do
 - after new product submission - reset all form fields and canvas to empty
 - on mobile, user can choose to upload picture taken previously, or to take new one with camera (to enable user to store also old pictures)
 - if browsing in private mode, show message that all saved data will be deleted when tab is closed (browsers act like that)  https://developer.mozilla.org/en-US/docs/Web/API/Storage/LocalStorage
 
-
+---------------------------------------------------------------------------------------------------
 
 dropbox stuff
      oauth guide    https://www.dropbox.com/developers/reference/oauth-guide
@@ -67,5 +78,9 @@ done:
 21 Jan
 - i can change my products
 - i can delete my products
+
+22 Jan
+- user cannot submit newe product without picture
+- make new-product-form main fields required
 
 */

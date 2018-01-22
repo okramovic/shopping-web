@@ -429,12 +429,12 @@ const app = new Vue({
                xhr.send( string)
 
           },
-          informUser: function(msg){
+          informUser: function(msg, millis = 3000){
                this.console = msg
 
                setTimeout(()=>{
                     this.console = undefined
-               },5000)
+               },millis)
           },
           followUser:function(email,userName){
                console.log('follow', email,userName)
@@ -656,8 +656,14 @@ const app = new Vue({
           newProductSubmit: function($event){
                $event.preventDefault()
                
-               if (!this.newProductPreview) return this.informUser(`picture of product is required`)
-               //const form = document.querySelector('form[name="newProductForm"')
+               if (!this.newProductPreview) 
+                         return this.informUser(`picture of product is required`,2000)
+               if (!this.newProductType || !this.newProductName ) 
+                         return this.informUser(`product type and name are required`,3000)
+               if (! document.querySelector('input[name="newRating"]:checked')) 
+                         return this.informUser('select product rating',2500)
+
+
                const rating = document.querySelector('input[name="newRating"]:checked').value
 
                const fileName =`${window.localStorage.getItem('deviceUserEmail')
