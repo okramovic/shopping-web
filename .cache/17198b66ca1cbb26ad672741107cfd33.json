@@ -1,0 +1,1 @@
+{"dependencies":[],"generated":{"js":"var REQUEST_CONSTANTS = {\n  RPC: 'rpc',\n  DOWNLOAD: 'download',\n  UPLOAD: 'upload'\n};\n\nmodule.exports = REQUEST_CONSTANTS;\n"},"hash":"04a6bccfc16a2350d9e8ccd7ac4ac2ae"}

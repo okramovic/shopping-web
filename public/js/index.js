@@ -10,10 +10,148 @@
 
 'use strict'
 
-//const Dexie = require('./vendor/Dexie.2.0.1.js'),
-//      Vue = require('./vendor/Vue.2.5.13.js')
+const Dexie = require('./vendor/Dexie.2.0.1.js'),
+      Vue = require('./vendor/Vue.2.5.13.js')
+
+const serverURL = 'https://shopp.glitch.me/'
 
 //import {addLocationToDB2} from './copy.js';
+
+//const token = 'qAZQ0ocdGioAAAAAAAACs8r7cWwxjlWLJx6b-qwlQOGEURMf-srx2X1wS_RnHari'
+
+var Dropbox = require('dropbox');
+//let dbx //= new Dropbox({ accessToken: token });
+
+
+/*dbx.filesListFolder({path: ''})
+  .then(function(response) {
+     console.log('DBDBDBDBDBD')
+     console.log(response);
+     //getfileThumb(response.entries[0])
+     response.entries.forEach(entry=>{
+          getPicURL(entry)
+          .then(url=>{
+               let img = new Image()
+               img.onload = function(){
+                    this.width=144
+                    this.height=256
+               }
+                    
+               img.src = url
+               let body = document.querySelector('body')
+               body.appendChild(img)
+          })
+     })
+     //  convert url to file?  https://stackoverflow.com/questions/28042535/converting-image-object-to-file-object-javascript
+  })
+  .catch(function(error) {
+    console.log(error);
+  });
+*/
+const getfileThumb = function(fileEntry){
+          
+          const id = fileEntry.id
+
+          //let obj = { "path": id , format: "jpeg", size: "w128h128" }
+          let obj = {"path": fileEntry.path_display }
+          obj = JSON.stringify( obj) 
+          console.log(obj)
+
+          const xhr = new XMLHttpRequest()
+          xhr.onreadystatechange = function(){
+               if (this.readyState == 4 && this.status == 200) {
+
+                    console.log('SUKCES', this.response, this.responseText)
+                    
+                    let img = document.querySelector('#preview')
+                    img.src = this.responseText
+                    //const URL = window.URL || window.webkitURL
+                    //img.src = URL.createObjectURL(this.response) 
+
+               } else console.log('header', this.responseText, this.getAllResponseHeaders())
+          }
+          //xhr.open('POST','https://content.dropboxapi.com/2/files/get_thumbnail',true)
+          xhr.open('POST','https://api.dropboxapi.com/2/files/get_temporary_link', true)
+          xhr.setRequestHeader('Access-Control-Allow-Origin', '*')
+          xhr.setRequestHeader("Access-Control-Allow-Headers", "X-Requested-With");
+          //xhr.setRequestHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+          xhr.setRequestHeader("Authorization", "Bearer qAZQ0ocdGioAAAAAAAACt4axxwChUOZ5U2XLXB1hvSzxXai4btwbq7O3LjzMst5c")
+          //xhr.setRequestHeader("Dropbox-API-Arg", obj)
+          //xhr.responseType = 'blob';
+          //xhr.send()
+          xhr.setRequestHeader('Content_Type','application/json')
+          
+          xhr.send(obj)
+}
+
+
+/*let getDropToken = function(){
+     const xhr = new XMLHttpRequest()
+     xhr.onreadystatechange = function(){
+                    if (this.readyState == 4 && this.status == 200) {
+
+                         console.log('SUKCES', this.response, this.responseText)
+                         
+                         
+
+                    } else console.log('header',this.status, this.getAllResponseHeaders())
+     }
+          //let url = 'https://www.dropbox.com/oauth2/authorize?' + 'response_type=token&' + 'client_id=hqdb69ima3zv29t&' + 'redirect_uri=http://localhost:1234/'
+     let url = 'https://api.dropboxapi.com/oauth2/token'
+     xhr.open('POST',url, true)
+     //xhr.send(   )
+
+}*/
+
+const checkDrBxToken = function(){
+
+     const user = localStorage.getItem('deviceUserEmail')
+     if (!user) return;
+
+     if ( navigator.onLine && window.location.hash && 
+          window.location.hash.includes('access_token=') && 
+          window.location.hash.includes('token_type=bearer')){
+          
+
+          // #access_token=qAZQ0ocdGioAAAAAAAACvzPeVzvTqmMsfEDCwQap8UvEMVAu8F0Zqatd1IypdhAt
+          // &token_type=bearer  // &uid=300342838  // &account_id=dbid%3AAAC5NUHLEil2GAOA3Si3wQmQ2pBC6qKCsEo
+
+          let str = window.location.hash.substr(1)
+          let arr = decodeURI(str).split('&')
+          //console.log(str,'arr',arr)
+          const token = arr[0].replace('access_token=','')
+          //window.accessToken = 
+          console.log('    token', token)
+
+          updateDBXToken(user, token)
+
+          window.dbx = new Dropbox({accessToken:token})
+
+          /*dbx.filesListFolder({path: ''})
+          .then(function(response) {
+               console.log('    ',response);
+
+          })*/
+          
+     } else console.log('####   no new dropbox token   ####')
+}
+const updateDBXToken = function(email, token){
+     console.log('tokenizing', email, token)
+
+     const request = new Request(serverURL + 'API/updateDBXToken',{
+          headers: new Headers({
+               'Content-Type': 'application/json'
+          }),
+          method: 'POST',
+          mode:'no-cors',
+          body: JSON.stringify({ email, token })
+     })
+
+
+     fetch(request)
+     .then(console.log)
+}
 
 
 const initalCountryData = [{
@@ -63,7 +201,7 @@ const picturesDB = new Dexie('product_img')
       picturesDB.open()
       .catch(er=>console.error('couldnt open DB',er))
       
-const serverURL = 'https://shopp.glitch.me/'
+
 
 
 
@@ -105,7 +243,8 @@ const app = new Vue({
           newProductDescriptionLong: null,
           newProductPrice: null,
 
-          modifyingProduct: false
+          modifyingProduct: false,
+          productModified: null,
      },
      methods:{
           switchScreen:function(screen){
@@ -115,6 +254,8 @@ const app = new Vue({
                     this.locationInputShown = false
                     this.locationSet = null
                     this.newLocation = null
+
+                    this.newProductForm = false;
                }
           },
           showUserSettings:function(show){
@@ -155,7 +296,7 @@ const app = new Vue({
                          self.informUser(`You hip'n'roll! Now logged iN`) // rock'n'hop
                          self.screen = 'main'
                          
-                         return self.startApp() //self.reloadView()
+                         return self.startApp()
 
                     } else if (this.readyState == 4 && this.status == 400){
 
@@ -195,7 +336,7 @@ const app = new Vue({
                               //.then(name=>self.userName = name)
                               self.screen = 'main'
 
-                              return self.startApp()  // self.reloadView()
+                              return self.startApp()
 
                     } else if (this.readyState == 4 && this.status ==400)
 
@@ -221,7 +362,53 @@ const app = new Vue({
                
                //this.userName = undefined
                console.log('now will reload app')
-               return this.startApp() // this.reloadView()//
+               return this.startApp()
+          },
+          requestDropboxAccess:function(){
+               
+               const url = 'https://www.dropbox.com/oauth2/authorize?' + 
+                         'response_type=token&' +
+                         'client_id=hqdb69ima3zv29t&' +
+                         'redirect_uri=' + window.location.origin + '/'    //'http://localhost:1234/'
+
+               window.location.href = url
+          },
+          fetchMyCountries:function(){
+               console.log('fetching my countries of >', this.userName, '<')
+
+               if (!this.userName) return alert('unregistered user cant back up his data')
+
+               fetchCountriesOfUser({   userName: this.userName,
+                                        email: localStorage.getItem('deviceUserEmail')
+               }).then(userData =>{
+
+                    console.log('|||  userData fecthed', userData)
+
+                    return updateDeviceUserCountries(this.userName, userData.countries)
+                    
+               })
+               .then( (result) => {
+                    console.log('after saving user own data', result)
+                    this.informUser(`Sukces - your own data updated!`)
+
+                    return this.startApp()
+               })
+                    
+          },
+          pushMyCountries:function(){
+               if (!this.userName ) return alert('unregistered user cant back up data online')
+               if (!navigator.onLine) return alert(`ooops, you're not online..`)
+
+               console.log('pushing my countries', this.userName)
+               const email = localStorage.getItem('deviceUserEmail')
+
+               sendCountryDataOfUser({email, userName: this.userName})
+               .then(()=>{
+
+               })
+               .catch(er=>{
+                    this.informUser(`Didnt work out as planned. Try again?`)
+               })
           },
           requestUsers:function(){
                let string = this.searchText
@@ -242,12 +429,12 @@ const app = new Vue({
                xhr.send( string)
 
           },
-          informUser: function(msg){
+          informUser: function(msg, millis = 3000){
                this.console = msg
 
                setTimeout(()=>{
                     this.console = undefined
-               },5000)
+               },millis)
           },
           followUser:function(email,userName){
                console.log('follow', email,userName)
@@ -263,7 +450,7 @@ const app = new Vue({
 
                          fetchCountriesOfUser({userName, email})
                          .then(setOtherUserIDBData)              // hard-replaces whole document with new data
-                         .then(self.reloadView)                    // here it copies data(countries etc) to device users
+                         .then(self.startApp)                    // here it copies data(countries etc) to device users
 
                     } else if (this.readyState == 4 && this.status == 400) { 
                          console.error('TRY AGAIN LATER')
@@ -301,12 +488,17 @@ const app = new Vue({
                }
           },
           addNewLocation: function(){
-               console.log(`new ${this.locationSet} is ${this.newLocation}`)
-               if (!this.newLocation) return alert('no name?');
+               
+               if (!this.newLocation) this.informUser('no name?',1500)
+               if (this.newLocation == 'all countries' || this.newLocation == 'all cities' || this.newLocation == 'all shops'){
+                         this.informUser(`sorry, '${this.newLocation}' is one of names that are not allowed`,3000)
+                         return this.newLocation = ''
+               }
+               //console.log(`new ${this.locationSet} is ${this.newLocation}`)
 
                const addLocation = addNewLocationToDB.bind(this)
-               return addLocation(this.locationSet, this.newLocation.toString() )
-               //return addNewLocationToDB(this.locationSet, this.newLocation)
+
+               return addLocation( this.locationSet, this.newLocation.toString() )
           },
           updateLocationSelect:function(index, event,requestedShopName){
                //console.log('slct', event.srcElement.selectedIndex)
@@ -327,11 +519,12 @@ const app = new Vue({
                //return console.log('name', name, 'event', event)
                
                getSubsetItems(this,index,name)
-                    .then(userOwnProducts =>{
+                    .then(initialOwnProducts =>{
                          // save last locations to local storage rather here?
+
+                         const userOwnProducts = initialOwnProducts.map(prod=>{prod.owner = this.userName || 0; return prod})
                          console.log('----- user own products:', userOwnProducts.length, userOwnProducts)
 
-                         userOwnProducts = userOwnProducts.map(prod=>{prod.owner = this.userName || 0; return prod})
                          // get products from each user in IDB: for current city, shop etc
                          getOtherUsersIDBData(this.followedUsers)
                          .then(users=>{
@@ -361,7 +554,8 @@ const app = new Vue({
 
                                    if (otherProds.length>0) finals = finals.concat(...otherProds)
                               }
-                              
+                              console.log('finals', finals)
+
                               return new Promise((resolve, reject)=>{
                                    // display products on screen
                                    resolve (this.currentDisplayedProducts = finals ) //[...finals]
@@ -458,16 +652,27 @@ const app = new Vue({
           },
           openNewProductForm:function(open){
                this.newProductForm = open
+               //if (open)
+
+               if (open === false){
+                    this.modifyingProduct = false;
+               }
           },
           newProductSubmit: function($event){
                $event.preventDefault()
                
-               if (!this.newProductPreview) return this.informUser(`picture of product is required`)
-               //const form = document.querySelector('form[name="newProductForm"')
+               if (!this.newProductPreview) 
+                         return this.informUser(`picture of product is required`,2000)
+               if (!this.newProductType || !this.newProductName ) 
+                         return this.informUser(`product type and name are required`,3000)
+               if (! document.querySelector('input[name="newRating"]:checked')) 
+                         return this.informUser('select product rating',2500)
+
+
                const rating = document.querySelector('input[name="newRating"]:checked').value
 
                const fileName =`${window.localStorage.getItem('deviceUserEmail')
-                               }_D${getFormattedDate(this.newProductPreviewLastModified)}`.toString()
+                               }_D${getFormattedDate(this.newProductPreviewLastModified)}`
 
                console.log('submit', fileName)
                console.log(this.newProductType, this.newProductName, this.newProductDescription, this.newProductPrice, rating)
@@ -497,11 +702,20 @@ const app = new Vue({
                     if (x) return x
                })
                .then(y=>{
-                    addProduct('product', productToAdd)
+                    return addProduct('product', productToAdd)
+               })
+               .then(()=>{
+                    const uploadToDBX = uploadImgToDropbox.bind(self)
+
+                    /*uploadToDBX(fileName, window.toUploadToDropbox)
+                    .then(()=>{
+                         window.toUploadToDropbox = undefined
+                    })*/
+
                     this.newProductForm = false
                     this.newProductPreview = false
-
-               }).catch(er=>alert('huge arror storing new product'))
+               })
+               .catch(er=>alert('huge arror storing new product'))
                
                const addProduct = addNewLocationToDB.bind(this)
 
@@ -510,6 +724,7 @@ const app = new Vue({
           imageAdded:function(ev){
 
                     const reader = new FileReader(),
+                         readBin = new FileReader(),
                          self = this,
                          file = ev.target.files[0]
                     
@@ -521,7 +736,7 @@ const app = new Vue({
 
                          //let data = fileObj.target.result
                          
-                         img.onload = function(y){
+                         img.onload = function(){
 
                               if (this.width>this.height) return alert(`take image with vertical orientation please`)
 
@@ -547,11 +762,22 @@ const app = new Vue({
 
                               window.canvasData = canvas.toDataURL() // canvas data for new image to save to IDB
 
-                              //let w = window.open()
-                              //w.document.write(`<img src="${canvas.toDataURL()}" >`)
+                              canvas.toBlob(function(blob){
+                                   
+                                   let reader = new FileReader()
+                                   reader.onloadend = function(){
+                                        console.log('binary result', reader.result)//, reader.result.substr(0,100) + '...')
+                                        window.toUploadToDropbox = reader.result    // global var is used later to upload
+
+                                        //const upload = uploadImgToDropbox.bind(self)
+
+                                        //upload(undefined, reader.result,  ev.target.files[0], blob)//,
+                                        //uploadImgToDropbox(undefined, reader.result)
+                                   }
+                                   reader.readAsArrayBuffer(blob)    //reader.readAsBinaryString(blob)
+                              })
                          }
                          img.src = fileObj.target.result
-                         
                     }
                     
                     reader.readAsDataURL(ev.target.files[0])
@@ -567,6 +793,7 @@ const app = new Vue({
                //   to new current country city shop
 
                this.modifyingProduct = true // to show correct submit button
+               this.productModified = prod
 
                if (prod.type) this.newProductType = prod.type
                if (prod.name) this.newProductName = prod.name
@@ -601,11 +828,83 @@ const app = new Vue({
           },
           applyProductChanges:function(ev){
                ev.preventDefault()
-               console.log('prod change')
+               console.log('prod change', this.productModified)
+
+               
+               getOwnDBData(this.userName)
+               .then(ownData=>{
+                    console.log('    ownData',ownData)
+
+                    let country = ownData.find(country=>country.name == this.currentCountry)
+                    let city = country.cities.find(city=> city.name == this.currentCity)
+                    let shop = city.shops.find(shop=>shop.name== this.currentShop)
+                    let prod = shop.products.find(prod=>prod.name === this.productModified.name)
+
+
+                    for (let prop in prod){
+                         if (prop!=='imgName') delete prod[prop]
+                    }
+               
+
+                    if ( this.newProductType) prod.type = this.newProductType
+                    if ( this.newProductName) prod.name = this.newProductName
+                    if ( this.newProductDescription) prod.descr = this.newProductDescription
+                    if ( this.newProductDescriptionLong)  prod.descrLong = this.newProductDescriptionLong
+                    if ( this.newProductPrice) prod.price = parseFloat(this.newProductPrice)
+
+                    prod.rating = document.querySelector('input[name="newRating"]:checked').value
+
+                    console.log('prod edited to:', prod)
+
+                    updateDeviceUserCountries(this.userName, ownData)
+                    .then(this.afterProductFormSubmitted)
+               })
+
           },
           deleteProduct:function(ev){
                ev.preventDefault()
-               console.log('delete')
+
+               if (confirm('Delete this product?')){
+               
+               //console.log('delete', this.productModified)
+
+               // find product among my prods
+               getOwnDBData(this.userName)
+               .then(ownData=>{
+                    console.log('    ownData',ownData)
+
+                    let country = ownData.find(country=>country.name == this.currentCountry)
+                    let city = country.cities.find(city=> city.name == this.currentCity)
+                    let shop = city.shops.find(shop=>shop.name== this.currentShop)
+                    const i = shop.products.findIndex(prod=>prod.name === this.productModified.name)
+
+                    shop.products.splice(i,1)
+                    console.log('    shop?', shop)
+
+                    // if it has imgName, delete image data from IDB
+                    if (this.productModified.imgName && navigator.onLine) {
+                         //deleteImageFromIDB(this.productModified.imgName)
+
+                         const email = localStorage.getItem('deviceUserEmail')
+
+                         deleteDropboxImg(email, this.productModified.imgName)
+                         .then(status=>{
+                              deleteImageFromIDB(this.productModified.imgName)
+                              updateDeviceUserCountries(this.userName, ownData).then(this.afterProductFormSubmitted)   
+                         })
+                    } else if (this.productModified.imgName && !navigator.onLine){
+
+                         // create queue of files to get deleted from Dropbox
+                    }
+                    
+               })
+               }
+          },
+          afterProductFormSubmitted:function(){
+               this.modifyingProduct = false    // hides Modify and Delete buttons
+               this.newProductPreview = false   // to hide canvas
+               this.reloadView()
+               return this.switchScreen('main')
           },
           reloadView:function(){
                     console.log('RELOADING VIEW')
@@ -630,7 +929,6 @@ const app = new Vue({
                          return copyUserData(Users, own)
 
                          function copyUserData(users, owndata){
-                              //console.log('EQUAL', ownCountries == owndata)
                               
                               return new Promise((resolve, reject)=>{
                                    const sets = ['countries','cities','shops','products']
@@ -727,12 +1025,12 @@ const app = new Vue({
                     .then(final=>{
                          console.log('somethingChanged? ',somethingChanged)
                          //if (somethingChanged) 
-                         console.log('location data to save', final) //  , final===own
+                         console.log('reload view - location data to save', final) //  , final===own
 
                          // save each country without prods to device user IDB
                          if (somethingChanged) {
                               updateDeviceUserCountries(this.userName, final)   // store everything to deviceUser IDB
-                              .then(initializeLocationSelects(this, final))      // update screen w new data available
+                              .then(initializeLocationSelects(this, final))     // update screen w new data available
 
                          } else return initializeLocationSelects(this, final)
                     })
@@ -753,31 +1051,30 @@ const app = new Vue({
 
                getOwnDBData(this.userName)
 
-               // try to get other's MDB data to update IDB
+               
                .then( ownData =>{  
 
                     if (!this.userName || !this.followedUsers) return initializeLocationSelects(this, ownData)
 
                     ownCountries = ownData
 
-                    
+                    // try to get other's MDB data to update IDB
                     if (navigator.onLine){
-                         const fetchedData = this.followedUsers.map(fetchCountriesOfUser) // get new data for each user
-                         //console.log('nav online - fetched', fetchedData)
+                         const fetchedCountryData = this.followedUsers.map(fetchCountriesOfUser) // get new data for each user
+                         //console.log('nav online - fetched', fetchedCountryData)
 
-                         Promise.all(fetchedData)
+                         Promise.all(fetchedCountryData)
                          .then(userData=>{   // store new user data
-                              console.log('nav online - fetched', fetchedData)
+                              console.log('nav online - fetched', fetchedCountryData)
                               const saved = userData.map(user=>setOtherUserIDBData(user))
                               
                               return Promise.all(saved)
                          })
                          
-                         .then(saved=>{      // reload view where new locations get copied to users countries
+                         .then(saved=>{      // reloadView() is where new locations get copied to users countries
 
-                              console.log('saved? other users data', saved)
-                              //return 
-                              this.reloadView()//getOtherUsersIDBData(this.followedUsers)
+                              console.log('starting app - other users data', saved)
+                              return this.reloadView()     //getOtherUsersIDBData(this.followedUsers)
 
                          })
                          .catch(er=>console.error('error in online branch',er))
@@ -917,7 +1214,6 @@ const app = new Vue({
                          }
                     }
                })
-               //})
                .catch( er => {
                     
                     if (er===null){  //console.log('- - - will initialize Country data')
@@ -939,15 +1235,168 @@ const app = new Vue({
      mounted: function(){
           window.initializeLocationSelects = initializeLocationSelects.bind(this)  // its used on few occasions w different contexts
           
+          this.startApp()
+
+          // should unregistered user be able to upload pics to his dropbox?
+
+          // check logged in user ('deviceUserEmail' is set?) and find out if he got new dropbox token
+          // if yes, update his MDB token field
+          checkDrBxToken()
+
           //window.addNewLocationToDB = addNewLocationToDB.bind(this)
           //console.log( window.addNewLocationToDB == addNewLocationToDB, addNewLocationToDB)
 
-          this.startApp()
+          
      },
      created:function(){
           //console.log('CREATED')
      }
 })
+
+const getMyPic = ()=>{
+          let dbximg = 'https://www.dropbox.com/s/jl15lcir35926i5/okram%40protonmail.ch_D2018-01-12_T22-09-07.jpg'
+          //  https://www.dropboxforum.com/t5/API-support/CORS-issue-when-trying-to-download-shared-file/td-p/82466/page/2
+
+          let d2 = 'https://dl.dropboxusercontent.com/s/jl15lcir35926i5/okram%40protonmail.ch_D2018-01-12_T22-09-07.jpg' 
+          const req1 = new Request(d2,{  // './test1.png'
+               headers: new Headers({
+                    //'Content-Type': 'image/png'
+               }),
+               method: 'GET'
+               
+               //body: JSON.stringify({ email, token })
+          })
+          var image = new Image(); //image.crossOrigin = "Anonymous"
+
+          fetch(req1)
+          .then(result=>{
+               console.log('img result',result)
+               return  result.blob()//result.arrayBuffer()//.blob()
+               
+               
+          }).then(blob=>{
+               console.log('res', blob)
+               let r = new FileReader()
+               r.onload = function(obj){
+                    
+                    
+                    //let x = fin.replace('data:text/html', 'data:image/png')
+                    image.src = obj.target.result //URL.createObjectURL(blob);
+                    //document.body.appendChild(image);
+               }
+               r.readAsDataURL(blob)
+               
+               
+               //const URL = window.URL || window.webkitURL;
+               //console.log(URL)
+               //image.src = URL.createObjectURL(blob);
+          })
+          
+          /*let xhr = new XMLHttpRequest()
+          if ("withCredentials" in xhr) { console.log('with creds') }
+          xhr.onreadystatechange = function(){
+               if (this.readyState == 4 && this.status == 200) {
+                    console.log(this.response, this.responseText, this.responseType)
+
+               } else console.log(this.status, this.response)
+          }
+          xhr.open('GET', CE + 'https://www.dropbox.com/s/jl15lcir35926i5/okram%40protonmail.ch_D2018-01-12_T22-09-07.jpg?dl=0', true)
+          console.log(xhr)
+          //xhr.send()*/
+}
+//getMyPic()
+
+const deleteDropboxImg = (email, fileName)=>{
+
+     return new Promise((resolve, reject)=>{
+          if (!email || ! fileName) reject(null)
+
+          const xhr = new XMLHttpRequest()
+          xhr.onreadystatechange = function(){
+               if (this.readyState == 4 && this.status == 200) {
+
+                    console.log('SUKCES deleting dbx image', this.response, this.responseText)
+                    resolve(this.status)
+
+               } else console.log('so?', this.status, this.responseText) //this.getAllResponseHeaders())
+          }
+          xhr.open('POST', serverURL + '/API/deleteDrbxImage' + `?email=${email}&fileName=${fileName}` , true)
+          xhr.send()
+     })
+}
+
+
+// set image property so its accessible publicly any time it ll be needed by others
+let uploadImgToDropbox = function(newName='test', imgData, file, blobb){
+     return new Promise((resolve, reject)=>{
+
+          let fileName = newName// + new Date()
+          //console.log(this.userName,'fileName', fileName, file, blobb)
+
+          const email = localStorage.getItem('deviceUserEmail')
+          const toSend = { email }//data: JSON.stringify(imgData)
+          
+          // https://stackoverflow.com/questions/9395911/send-a-file-as-multipart-through-xmlhttprequest
+          // https://stackoverflow.com/questions/15001822/sending-large-image-data-over-http-in-node-js
+          // https://stackoverflow.com/questions/5052165/streaming-an-octet-stream-from-request-to-s3-with-knox-on-node-js
+          // https://stackoverflow.com/questions/3146483/html5-file-api-read-as-text-and-binary
+          /*let fd = new FormData()
+               fd.append('json', JSON.stringify(toSend))
+               fd.append('imgData', imgData )  // stringify imgData didnt work
+               //fd.append('blob', new Blob([ file ] ))
+               fd.append('ffile',  file  )
+               fd.append('blobb', blobb )
+          */
+          /*fetch(serverURL + '/API/postPicToDrbx' + '?' + 'name='+ this.userName,{
+               method: 'POST',
+               body: imgData
+               })*/
+
+               /*fd.append('json_data', JSON.stringify({a: 1, b: 2}))
+               fd.append('binary_data', new Blob([binary.buffer])
+          */
+
+          const xhr = new XMLHttpRequest()
+          xhr.onreadystatechange = function(){
+               if (this.readyState == 4 && this.status == 200) {
+
+                    console.log('SUKCES uploading to dbx', this.response, this.responseText)
+                    resolve(this.status)
+
+               } else console.log('so?', this.status, this.responseText) //this.getAllResponseHeaders())
+          }
+          xhr.open('POST', serverURL + '/API/postPicToDrbx' + `?email=${email}&fileName=${fileName}` , true)
+          xhr.send(imgData)
+          // 
+          //
+          //xhr.send(fd) // imgData
+          
+               /*let params = {
+                    "path": fileName,
+                    "mode": "add"
+               }  // "autorename": true, "mute": false
+               params = JSON.stringify(params)  
+
+               let bearer = "Bearer " + window.accessToken
+               bearer = JSON.stringify(bearer)
+               console.log('bearer', bearer)
+               
+               xhr.open('POST','https://content.dropboxapi.com/2/files/upload', true)
+               xhr.setRequestHeader("Authorization", bearer)
+               xhr.setRequestHeader("Dropbox-API-Arg", params)
+               xhr.setRequestHeader('Content_Type','application/octet-stream')
+
+               //xhr.setRequestHeader("Authorization", "Bearer qAZQ0ocdGioAAAAAAAACt4axxwChUOZ5U2XLXB1hvSzxXai4btwbq7O3LjzMst5c")
+               //xhr.setRequestHeader("Dropbox-API-Arg", obj)
+               //xhr.responseType = 'blob';
+               //xhr.send()
+               
+               
+          xhr.send(imgData)*/
+          // later set images to be accessible from dropbox publicly?
+     })
+}
+
 
 function getImagesData(names){
 
@@ -966,112 +1415,164 @@ function getImagesData(names){
      return Promise.all(promises)
 }
 
-
 function addNewLocationToDB(set, toAdd){
-     console.log('add', set)
+     console.log('adding', set, this.userName)
      //return console.log('this', this)
-     //   under what country to add it
-     //   should i update whole country document?
-     
-     let somethingChanged = '333' //false
-     const copyData = new Function('users', 'owndata', copyUserData_text)
-     const self = this
-     
-     let toSave
+     getOwnDBData(this.userName)
+     .then( ownCountries =>{
+          if (set!=='product') toAdd = toAdd.toString()
 
-     if (set =='country'){
-                    console.log(`this happens 1`)
-                    let index = this.countries.findIndex(country=>country.name == toAdd)
+          let somethingChanged = '333' //false
+          const copyData = new Function('users', 'owndata', copyUserData_text)
+          const self = this
+          
+          let toSave, lastLocs = []
 
-                    if (index>-1) { return alert(`'${toAdd}' is already in your database`) }
+          if (set =='country'){
+                         
+                         //let index = this.countries.findIndex(country=>country.name == toAdd)
+                         let index = ownCountries.findIndex(country=>country.name == toAdd)
 
-                    const newCountry = 
-                              [{   name: toAdd, 
-                                   cities: [{
-                                        name: 'all cities', 
+                         if (index>-1) { return self.informUser(`'${toAdd}' is already in your database`) }
+
+                         const newCountry = 
+                                   [{   name: toAdd, 
+                                        cities: [{
+                                             name: 'all cities', 
+                                             shops:[{
+                                                  name: 'all shops',
+                                                  products: []
+                                             }]
+                                        }]
+                                   }]
+                         
+                         toSave = [newCountry]
+                         lastLocs.push({key: 'countries', value: toAdd})
+                         lastLocs.push({key: 'cities', value: 'all cities'})
+                         lastLocs.push({key: 'shops',  value: 'all shops'})
+
+          } else if (set =='city') { console.log(`this happens 1`)
+
+                    //let countryData = this.countries.find(cntry=> cntry.name == this.currentCountry)
+                    let countryData = ownCountries.find(cntry=> cntry.name == this.currentCountry)
+                    
+                    // check if this city is already there
+                    let index = countryData.cities.findIndex(city=>city.name == toAdd)
+
+                    if (index>-1){ return alert(`'${toAdd}' is already in your database`) }
+                    
+
+                    countryData.cities.push({
+                                        name: toAdd, 
                                         shops:[{
                                              name: 'all shops',
                                              products: []
                                         }]
-                                   }]
-                              }]
-                    
-                    toSave = [newCountry]
-                    
+                    })
+                    console.log( '   adding city',"\n",countryData)
+                    console.log( '   original',"\n",ownCountries)
 
-     } else if (set =='city') { console.log(`this happens 1`)
+                    toSave = [[countryData]]
 
-               let countryData = this.countries.find(cntry=> cntry.name == this.currentCountry)
+                    lastLocs.push({key: 'cities', value: toAdd})
+                    lastLocs.push({key: 'shops', value: 'all shops'})
+
+          } else if (set =='shop') {  console.log(`this happens 1`)
+
+               //let countryData = this.countries.find(cntry=> cntry.name ===this.currentCountry)
+               let countryData = ownCountries.find(cntry=> cntry.name ===this.currentCountry)
                
-               // check if this city is already there
-               let index = countryData.cities.findIndex(city=>city.name == toAdd)
+               let cityData = countryData.cities.find(city=> city.name === this.currentCity)
+               console.log( '   adding shop ', toAdd, 'to', cityData.name)
 
-               if (index>-1){ return alert(`'${toAdd}' is already in your database`) }
+               // check its not there already
+               if (cityData.shops.findIndex(shop=>shop.name===toAdd) > -1)
+                         return alert(`'${toAdd}' is already in your database`)
                
 
-               countryData.cities.push({
-                                   name: toAdd, 
-                                   shops:[{
-                                        name: 'all shops',
+               cityData.shops.push(
+                                        {
+                                        name: toAdd,
                                         products: []
-                                   }]
-               })
-               console.log( '   adding city',"\n",countryData)
-               console.log( '   original',"\n",this.countries)
+                                        }
+                                   )
 
+               console.log('   new entry now', this.currentCountry, countryData)
+               
                toSave = [[countryData]]
+               lastLocs.push({key:'shops', value: toAdd})
+               
+          } else if (set=='product'){
+               //let countryData = this.countries.find(cntry=> cntry.name=== this.currentCountry)
+               let countryData = ownCountries.find(cntry=> cntry.name=== this.currentCountry)
+               let cityData = countryData.cities.find(city=> city.name === this.currentCity)
+               let shopData = cityData.shops.find(shop=> shop.name=== this.currentShop)
 
-     } else if (set =='shop') {  console.log(`this happens 1`)
-
-          let countryData = this.countries.find(cntry=> cntry.name ===this.currentCountry)
+               shopData.products.push(toAdd)
+               console.log('shopData', shopData)
+               console.log('countryData', countryData)
+               toSave = [[countryData]]
+          }
           
-          let cityData = countryData.cities.find(city=> city.name === this.currentCity)
-          console.log( '   adding shop ', toAdd, 'to', cityData.name)
+          // 
 
-          // check its not there already
-          if (cityData.shops.findIndex(shop=>shop.name===toAdd) > -1)
-                    return alert(`'${toAdd}' is already in your database`)
-          
+          //copyData( toSave, [...this.countries] )
+          copyData( toSave, [...ownCountries] )
+          .then(final=>{
+                    console.log('location data to save', final===this.countries, final)
 
-          cityData.shops.push(
-                                   {
-                                     name: toAdd,
-                                     products: []
-                                   }
-                              )
 
-          console.log('   new entry now', this.currentCountry, countryData)
-          
-          toSave = [[countryData]]
-          
-     } else if (set=='product'){
-          let countryData = this.countries.find(cntry=> cntry.name=== this.currentCountry)
-          let cityData = countryData.cities.find(city=> city.name === this.currentCity)
-          let shopData = cityData.shops.find(shop=> shop.name=== this.currentShop)
+                    lastLocs.forEach(item=>setLastSelection(item.key, item.value))
 
-          shopData.products.push(toAdd)
-          console.log('shopData', shopData)
-          console.log('countryData', countryData)
-          toSave = [[countryData]]
-     }
+                    return updateDeviceUserCountries(this.userName, final)
+                              
+          }).then(result=>{
+                    console.log('result', result)
+                    return initializeLocationSelects(this, result)
+          })
+          .catch(er=>{
+               alert('add Loc to DB er' + er)
+          })
+
+
+          return this.switchScreen('main')
+     })
+}
+
+
+const sendCountryDataOfUser = userObj =>
+
+     new Promise((resolve, reject)=>{
+
+          getOwnDBData(userObj.userName)
+          .then(countries=>{
+               console.log(`data of - ${userObj.userName} - to be pushed to MDB`, countries)
+
+               const request = new Request(serverURL + 'API/pushCountriesOfUser',{
+                    headers: new Headers({
+                         'Content-Type': 'application/json'
+                    }),
+                    method: 'POST',
+                    mode:'no-cors',
+                    body: JSON.stringify({
+                         email: userObj.email,
+                         countries
+                    })
+               })
      
 
-     copyData( toSave, [...this.countries] )
+               fetch(request).then(result =>{
+                    console.log('result ',result)
+                    resolve(null)
+               })
 
-     .then(final=>{
-               console.log('location data to save', final===this.countries, final)
 
-               return updateDeviceUserCountries(this.userName, final)
-                         
-     }).then(result=>{
-               console.log('result', result)
-               return initializeLocationSelects(this, result)
+          }).catch(er=>{
+               console.error(er)
+               reject(er)
+          })
      })
-     .catch(er=>{alert('add Loc to DB er' + er)})
 
-
-     return this.switchScreen('main')
-}
 
 
 function fetchCountriesOfUser(user){
@@ -1086,7 +1587,7 @@ function fetchCountriesOfUser(user){
                          const result = JSON.parse(this.responseText)
                          result.userName = user.userName
 
-                         console.log('   got user data from server',result.email, result)
+                         //console.log('   got user data from server',result.email, result)
                          resolve(result)
 
                } else if (this.readyState == 4 && this.status!=200) reject()
@@ -1097,7 +1598,7 @@ function fetchCountriesOfUser(user){
 }
 
 function setOtherUserIDBData(allData){
-     console.log('allData to IDB >', allData)
+     console.log('allData to put to IDB >', allData)
      return new Promise((resolve, reject)=>{
 
           users_followed.userData.put(allData)
@@ -1262,16 +1763,17 @@ function initializeLocationSelects(self, countries){
      self.currentShop =  getLastSelection('shops')  || 'all shops'
      //console.log(self.currentShop)
 
-     let gz = self.updateLocationSelect(2, null,self.currentShop)
+     // 2 stands for 'shop/s' in array, null for event, currentShop = requested shop name
+     let somevar = self.updateLocationSelect(2, null, self.currentShop)
 
-     console.log('promise?', gz)
-     /*gz.then(x=>{  //it doesnt return promise
+     //console.log('promise?', somevar)
+     /*somevar.then(x=>{  //it doesnt return promise
           console.log('after updated loaction', x)
      })*/
-     //console.log('this happens last')
+     
+
      // this is probably not needed anymore
-     self.currentDisplayedProducts = self.shops.find(shop=>shop.name === self.currentShop).products
-     //console.log('curr prods',self.currentDisplayedProducts)
+     //self.currentDisplayedProducts = self.shops.find(shop=>shop.name === self.currentShop).products
 }
 
 
@@ -1374,8 +1876,8 @@ function copyUserData(users, owndata){
 
 
 function updateDeviceUserCountries(userName=0, countries){
-     //console.log(`save to user: ${userName} ${countries}`)
-     let obj = {userName, countries }
+     console.log(`save to user: ${userName} ${countries}`)
+     let obj = { userName, countries }
      //console.log(obj)
      return new Promise((resolve, reject)=>{
 
@@ -1521,12 +2023,61 @@ function saveImageToIDB(fileName){
      })
 }
 
+//let testDel = 'okram@protonmail.ch_D2018-01-12_T22-09-07'
+//deleteImageFromIDB(testDel).then(()=>{console.log('deleted?')})
+
+function deleteImageFromIDB(fileName){
+     //console.log(fileName, picturesDB.item)
+     return new Promise((resolve, reject)=>{
+          
+
+          picturesDB.item.where('fileName').equals(fileName).delete() //(fileName)  
+          .then(something=>{
+
+               console.log('deleted?',something)
+               resolve(something)
+          })
+          .catch(er=>console.error(er))        
+     })
+
+}
+
 function nodeListToArray(list){
      let result = []
      for (let item of list) result.push(item)
      
      return result
 }
+
+
+
+const getPicURL = function(entry){
+
+     return new Promise((resolve, reject)=>{
+
+          let obj = {"path": entry.path_display }
+          obj = JSON.stringify( entry) 
+          const xhr = new XMLHttpRequest()
+          xhr.onreadystatechange = function(){
+
+               if (this.readyState == 4 && this.status == 200) {
+
+                         console.log('SUKCES', this.status)//this.response, this.responseText)
+                         resolve(this.responseText)
+
+               } else console.log(this.status)
+          }
+          xhr.open('POST', serverURL + '/API/getPicURL', true)
+          xhr.send(obj)
+     })
+}
+
+
+
+
+
+
+
 /*let somelet = 44
 const funText = 'console.log("hi " + somelet)'
 function fun(){

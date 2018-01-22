@@ -1,0 +1,1 @@
+{"dependencies":[{"name":"./db.json","loc":{"line":11,"column":25}}],"generated":{"js":"/*!\n * mime-db\n * Copyright(c) 2014 Jonathan Ong\n * MIT Licensed\n */\n\n/**\n * Module exports.\n */\n\nmodule.exports = require('./db.json')\n"},"hash":"0ffd51599e4aa79fe97c1b313eb34b0b"}

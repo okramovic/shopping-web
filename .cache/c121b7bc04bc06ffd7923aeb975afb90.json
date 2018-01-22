@@ -1,0 +1,1 @@
+{"dependencies":[],"generated":{"js":"function getBaseURL(host) {\n  return 'https://' + host + '.dropboxapi.com/2/';\n}\n\nmodule.exports = getBaseURL;\n"},"hash":"cc21a968adf87620c6d7199519446cce"}
