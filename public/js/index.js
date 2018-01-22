@@ -296,7 +296,7 @@ const app = new Vue({
                          self.informUser(`You hip'n'roll! Now logged iN`) // rock'n'hop
                          self.screen = 'main'
                          
-                         return self.startApp() //self.reloadView()
+                         return self.startApp()
 
                     } else if (this.readyState == 4 && this.status == 400){
 
@@ -336,7 +336,7 @@ const app = new Vue({
                               //.then(name=>self.userName = name)
                               self.screen = 'main'
 
-                              return self.startApp()  // self.reloadView()
+                              return self.startApp()
 
                     } else if (this.readyState == 4 && this.status ==400)
 
@@ -362,7 +362,7 @@ const app = new Vue({
                
                //this.userName = undefined
                console.log('now will reload app')
-               return this.startApp() // this.reloadView()//
+               return this.startApp()
           },
           requestDropboxAccess:function(){
                
@@ -450,7 +450,7 @@ const app = new Vue({
 
                          fetchCountriesOfUser({userName, email})
                          .then(setOtherUserIDBData)              // hard-replaces whole document with new data
-                         .then(self.reloadView)                    // here it copies data(countries etc) to device users
+                         .then(self.startApp)                    // here it copies data(countries etc) to device users
 
                     } else if (this.readyState == 4 && this.status == 400) { 
                          console.error('TRY AGAIN LATER')
@@ -488,12 +488,17 @@ const app = new Vue({
                }
           },
           addNewLocation: function(){
-               console.log(`new ${this.locationSet} is ${this.newLocation}`)
-               if (!this.newLocation) return alert('no name?');
+               
+               if (!this.newLocation) this.informUser('no name?',1500)
+               if (this.newLocation == 'all countries' || this.newLocation == 'all cities' || this.newLocation == 'all shops'){
+                         this.informUser(`sorry, '${this.newLocation}' is one of names that are not allowed`,3000)
+                         return this.newLocation = ''
+               }
+               //console.log(`new ${this.locationSet} is ${this.newLocation}`)
 
                const addLocation = addNewLocationToDB.bind(this)
-               return addLocation(this.locationSet, this.newLocation.toString() )
-               //return addNewLocationToDB(this.locationSet, this.newLocation)
+
+               return addLocation( this.locationSet, this.newLocation.toString() )
           },
           updateLocationSelect:function(index, event,requestedShopName){
                //console.log('slct', event.srcElement.selectedIndex)
@@ -700,12 +705,12 @@ const app = new Vue({
                     return addProduct('product', productToAdd)
                })
                .then(()=>{
-                    const upload = uploadImgToDropbox.bind(self)
+                    const uploadToDBX = uploadImgToDropbox.bind(self)
 
-                    upload(fileName, window.toUploadToDropbox)
+                    /*uploadToDBX(fileName, window.toUploadToDropbox)
                     .then(()=>{
                          window.toUploadToDropbox = undefined
-                    })
+                    })*/
 
                     this.newProductForm = false
                     this.newProductPreview = false
@@ -762,7 +767,7 @@ const app = new Vue({
                                    let reader = new FileReader()
                                    reader.onloadend = function(){
                                         console.log('binary result', reader.result)//, reader.result.substr(0,100) + '...')
-                                        window.toUploadToDropbox = reader.result
+                                        window.toUploadToDropbox = reader.result    // global var is used later to upload
 
                                         //const upload = uploadImgToDropbox.bind(self)
 
@@ -924,7 +929,6 @@ const app = new Vue({
                          return copyUserData(Users, own)
 
                          function copyUserData(users, owndata){
-                              //console.log('EQUAL', ownCountries == owndata)
                               
                               return new Promise((resolve, reject)=>{
                                    const sets = ['countries','cities','shops','products']
@@ -1021,12 +1025,12 @@ const app = new Vue({
                     .then(final=>{
                          console.log('somethingChanged? ',somethingChanged)
                          //if (somethingChanged) 
-                         console.log('location data to save', final) //  , final===own
+                         console.log('reload view - location data to save', final) //  , final===own
 
                          // save each country without prods to device user IDB
                          if (somethingChanged) {
                               updateDeviceUserCountries(this.userName, final)   // store everything to deviceUser IDB
-                              .then(initializeLocationSelects(this, final))      // update screen w new data available
+                              .then(initializeLocationSelects(this, final))     // update screen w new data available
 
                          } else return initializeLocationSelects(this, final)
                     })
@@ -1047,31 +1051,30 @@ const app = new Vue({
 
                getOwnDBData(this.userName)
 
-               // try to get other's MDB data to update IDB
+               
                .then( ownData =>{  
 
                     if (!this.userName || !this.followedUsers) return initializeLocationSelects(this, ownData)
 
                     ownCountries = ownData
 
-                    
+                    // try to get other's MDB data to update IDB
                     if (navigator.onLine){
-                         const fetchedData = this.followedUsers.map(fetchCountriesOfUser) // get new data for each user
-                         //console.log('nav online - fetched', fetchedData)
+                         const fetchedCountryData = this.followedUsers.map(fetchCountriesOfUser) // get new data for each user
+                         //console.log('nav online - fetched', fetchedCountryData)
 
-                         Promise.all(fetchedData)
+                         Promise.all(fetchedCountryData)
                          .then(userData=>{   // store new user data
-                              console.log('nav online - fetched', fetchedData)
+                              console.log('nav online - fetched', fetchedCountryData)
                               const saved = userData.map(user=>setOtherUserIDBData(user))
                               
                               return Promise.all(saved)
                          })
                          
-                         .then(saved=>{      // reload view where new locations get copied to users countries
+                         .then(saved=>{      // reloadView() is where new locations get copied to users countries
 
-                              console.log('saved? other users data', saved)
-                              //return 
-                              this.reloadView()//getOtherUsersIDBData(this.followedUsers)
+                              console.log('starting app - other users data', saved)
+                              return this.reloadView()     //getOtherUsersIDBData(this.followedUsers)
 
                          })
                          .catch(er=>console.error('error in online branch',er))
@@ -1211,7 +1214,6 @@ const app = new Vue({
                          }
                     }
                })
-               //})
                .catch( er => {
                     
                     if (er===null){  //console.log('- - - will initialize Country data')
@@ -1414,109 +1416,127 @@ function getImagesData(names){
 }
 
 function addNewLocationToDB(set, toAdd){
-     console.log('add', set)
+     console.log('adding', set, this.userName)
      //return console.log('this', this)
-     //   under what country to add it
-     //   should i update whole country document?
-     
-     let somethingChanged = '333' //false
-     const copyData = new Function('users', 'owndata', copyUserData_text)
-     const self = this
-     
-     let toSave
+     getOwnDBData(this.userName)
+     .then( ownCountries =>{
+          if (set!=='product') toAdd = toAdd.toString()
 
-     if (set =='country'){
-                    console.log(`this happens 1`)
-                    let index = this.countries.findIndex(country=>country.name == toAdd)
+          let somethingChanged = '333' //false
+          const copyData = new Function('users', 'owndata', copyUserData_text)
+          const self = this
+          
+          let toSave, lastLocs = []
 
-                    if (index>-1) { return alert(`'${toAdd}' is already in your database`) }
+          if (set =='country'){
+                         
+                         //let index = this.countries.findIndex(country=>country.name == toAdd)
+                         let index = ownCountries.findIndex(country=>country.name == toAdd)
 
-                    const newCountry = 
-                              [{   name: toAdd, 
-                                   cities: [{
-                                        name: 'all cities', 
+                         if (index>-1) { return self.informUser(`'${toAdd}' is already in your database`) }
+
+                         const newCountry = 
+                                   [{   name: toAdd, 
+                                        cities: [{
+                                             name: 'all cities', 
+                                             shops:[{
+                                                  name: 'all shops',
+                                                  products: []
+                                             }]
+                                        }]
+                                   }]
+                         
+                         toSave = [newCountry]
+                         lastLocs.push({key: 'countries', value: toAdd})
+                         lastLocs.push({key: 'cities', value: 'all cities'})
+                         lastLocs.push({key: 'shops',  value: 'all shops'})
+
+          } else if (set =='city') { console.log(`this happens 1`)
+
+                    //let countryData = this.countries.find(cntry=> cntry.name == this.currentCountry)
+                    let countryData = ownCountries.find(cntry=> cntry.name == this.currentCountry)
+                    
+                    // check if this city is already there
+                    let index = countryData.cities.findIndex(city=>city.name == toAdd)
+
+                    if (index>-1){ return alert(`'${toAdd}' is already in your database`) }
+                    
+
+                    countryData.cities.push({
+                                        name: toAdd, 
                                         shops:[{
                                              name: 'all shops',
                                              products: []
                                         }]
-                                   }]
-                              }]
-                    
-                    toSave = [newCountry]
-                    
+                    })
+                    console.log( '   adding city',"\n",countryData)
+                    console.log( '   original',"\n",ownCountries)
 
-     } else if (set =='city') { console.log(`this happens 1`)
+                    toSave = [[countryData]]
 
-               let countryData = this.countries.find(cntry=> cntry.name == this.currentCountry)
+                    lastLocs.push({key: 'cities', value: toAdd})
+                    lastLocs.push({key: 'shops', value: 'all shops'})
+
+          } else if (set =='shop') {  console.log(`this happens 1`)
+
+               //let countryData = this.countries.find(cntry=> cntry.name ===this.currentCountry)
+               let countryData = ownCountries.find(cntry=> cntry.name ===this.currentCountry)
                
-               // check if this city is already there
-               let index = countryData.cities.findIndex(city=>city.name == toAdd)
+               let cityData = countryData.cities.find(city=> city.name === this.currentCity)
+               console.log( '   adding shop ', toAdd, 'to', cityData.name)
 
-               if (index>-1){ return alert(`'${toAdd}' is already in your database`) }
+               // check its not there already
+               if (cityData.shops.findIndex(shop=>shop.name===toAdd) > -1)
+                         return alert(`'${toAdd}' is already in your database`)
                
 
-               countryData.cities.push({
-                                   name: toAdd, 
-                                   shops:[{
-                                        name: 'all shops',
+               cityData.shops.push(
+                                        {
+                                        name: toAdd,
                                         products: []
-                                   }]
-               })
-               console.log( '   adding city',"\n",countryData)
-               console.log( '   original',"\n",this.countries)
+                                        }
+                                   )
 
+               console.log('   new entry now', this.currentCountry, countryData)
+               
                toSave = [[countryData]]
+               lastLocs.push({key:'shops', value: toAdd})
+               
+          } else if (set=='product'){
+               //let countryData = this.countries.find(cntry=> cntry.name=== this.currentCountry)
+               let countryData = ownCountries.find(cntry=> cntry.name=== this.currentCountry)
+               let cityData = countryData.cities.find(city=> city.name === this.currentCity)
+               let shopData = cityData.shops.find(shop=> shop.name=== this.currentShop)
 
-     } else if (set =='shop') {  console.log(`this happens 1`)
-
-          let countryData = this.countries.find(cntry=> cntry.name ===this.currentCountry)
+               shopData.products.push(toAdd)
+               console.log('shopData', shopData)
+               console.log('countryData', countryData)
+               toSave = [[countryData]]
+          }
           
-          let cityData = countryData.cities.find(city=> city.name === this.currentCity)
-          console.log( '   adding shop ', toAdd, 'to', cityData.name)
+          // 
 
-          // check its not there already
-          if (cityData.shops.findIndex(shop=>shop.name===toAdd) > -1)
-                    return alert(`'${toAdd}' is already in your database`)
-          
+          //copyData( toSave, [...this.countries] )
+          copyData( toSave, [...ownCountries] )
+          .then(final=>{
+                    console.log('location data to save', final===this.countries, final)
 
-          cityData.shops.push(
-                                   {
-                                     name: toAdd,
-                                     products: []
-                                   }
-                              )
 
-          console.log('   new entry now', this.currentCountry, countryData)
-          
-          toSave = [[countryData]]
-          
-     } else if (set=='product'){
-          let countryData = this.countries.find(cntry=> cntry.name=== this.currentCountry)
-          let cityData = countryData.cities.find(city=> city.name === this.currentCity)
-          let shopData = cityData.shops.find(shop=> shop.name=== this.currentShop)
+                    lastLocs.forEach(item=>setLastSelection(item.key, item.value))
 
-          shopData.products.push(toAdd)
-          console.log('shopData', shopData)
-          console.log('countryData', countryData)
-          toSave = [[countryData]]
-     }
-     
+                    return updateDeviceUserCountries(this.userName, final)
+                              
+          }).then(result=>{
+                    console.log('result', result)
+                    return initializeLocationSelects(this, result)
+          })
+          .catch(er=>{
+               alert('add Loc to DB er' + er)
+          })
 
-     copyData( toSave, [...this.countries] )
 
-     .then(final=>{
-               console.log('location data to save', final===this.countries, final)
-
-               return updateDeviceUserCountries(this.userName, final)
-                         
-     }).then(result=>{
-               console.log('result', result)
-               return initializeLocationSelects(this, result)
+          return this.switchScreen('main')
      })
-     .catch(er=>{alert('add Loc to DB er' + er)})
-
-
-     return this.switchScreen('main')
 }
 
 
@@ -1743,16 +1763,17 @@ function initializeLocationSelects(self, countries){
      self.currentShop =  getLastSelection('shops')  || 'all shops'
      //console.log(self.currentShop)
 
-     let gz = self.updateLocationSelect(2, null,self.currentShop)
+     // 2 stands for 'shop/s' in array, null for event, currentShop = requested shop name
+     let somevar = self.updateLocationSelect(2, null, self.currentShop)
 
-     console.log('promise?', gz)
-     /*gz.then(x=>{  //it doesnt return promise
+     //console.log('promise?', somevar)
+     /*somevar.then(x=>{  //it doesnt return promise
           console.log('after updated loaction', x)
      })*/
-     //console.log('this happens last')
+     
+
      // this is probably not needed anymore
-     self.currentDisplayedProducts = self.shops.find(shop=>shop.name === self.currentShop).products
-     //console.log('curr prods',self.currentDisplayedProducts)
+     //self.currentDisplayedProducts = self.shops.find(shop=>shop.name === self.currentShop).products
 }
 
 

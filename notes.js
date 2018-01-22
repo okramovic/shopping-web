@@ -17,14 +17,9 @@ user stories:
 
 
 TODO
-
-- user cannot add item 'all countries'/'all cities'/'all shops' as new location // it would create mess in DB
-- make newly added country/city/shop selected one
-- when pushing my local country data to MDB, make sure they go without owner field
 - when adding/deleting products and user is not online, create queue of future requests to be sent when app is online
           1) files to be uploaded
           2) files to be deleted
-
 - add small status bar at bottom, that indicate suxess uploading to DBX or removing file from DBX
 
 
@@ -80,7 +75,10 @@ done:
 - i can delete my products
 
 22 Jan
-- user cannot submit newe product without picture
+- user cannot submit new product without picture
 - make new-product-form main fields required
+- user cannot add item 'all countries'/'all cities'/'all shops' as new location // it would create mess in DB
+- make newly added country/city/shop selected one
+- when pushing my local country data to MDB, make sure they go without owner field
 
 */
