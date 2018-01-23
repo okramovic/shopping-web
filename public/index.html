@@ -141,8 +141,9 @@
                
                <div id="products" v-show="newProductForm === false && currentDisplayedProducts.length" class="vertical">
                          <br>
-                         <div v-for="prod in currentDisplayedProducts" 
-                              v-on:click="openProductForm(prod)" class="product">
+                         <div v-for="prod in currentDisplayedProducts" class="product"
+                              v-on:click="openProductForm(prod)" >
+                              <div v-if="!prod.owner">#</div>
                               <div class="imgContainer" v-if="prod.imgName">
                                    <img alt="img not here" >
                               </div>

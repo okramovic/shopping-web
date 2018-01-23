@@ -10701,8 +10701,7 @@ const app = new Vue({
                               console.log('users to add products from', users)
 
                               let finals = []
-                              if (userOwnProducts.length>0) 
-                                   finals = [...userOwnProducts]
+                              if (userOwnProducts.length>0) finals = [...userOwnProducts]
 
                               console.log('finals1', finals.length)
 
@@ -10727,8 +10726,8 @@ const app = new Vue({
                               console.log('finals', finals)
 
                               return new Promise((resolve, reject)=>{
-                                   // display products on screen
-                                   resolve (this.currentDisplayedProducts = finals ) //[...finals]
+                                   
+                                   resolve (this.currentDisplayedProducts = finals ) // display products on screen
 
                                    // check out vue cheatsheet (v-bind) to see how to attach classes
                               })
@@ -10767,9 +10766,7 @@ const app = new Vue({
                function getSubsetItems(self, outerIndex, name){
                     
                     if (outerIndex>4) return console.error('outerIndex>4  !!!',outerIndex) // this doesnt seem to ever happen
-
-                    //console.log('getting items of', name)
-                    //console.log('continue -- outerIndex, name',outerIndex, name)
+                    
                     return new Promise((resolve, rej)=>{
                          // 0 1 2
                          const currentX = currents[outerIndex]  // 'currentCountry' 'currentCity' 'currentShop'
@@ -10778,10 +10775,7 @@ const app = new Vue({
                                set      = selects[index],   // 'countries' 'cities' 'shops'
                                subSet   = selects[index+1]  // 'countries' 'cities' 'shops'
                                
-                         //console.log('self[currentX]', currentX, self[currentX])
-                         //console.log('set', set)
 
-                         //const name = event.srcElement.selectedOptions[0].text
                          if (set == 'products'){
                               //console.log('products', subSet, a.name, a[subSet], a.products)
                               //console.log('PRODUCTS!!!  ', a.products)
@@ -10792,26 +10786,22 @@ const app = new Vue({
                          let a = self[set].find(el=> el.name===name )
                          
                          
-
                          self[currentX] = name
-                         console.log('current',currentX, name)
-                         //console.log('    save ?', set, name)
                          setLastSelection(set, name)
+                         console.log('current',currentX, name)
+                         
+                         
 
                          self[subSet] = a[subSet]
                          //console.log('subSet', subSet)
                          
-                         //console.log('---',currents[outerIndex+1])
                          if (currents[outerIndex+1]=== undefined) {
                               //console.log('products?', a.name, a[subSet])
                               resolve(a[subSet]) 
-                              //return
                          }
                          else {
                               let string = currents[outerIndex+1].toString()
                               self[string]= a[subSet][0].name    // 'currentCountry' 'currentCity' 'currentShop'
-                              
-                              //console.log('[subSet]', self[subSet][0])  // name of default item to set
                               
                               resolve(
                                    getSubsetItems(self, outerIndex + 1, a[subSet][0].name)          
@@ -10954,9 +10944,10 @@ const app = new Vue({
                     //this.newProductForm = false
           },
           openProductForm:function(prod){
+               
+               if (!prod.owner) return this.informUser(`You can only modify your own products`,1500)
+               
                console.log('modify',prod)
-               if (!prod.owner) return alert(`You can only modify your own products`)
-
                // let currCountry = this.currentCountry, etc...
                //   get curr Country, City & Shop so if user would change them w form open,
                //   take it as indication he wants to place product 

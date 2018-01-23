@@ -6,8 +6,17 @@
           i might need both thumbnails 
               and full pic file   https://www.dropbox.com/developers/documentation/http/documentation#sharing-get_shared_link_file
               in different situations
- 
 
+- should user be able to add product to all countries/all cities/all shops?
+          i think yes, it might be needed in some cases
+               - example1: on airplane, EasyJet is in DB as country, but why force to specify it's cities and shops, thats nonsense)
+               - example2: Amazon - that would be in DB probably as country, 
+                         but user wouldnt give it it's own cities or shops in most cases
+
+
+getting products from more locations (all countries/all cities/all shops)
+     - how should mixed products be ordered on screen? (suppose they'll come from more users)
+     - will it be needed to be able to switch their order on screen?
 
 
 user stories:
@@ -17,6 +26,9 @@ user stories:
 
 
 TODO
+- use something looking better than annoying alerts (e.g. when i want to modify product thats not mine)
+          - product could turn red for half second or shake itself to indicate user cant change it
+          - also small status bar could appear with announcement whats wrong
 - when adding/deleting products and user is not online, create queue of future requests to be sent when app is online
           1) files to be uploaded
           2) files to be deleted
