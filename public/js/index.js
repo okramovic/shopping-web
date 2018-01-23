@@ -521,7 +521,9 @@ const app = new Vue({
                getSubsetItems(this,index,name)
                     .then(initialOwnProducts =>{
                          // save last locations to local storage rather here?
+                         return;
 
+                         // none of the below is needed now
                          const userOwnProducts = initialOwnProducts.map(prod=>{prod.owner = this.userName || 0; return prod})
                          console.log('----- user own products:', userOwnProducts.length, userOwnProducts)
 
@@ -555,16 +557,17 @@ const app = new Vue({
                               }
                               console.log('finals', finals)
 
-                              return new Promise((resolve, reject)=>{
+                              /*return new Promise((resolve, reject)=>{
                                    
                                    resolve (this.currentDisplayedProducts = finals ) // display products on screen
 
                                    // check out vue cheatsheet (v-bind) to see how to attach classes
-                              })
+                              })*/
+                              return finals
                                
                          })
                          .then(finals=>{
-                              console.log('finals2', finals.length)
+                              console.log('finals2', finals)
 
                               let prodsWImages = finals
                                                   .filter(prod=>!!prod.imgName)
@@ -605,14 +608,6 @@ const app = new Vue({
                                set      = selects[index],   // 'countries' 'cities' 'shops'
                                subSet   = selects[index+1]  // 'countries' 'cities' 'shops'
                                
-
-                         if (set == 'products'){
-                              //console.log('products', subSet, a.name, a[subSet], a.products)
-                              //console.log('PRODUCTS!!!  ', a.products)
-                              //resolve( getSubsetItems(self, outerIndex + 1, 'products') )
-                              return alert('oops')
-                         }
-
                          let a = self[set].find(el=> el.name===name )
                          
                          
@@ -697,10 +692,10 @@ const app = new Vue({
                .then(()=>{
                     const uploadToDBX = uploadImgToDropbox.bind(self)
 
-                    /*uploadToDBX(fileName, window.toUploadToDropbox)
+                    uploadToDBX(fileName, window.toUploadToDropbox)
                     .then(()=>{
                          window.toUploadToDropbox = undefined
-                    })*/
+                    })
 
                     this.newProductForm = false
                     this.newProductPreview = false
@@ -822,7 +817,7 @@ const app = new Vue({
                console.log('prod change', this.productModified)
 
                
-               getOwnDBData(this.userName)
+               getOwnIDBData(this.userName)
                .then(ownData=>{
                     console.log('    ownData',ownData)
 
@@ -860,7 +855,7 @@ const app = new Vue({
                //console.log('delete', this.productModified)
 
                // find product among my prods
-               getOwnDBData(this.userName)
+               getOwnIDBData(this.userName)
                .then(ownData=>{
                     console.log('    ownData',ownData)
 
@@ -900,131 +895,63 @@ const app = new Vue({
           reloadView:function(){
                     console.log('RELOADING VIEW')
 
-                    let ownCountries,
-                        somethingChanged = false
+               let ownCountries,
+                   othersCountriesWProds,
+                   somethingChanged = false
 
-                    getOwnDBData(this.userName)
-                    .then( ownData =>{
+               getOwnIDBData(this.userName)
+               .then( ownData =>{
 
-                         if (!this.userName || !this.followedUsers) return initializeLocationSelects(this, ownData)
+                    if (!this.userName || !this.followedUsers) return initializeLocationSelects(this, ownData)
 
-                         ownCountries = ownData
+                    //ownCountries = ownData
+                    ownCountries = addOwner(ownData, this.userName)  // owner key serves later when allowing/blocking user to modify product
+                    //console.log('countries w owner', ownCountries)     
 
-                         return getOtherUsersIDBData(this.followedUsers)
-                    })
-                    .then(othersData=>{
+                    return getOtherUsersIDBData(this.followedUsers)
+               })
+               .then(othersData=>{
+                         
+                    let own = [...ownCountries], 
+                        Users = othersData.map(user=> user.countries )
 
-                         let own = [...ownCountries],
-                             Users = othersData.map(user=>user.countries)
+                    othersCountriesWProds = JSON.parse(JSON.stringify(Users)) // it will be needed later in original state to show poducts
+                         
+                    //let woProducts = copyUserDataOrig.call(this, Users, own, 1) //return woProducts
 
-                         return copyUserData(Users, own)
 
-                         function copyUserData(users, owndata){
+                    // returns Countries with added new locations from others (w/o their prods)
+                    // its needed when saving them to users IDB
+                    return copyUserDataOrig.call(this, Users, own, 1)  
+               })
+               .then(result=>{
+                    console.log('somethingChanged? ',result.somethingChanged)
+                    console.log('reloading - location w/o prods to save', result.countries)
+
+                         
+                    if (result.somethingChanged===true) 
+                         // save all locations without prods to device user IDB
+                         // return updateDeviceUserCountries(this.userName, result.countries)
+                              return result.countries
+                    //     .then(initializeLocationSelects(this, result.countries))
+
+                    else return result.countries
                               
-                              return new Promise((resolve, reject)=>{
-                                   const sets = ['countries','cities','shops','products']
-                                   let index = 0
-                                   users.forEach(other_countries => {
+               })
+               .then(myresult=>{
+                         
+                         //console.log('my', myresult)
+                         //console.log('others', othersCountriesWProds)
+                         let copy = JSON.parse( JSON.stringify(othersCountriesWProds))
 
-                                             // remove products from each country
-                                             const others_cleaned = other_countries.map( country => removeProducts(country,0))     
+                         const withProducts = copyUserDataOrig.call(this, copy, myresult, 0)
+                         console.log('withProducts for display', withProducts)
 
-                                             copyEntries(index, owndata, others_cleaned)
+                         this.countries = withProducts.countries // update screen w new data available
 
-                                             .then(newCountries=> resolve(newCountries) )  
-                                   })
-
-                                   function removeProducts(entry,index){
-                                        //if (index>3) return;
-
-                                        if (entry.hasOwnProperty('products')){
-                                             //console.log('in SHOP', entry.name)
-                                             return {name: entry.name, products: []} //entry.products = []
-
-                                        } else if (entry.name){
-                                             //console.log('|||| not shop', index, entry.name, sets[index])
-                                             let name = entry.name
-                                             let prop = sets[index+1]  // cities shops
-                                             let y 
-                                             entry[prop] = entry[prop].map(entry => {
-                                                            //console.log('-- going into',entry.name, sets[index+1])
-                                                            return removeProducts(entry, index+1)
-                                                       })
-                                             //console.log('filtered ',prop,'of',entry.name, entry[prop])
-                                             return entry
-                                        } 
-                                   }
-                                   function copyEntries(outerIndex, ownEntries, otherEntries){
-                                        
-                                        function emptyspace(ind){
-                                                  let spaces = "", len = ind*5
-                                                  for (let i=0; i<len; i++){
-                                                       spaces = spaces.concat(" ")
-                                                  }
-                                                  return spaces
-                                        }
-                                        let index = outerIndex +1
-                                        let set = sets[outerIndex], subset = sets[index]
-                                        //console.log(emptyspace(outerIndex),'index', index, set, subset)
-                                        // if its shops now
-
-                                        return new Promise((resolve,rej)=>{
-                                             otherEntries.forEach(other_entry=>{
-                                                  
-                                                  //console.log( emptyspace(outerIndex),`checking others '${other_entry.name}'`)
-
-                                                  if (ownEntries.some(ownEntry=> ownEntry.name == other_entry.name)=== false ) {
-                                                       // not on device -> add it there
-                                                       //console.log(emptyspace(outerIndex),set, 'NOT THERE -> ADDING ',other_entry.name )
-                                                       //console.log(emptyspace(outerIndex),'- doing -', other_entry.name) 
-                                                       //let locations = removeProducts( other_entry, index)
-                                                       //console.log('without products',set, locations, subset)
-                                                       //other_entry[subset] = location
-                                                       ownEntries.push(other_entry)
-                                                       somethingChanged = true
-                                                       //console.log(other_entry.name,'updated?',other_entry)
-                                                       //console.log( other_entry.name, 'updated?',locations )
-
-                                                  // if this entry is already there
-                                                  } else{
-                                                       ownEntries.forEach( own_entry=>{
-                                                            //console.log(emptyspace(outerIndex),'checking >>>',subset, 'of',own_entry.name, own_entry)
-                                                            //console.log(emptyspace(outerIndex),set, 'is there checking >>>',own_entry.name, own_entry)
-                                                            // take others subentries and add them to Own
-                                                            if (own_entry.name === other_entry.name){
-                                                                 //console.log(emptyspace(outerIndex),`duplicates ${own_entry.name} = ${other_entry.name}`)
-                                                                 //console.log(emptyspace(outerIndex),index, 'subset',subset,'<<')
-                                                                 if (index<3)//subset!==undefined) // if subset is undefined, can it even reach this deep? i.e. - if the condition neccessary
-                                                                 copyEntries(index, own_entry[subset], other_entry[subset] )
-
-                                                                 else if (subset===undefined) {
-                                                                      
-                                                                      //console.log(emptyspace(outerIndex),'??',own_entry)
-                                                                      //let smt = removeProducts(own_entry,index)
-                                                                      //console.log(emptyspace(outerIndex),'done ------- with', set)
-                                                                 }
-                                                            } //it gets added above
-                                                       })
-                                                  }
-                                             })
-                                             resolve(ownEntries)
-                                        })
-                                   }
-                              })
-                         }
-                    })
-                    .then(final=>{
-                         console.log('somethingChanged? ',somethingChanged)
-                         //if (somethingChanged) 
-                         console.log('reload view - location data to save', final) //  , final===own
-
-                         // save each country without prods to device user IDB
-                         if (somethingChanged) {
-                              updateDeviceUserCountries(this.userName, final)   // store everything to deviceUser IDB
-                              .then(initializeLocationSelects(this, final))     // update screen w new data available
-
-                         } else return initializeLocationSelects(this, final)
-                    })
+                         initializeLocationSelects(this, withProducts.countries)
+               })
+               
           },
           startApp:function(){
                //this.screen = 'main'
@@ -1040,7 +967,7 @@ const app = new Vue({
                let ownCountries
                let somethingChanged = false
 
-               getOwnDBData(this.userName)
+               getOwnIDBData(this.userName)
 
                
                .then( ownData =>{  
@@ -1076,7 +1003,7 @@ const app = new Vue({
 
                          console.log('|||  not online')
                     
-                         return getOtherUsersIDBData(this.followedUsers)  
+                         //return getOtherUsersIDBData(this.followedUsers)  
                     }
                }).then(users=>{
                          
@@ -1092,10 +1019,13 @@ const app = new Vue({
                              own = [...ownCountries],
                              Users = users.map(user=>user.countries)
 
+                         const copyFunc = copyUserDataOrig.bind(this)
+                         console.log('|||  equal? ', copyFunc == copyUserDataOrig, copyFunc === copyUserDataOrig)
+                         const copy = copyFunc.call(this, Users, own, 0)
 
                          // copies all others' locations to save them in IDB of device
-                         copyUserData(Users, own)
-                         .then(final=>{
+                         //copyUserData(Users, own)
+                         copy.then(final=>{
                                    console.log('somethingChanged? ',somethingChanged)
                                    if (somethingChanged) console.log('location data to save', final===own, final)
 
@@ -1109,7 +1039,7 @@ const app = new Vue({
                          })
 
 
-                         function copyUserData(users, owndata){
+                         /*function copyUserData(users, owndata){
                               //console.log('EQUAL', ownCountries == owndata)
                               
                               return new Promise((resolve, reject)=>{
@@ -1202,7 +1132,7 @@ const app = new Vue({
                                         })
                                    }
                               })
-                         }
+                         }*/
                     }
                })
                .catch( er => {
@@ -1243,8 +1173,123 @@ const app = new Vue({
           //console.log('CREATED')
      }
 })
+let closTest = function(){
 
-const getMyPic = ()=>{
+     //console.log('hi,', somename)
+}
+
+const addOwner = (countries, nameToAdd) =>{
+
+     countries.forEach(country=>
+          country.cities.forEach(city=>
+               city.shops.forEach(shop=>
+                    shop.products.forEach(prod=>
+                         prod.owner = nameToAdd
+                    )
+               )
+          )
+     )
+     return countries
+}
+
+const copyUserDataOrig = (users, owndata, removeProds) => {
+                              
+          let somethingChanged = 0
+          const sets = ['countries','cities','shops','products']
+          let index = 0
+
+          console.log('removeProds?', removeProds)
+
+
+          users.forEach(other_countries => {
+     
+                    let others_cleaned
+                    if (removeProds) {
+                         console.log('removing prods')
+                         others_cleaned = other_countries.map( country => removeProducts(country,0))
+                    } else {
+                         console.log('keeping products')
+                         others_cleaned = other_countries
+                    }
+
+
+                    copyEntries(index, owndata, others_cleaned)
+          })
+          
+          
+          return({ somethingChanged, countries: owndata})
+
+
+          function copyEntries(outerIndex, ownEntries, otherEntries){
+               
+               let index = outerIndex +1
+               let set = sets[outerIndex], subset = sets[index]
+
+               otherEntries.forEach(other_entry=>{
+                         //console.log( emptyspace(outerIndex),`checking others '${other_entry.name}'`)
+
+                         if (ownEntries.some(ownEntry=> ownEntry.name == other_entry.name)=== false ){
+                         // it's not on device -> add it there
+                              console.log(emptyspace(outerIndex),set, 'NOT THERE -> ADDING ',other_entry.name )
+                              
+                              ownEntries.push(other_entry)
+                              somethingChanged = true
+                              
+
+                         // this entry is already there
+                         } else ownEntries.forEach( own_entry=>{
+                              //console.log(emptyspace(outerIndex),'checking >>>',subset, 'of',own_entry.name, own_entry)
+                              //console.log(emptyspace(outerIndex),set, 'is there checking >>>',own_entry.name, own_entry)
+                              // take others subentries and add them to Own
+                              if (own_entry.name === other_entry.name){
+                                   //console.log(emptyspace(outerIndex),`duplicates ${own_entry.name} = ${other_entry.name}`)
+                                   //console.log(emptyspace(outerIndex),index, 'subset',subset,'<<')
+
+                                        if (index< 3)  copyEntries( index, own_entry[subset], other_entry[subset] )
+
+                                        else if (index===3 && !removeProds)
+                                             copyEntries(index, own_entry[subset], other_entry[subset] )
+                                   
+
+                              } //it gets added above
+                         })
+                         
+                         
+               })
+               return ownEntries
+               
+          }
+          function removeProducts(entry,index){
+               //if (index>3) return;
+
+               if (entry.hasOwnProperty('products')){
+                    //console.log('in SHOP', entry.name)
+                    return {name: entry.name, products: []} //entry.products = []
+
+               } else if (entry.name){
+                    //console.log('|||| not shop', index, entry.name, sets[index])
+                    let name = entry.name
+                    let prop = sets[index+1]  // cities shops
+                    let y 
+                    entry[prop] = entry[prop].map(entry => {
+                                   //console.log('-- going into',entry.name, sets[index+1])
+                                   return removeProducts(entry, index+1)
+                              })
+                    //console.log('filtered ',prop,'of',entry.name, entry[prop])
+                    return entry
+               } 
+          }
+          function emptyspace(ind){
+               let spaces = "", len = ind*5
+               for (let i=0; i<len; i++){
+                    spaces = spaces.concat(" ")
+               }
+               return spaces
+          }
+     
+}
+
+const getMyPic =()=>{
           let dbximg = 'https://www.dropbox.com/s/jl15lcir35926i5/okram%40protonmail.ch_D2018-01-12_T22-09-07.jpg'
           //  https://www.dropboxforum.com/t5/API-support/CORS-issue-when-trying-to-download-shared-file/td-p/82466/page/2
 
@@ -1409,7 +1454,7 @@ function getImagesData(names){
 function addNewLocationToDB(set, toAdd){
      console.log('adding', set, this.userName)
      //return console.log('this', this)
-     getOwnDBData(this.userName)
+     getOwnIDBData(this.userName)
      .then( ownCountries =>{
           if (set!=='product') toAdd = toAdd.toString()
 
@@ -1535,7 +1580,7 @@ const sendCountryDataOfUser = userObj =>
 
      new Promise((resolve, reject)=>{
 
-          getOwnDBData(userObj.userName)
+          getOwnIDBData(userObj.userName)
           .then(countries=>{
                console.log(`data of - ${userObj.userName} - to be pushed to MDB`, countries)
 
@@ -1656,7 +1701,7 @@ function getDeviceUser(){
           else return undefined
 }
 
-function getOwnDBData(user = 0){
+function getOwnIDBData(user = 0){
      console.log(`getting data of ${user}`)
 
      return new Promise((resolve, reject)=>{
@@ -1719,7 +1764,7 @@ function getOtherUsersIDBData(localUsers){
           .then(users =>{ 
                
                users = users.filter(user=> localUsers.find(lUser=>lUser.email==user.email)!==undefined )
-               //console.log('|||     filtered users',users)
+               console.log('|||     filtered users',users)
 
                if (users.length==0) resolve(null)     // when can this happen?
                else resolve(users)
@@ -1755,7 +1800,7 @@ function initializeLocationSelects(self, countries){
      //console.log(self.currentShop)
 
      // 2 stands for 'shop/s' in array, null for event, currentShop = requested shop name
-     let somevar = self.updateLocationSelect(2, null, self.currentShop)
+     //let somevar = self.updateLocationSelect(2, null, self.currentShop)
 
      //console.log('promise?', somevar)
      /*somevar.then(x=>{  //it doesnt return promise

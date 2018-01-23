@@ -136,19 +136,52 @@
                   <div id="" v-show="newProductForm === false">
                        {{currentCountry}} - {{currentCity}} - {{currentShop}}
                   </div>
+                  <br>
+
         
-        
+               <div v-show="newProductForm === false">
+                    <div v-for="country in countries" v-if="currentCountry == country.name || currentCountry=='all countries'">
+                         <div ></div>
+
+                         <div v-for="city in country.cities" v-if="currentCity == city.name || currentCity=='all cities'">
+                              
+                              <div v-for="shop in city.shops" v-if="currentShop==shop.name || currentShop == 'all shops'">
+                                   
+                                   <!--div v-for="prod in shop.products">{{prod.name}}</div-->
+                                   <h3>{{country.name}} - {{city.name}} - {{shop.name}}</h3>
+
+                                   <div v-for="prod in shop.products" class="product" v-if="shop.products.length>0"
+                                             v-on:click="openProductForm(prod)" >
+
+                                        <div v-if="!prod.owner">#</div>
+                                        <div class="imgContainer" v-if="prod.imgName">
+                                             <img alt="img not here" >
+                                        </div>
+                                        <div class="prodDataContainer vertical">
+                                             <p>{{prod.type}}</p>
+                                             <p>{{prod.name}}</p>
+                                             <p>{{prod.descr}}</p>
+                                             <p>{{prod.descrLong}}</p>
+                                             <p>{{prod.price}}</p>
+                                             <p>rating: {{prod.rating}}</p>
+                                        </div>
+                                        
+                                   </div>
+                              </div>
+                         </div>
+                    </div>
+               </div>
                
-               <div id="products" v-show="newProductForm === false && currentDisplayedProducts.length" class="vertical">
+               <!--div id="products" v-show="newProductForm === false && currentDisplayedProducts.length" class="vertical">
                          <br>
                          <div v-for="prod in currentDisplayedProducts" class="product"
-                              v-on:click="openProductForm(prod)" >
+                                   v-on:click="openProductForm(prod)" >
+
                               <div v-if="!prod.owner">#</div>
                               <div class="imgContainer" v-if="prod.imgName">
                                    <img alt="img not here" >
                               </div>
                               <div class="prodDataContainer vertical">
-                                   <!--p v-if="prod.imgName" class="prodImgData" style="visibility: hidden">{{prod.imgName}}</p-->
                                    <p>{{prod.type}}</p>
                                    <p>{{prod.name}}</p>
                                    <p>{{prod.descr}}</p>
@@ -158,10 +191,10 @@
                               </div>
                               
                          </div>
-               </div>
+               </div-->
                                    
-               <h4 v-show="newProductForm === false && currentDisplayedProducts.length==0"
-                    >no products to display</h4>
+               <!--h4 v-show="newProductForm === false && currentDisplayedProducts.length==0"
+                    >no products to display</h4-->
 
                   
 
