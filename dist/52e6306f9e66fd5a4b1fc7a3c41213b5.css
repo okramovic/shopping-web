@@ -61,6 +61,9 @@ h1 {
 .marginAround30 {
   margin: 30px; }
 
+#productList {
+  padding-bottom: 50px; }
+
 .product {
   box-shadow: 1px 1px 1px 1px gray;
   width: 80vw;
