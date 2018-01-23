@@ -93,4 +93,7 @@ done:
 - make newly added country/city/shop selected one
 - when pushing my local country data to MDB, make sure they go without owner field
 
+23 Jan
+- its possible to see products from all countries/all cities/all shops at the same time
+
 */

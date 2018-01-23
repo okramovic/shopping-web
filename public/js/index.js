@@ -680,29 +680,50 @@ const app = new Vue({
                })
                console.log('product to add\n', productToAdd)
 
-               // save image
-               saveImageToIDB(fileName)
-               .then(x=>{
-                    console.log('result 2', x)
-                    if (x) return x
-               })
-               .then(y=>{
-                    return addProduct('product', productToAdd)
-               })
-               .then(()=>{
-                    const uploadToDBX = uploadImgToDropbox.bind(self)
+               const uploadToDBX = uploadImgToDropbox.bind(self),
+                     addProduct = addNewLocationToDB.bind(this)
 
-                    uploadToDBX(fileName, window.toUploadToDropbox)
-                    .then(()=>{
-                         window.toUploadToDropbox = undefined
-                    })
+               if (navigator.onLine) // save image
+                         uploadToDBX(fileName, window.toUploadToDropbox)
+                         .then(link =>{
+                                   
+                                   console.log('link', link)
+                                   productToAdd.dbxURL = link
+
+                              return saveImageToIDB(fileName)
+                         })
+                         .then(result =>{
+                              console.log('result 2', result)
+                              window.toUploadToDropbox = undefined
+
+                              if (result) return result
+                         })
+                         .then(y => addProduct('product', productToAdd) )
+                         .then(()=>{
+                              
+                              this.newProductForm = false
+                              this.newProductPreview = false
+                              this.reloadView()
+                         })
+                         .catch(er=>alert('huge arror storing new product'))
+               
+
+               else saveImageToIDB(fileName)
+               .then(()=>{
+                    window.toUploadToDropbox = undefined
+                    // create task to upload image when user is online
+                    // return createUploadTaks
+               })
+               .then(()=> addProduct('product', productToAdd) )
+               .then(()=>{
 
                     this.newProductForm = false
                     this.newProductPreview = false
+                    return this.reloadView()
                })
-               .catch(er=>alert('huge arror storing new product'))
+               .catch(er => console.error('ERROR', er))
+
                
-               const addProduct = addNewLocationToDB.bind(this)
 
                
           },
@@ -1198,7 +1219,7 @@ const copyUserDataOrig = (users, owndata, removeProds) => {
           const sets = ['countries','cities','shops','products']
           let index = 0
 
-          console.log('removeProds?', removeProds)
+          //console.log('removeProds?', removeProds)
 
 
           users.forEach(other_countries => {
@@ -1290,10 +1311,12 @@ const copyUserDataOrig = (users, owndata, removeProds) => {
 }
 
 const getMyPic =()=>{
-          let dbximg = 'https://www.dropbox.com/s/jl15lcir35926i5/okram%40protonmail.ch_D2018-01-12_T22-09-07.jpg'
+          let d2    = 'https://dl.dropboxusercontent.com/s/jl15lcir35926i5/okram%40protonmail.ch_D2018-01-12_T22-09-07.jpg' 
+          let dbximg= 'https://www.dropbox.com/s/jl15lcir35926i5/okram%40protonmail.ch_D2018-01-12_T22-09-07.jpg'
           //  https://www.dropboxforum.com/t5/API-support/CORS-issue-when-trying-to-download-shared-file/td-p/82466/page/2
 
-          let d2 = 'https://dl.dropboxusercontent.com/s/jl15lcir35926i5/okram%40protonmail.ch_D2018-01-12_T22-09-07.jpg' 
+          //   https://dl.dropboxusercontent.com/s/1mzslkpuoilup3l/okram%40protonmail.ch_D2018-01-21_T17-42-18.jpg?dl=0
+          
           const req1 = new Request(d2,{  // './test1.png'
                headers: new Headers({
                     //'Content-Type': 'image/png'
@@ -1363,7 +1386,7 @@ const deleteDropboxImg = (email, fileName)=>{
 
 
 // set image property so its accessible publicly any time it ll be needed by others
-let uploadImgToDropbox = function(newName='test', imgData, file, blobb){
+const uploadImgToDropbox = function(newName='test', imgData, file, blobb){
      return new Promise((resolve, reject)=>{
 
           let fileName = newName// + new Date()
@@ -1396,8 +1419,9 @@ let uploadImgToDropbox = function(newName='test', imgData, file, blobb){
           xhr.onreadystatechange = function(){
                if (this.readyState == 4 && this.status == 200) {
 
-                    console.log('SUKCES uploading to dbx', this.response, this.responseText)
-                    resolve(this.status)
+                    console.log('SUKCES uploading to dbx -link?', this.response)//, this.responseText)
+                    //resolve(this.status)
+                    resolve(this.response)
 
                } else console.log('so?', this.status, this.responseText) //this.getAllResponseHeaders())
           }
@@ -1780,36 +1804,23 @@ function initializeLocationSelects(self, countries){
 
      self.countries = countries
      self.currentCountry = getLastSelection('countries') || 'all countries'
-     //console.log(self.currentCountry, self.countries)
-     //self.updateLocationSelect('countries','cities',undefined, self.currentCountry.toString() )
-
-     // city
+     
+     
      let lastCntry = countries.find(cn=>cn.name=== self.currentCountry)
      self.cities = lastCntry.cities
-     //console.log('self.cities',self.cities)
 
-     
+     // city
      self.currentCity = getLastSelection('cities') || 'all cities' 
-     //console.log('currentCity', self.currentCity)
      let lastCity = self.cities.find(city => city.name ==  self.currentCity)
 
      // shop
-     //let lastCity = self.cities.find(city => city.name === self.currentCity )
      self.shops = lastCity.shops
      self.currentShop =  getLastSelection('shops')  || 'all shops'
-     //console.log(self.currentShop)
+
 
      // 2 stands for 'shop/s' in array, null for event, currentShop = requested shop name
      //let somevar = self.updateLocationSelect(2, null, self.currentShop)
 
-     //console.log('promise?', somevar)
-     /*somevar.then(x=>{  //it doesnt return promise
-          console.log('after updated loaction', x)
-     })*/
-     
-
-     // this is probably not needed anymore
-     //self.currentDisplayedProducts = self.shops.find(shop=>shop.name === self.currentShop).products
 }
 
 
