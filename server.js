@@ -172,12 +172,12 @@ app.post('/API/postPicToDrbx', (req, res)=>{
      var bodyChunks = [];
      req.on('data', chunk =>{ bodyChunks.push(chunk) })
      req.on('end', ()=>{
-         let body = Buffer.concat(bodyChunks);
+         const imagedata = Buffer.concat(bodyChunks);
        
          getToken(req.query.email)
-         .then(token=> postPicToDropbox(body, req.query.fileName, token) )
+         .then(token => postPicToDropbox(imagedata, req.query.fileName, token) )
          .then(setFileToPublic)
-         .then(link => res.sendStatus(200) )
+         .then(link => res.send(link) )
          .catch(er=>{
            console.error(er)
            res.sendStatus(400)
@@ -302,7 +302,8 @@ const setFileToPublic = settings =>
                     rev: '128344b660',
                     size: 152276 }
                 */
-                resolve()
+                console.log('result.url', result.url)
+                resolve(result.url.replace('https://www.dropbox.com', 'https://dl.dropboxusercontent.com'))
               })
         });
 
