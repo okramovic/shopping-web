@@ -48,6 +48,7 @@ var Dropbox = require('dropbox');
     console.log(error);
   });
 */
+
 const getfileThumb = function(fileEntry){
           
           const id = fileEntry.id
@@ -635,11 +636,22 @@ const app = new Vue({
                     })
                }
           },
-          openNewProductForm:function(open){
+          openProductForm:function(open){
                this.newProductForm = open
-               //if (open)
 
                if (open === false){
+                    this.newProductPreview= false
+                    this.newProductPreviewLastModified= null
+                    this.newProductType= null
+                    this.newProductName= null
+                    this.newProductDescription= null
+                    this.newProductDescriptionLong= null
+                    this.newProductPrice= null
+
+                    removeFormRatingChecked()
+
+                    this.modifyingProduct= false
+                    this.productModified= null
                     this.modifyingProduct = false;
                }
           },
@@ -659,8 +671,8 @@ const app = new Vue({
                const fileName =`${window.localStorage.getItem('deviceUserEmail')
                                }_D${getFormattedDate(this.newProductPreviewLastModified)}`
 
-               console.log('submit', fileName)
-               console.log(this.newProductType, this.newProductName, this.newProductDescription, this.newProductPrice, rating)
+               //console.log('submit', fileName)
+               //console.log(this.newProductType, this.newProductName, this.newProductDescription, this.newProductPrice, rating)
                const fieldnames=['descr','descrLong','price'],
                      otherFields = [this.newProductDescription, this.newProductDescriptionLong, this.newProductPrice]
 
@@ -789,15 +801,11 @@ const app = new Vue({
                     reader.readAsDataURL(ev.target.files[0])
                     //this.newProductForm = false
           },
-          openProductForm:function(prod){
+          openProductFormToModify:function(prod){
                
                if (!prod.owner) return this.informUser(`You can only modify your own products`,1500)
-               
                console.log('modify',prod)
-               // let currCountry = this.currentCountry, etc...
-               //   get curr Country, City & Shop so if user would change them w form open,
-               //   take it as indication he wants to place product 
-               //   to new current country city shop
+
 
                this.modifyingProduct = true // to show correct submit button
                this.productModified = prod
@@ -808,14 +816,11 @@ const app = new Vue({
                if (prod.descrLong) this.newProductDescriptionLong =prod.descrLong
                if (prod.price) this.newProductPrice = parseFloat( prod.price )
                
-               if (prod.rating) document.querySelectorAll(`input[type="radio"][value="${prod.rating}"]`)[0].setAttribute('checked', true)
-               
-
-               if (prod.imgName) 
-               
-               getImagesData([prod.imgName])
-               .then(data=>{
+               if (prod.rating) document.querySelector(`input[name="newRating"][value="${prod.rating}"]`).setAttribute('checked', true)
                     
+               // just showing product's image
+               if (prod.imgName) getImagesData([prod.imgName])   
+               .then(data=>{
                     const self = this,
                           img = new Image(),
                           canv = document.querySelector('canvas'),
@@ -823,14 +828,11 @@ const app = new Vue({
 
                     img.onload = function(){
                          ctx.drawImage(this,0,0,300,300)
-
                          self.newProductPreview = true
                     }
                     img.src = data
-
-
                })
-               this.newProductForm =true
+               this.newProductForm = true
 
           },
           applyProductChanges:function(ev){
@@ -840,16 +842,22 @@ const app = new Vue({
                
                getOwnIDBData(this.userName)
                .then(ownData=>{
-                    console.log('    ownData',ownData)
+                    //console.log('    ownData',ownData)
+                    //console.log(this.productModified.imgName)
 
-                    let country = ownData.find(country=>country.name == this.currentCountry)
+                    const search = findProductLocations(ownData, this.productModified.imgName)
+                    const prod = search.product
+
+                    //return console.log('locs of product', locations)
+
+                    /*let country = ownData.find(country=>country.name == this.currentCountry)
                     let city = country.cities.find(city=> city.name == this.currentCity)
                     let shop = city.shops.find(shop=>shop.name== this.currentShop)
-                    let prod = shop.products.find(prod=>prod.name === this.productModified.name)
+                    let prod = shop.products.find(prod=>prod.name === this.productModified.name)*/
 
 
                     for (let prop in prod){
-                         if (prop!=='imgName') delete prod[prop]
+                         if (prop!=='imgName' && prop!=='dbxURL') delete prod[prop]
                     }
                
 
@@ -861,55 +869,56 @@ const app = new Vue({
 
                     prod.rating = document.querySelector('input[name="newRating"]:checked').value
 
-                    console.log('prod edited to:', prod)
+                    //console.log('prod edited to:', prod)
+                    console.log('upated cntries?\n', ownData)
 
-                    updateDeviceUserCountries(this.userName, ownData)
-                    .then(this.afterProductFormSubmitted)
+                    updateDeviceUserCountries(this.userName, ownData)  // returns exact same countries object
+                    .then(this.UIafterProductFormSubmitted)
                })
-
           },
           deleteProduct:function(ev){
                ev.preventDefault()
 
                if (confirm('Delete this product?')){
                
-               //console.log('delete', this.productModified)
+                    //console.log('delete', this.productModified)
+                    if (!this.productModified.imgName) return this.informUser('cant delete this product', 2000)
 
-               // find product among my prods
-               getOwnIDBData(this.userName)
-               .then(ownData=>{
-                    console.log('    ownData',ownData)
-
-                    let country = ownData.find(country=>country.name == this.currentCountry)
-                    let city = country.cities.find(city=> city.name == this.currentCity)
-                    let shop = city.shops.find(shop=>shop.name== this.currentShop)
-                    const i = shop.products.findIndex(prod=>prod.name === this.productModified.name)
-
-                    shop.products.splice(i,1)
-                    console.log('    shop?', shop)
-
-                    // if it has imgName, delete image data from IDB
-                    if (this.productModified.imgName && navigator.onLine) {
-                         //deleteImageFromIDB(this.productModified.imgName)
-
-                         const email = localStorage.getItem('deviceUserEmail')
-
-                         deleteDropboxImg(email, this.productModified.imgName)
-                         .then(status=>{
-                              deleteImageFromIDB(this.productModified.imgName)
-                              updateDeviceUserCountries(this.userName, ownData).then(this.afterProductFormSubmitted)   
-                         })
-                    } else if (this.productModified.imgName && !navigator.onLine){
-
-                         // create queue of files to get deleted from Dropbox
-                    }
                     
-               })
+                    // using stored data, since displayed data has unnecessary temp info attached, this way it's easier
+                    getOwnIDBData(this.userName)
+                    .then(ownData=>{
+                         console.log('    ownData',ownData)
+
+                         const search = findProductLocations(ownData, this.productModified.imgName),     // find product among own prods
+                              i = search.i
+
+                         search.shop.products.splice(i,1)
+                         //return console.log('    shop prods modified?', ownData)
+
+                         deleteImageFromIDB(this.productModified.imgName)
+                         .then(()=>updateDeviceUserCountries(this.userName, ownData))
+                         .then(this.UIafterProductFormSubmitted)
+
+                         if (this.productModified.imgName && navigator.onLine) 
+
+                              deleteDropboxImg( localStorage.getItem('deviceUserEmail'), this.productModified.imgName)
+                              .then(status=>this.informUser(`deleted Dropbox img: ${status}`, 3000))
+                              
+                              
+                         else if (this.productModified.imgName && !navigator.onLine){
+
+                              // create queue of files to get deleted from Dropbox
+                         }
+                         
+                    })
                }
           },
-          afterProductFormSubmitted:function(){
+          UIafterProductFormSubmitted:function(){
                this.modifyingProduct = false    // hides Modify and Delete buttons
                this.newProductPreview = false   // to hide canvas
+
+               this.openProductForm(false) // to reset form
                this.reloadView()
                return this.switchScreen('main')
           },
@@ -1194,9 +1203,34 @@ const app = new Vue({
           //console.log('CREATED')
      }
 })
-let closTest = function(){
+let closTest = function(){ //console.log('hi,', somename)
+}
 
-     //console.log('hi,', somename)
+const findProductLocations = (countries, imgName)=>{
+
+     if (!imgName || imgName=='') return console.error('provide imgName')
+
+     let countryName, cityName, shopName, shop, product, i
+
+     countries.forEach(cntry=>
+          cntry.cities.forEach(cty=>
+               cty.shops.forEach(shp=>
+                    shp.products.forEach((prod,index)=>{
+                              if (prod.imgName && prod.imgName === imgName){
+
+                                        countryName = cntry.name
+                                        cityName = cty.name
+                                        shopName = shp.name
+                                        shop = shp
+                                        product = prod
+                                        i = index
+                              }
+                    })
+               )
+          )
+     )
+
+     return {countryName, cityName, shopName, shop, product, i}
 }
 
 const addOwner = (countries, nameToAdd) =>{
@@ -1375,7 +1409,7 @@ const deleteDropboxImg = (email, fileName)=>{
                if (this.readyState == 4 && this.status == 200) {
 
                     console.log('SUKCES deleting dbx image', this.response, this.responseText)
-                    resolve(this.status)
+                    resolve(this.response)
 
                } else console.log('so?', this.status, this.responseText) //this.getAllResponseHeaders())
           }
@@ -2031,6 +2065,53 @@ const copyUserData_text = `
      })`
 //
 
+
+
+function saveImageToIDB(fileName){
+     console.log(getDeviceUser(), fileName)
+
+     return new Promise((resolve, reject)=>{
+          if (!fileName || !window.canvasData) reject(null)
+          let user = getDeviceUser()
+                  //{data: fileName, userName,                  data
+          picturesDB.item.put({ 'fileName': fileName, 'userName': user, 'data': window.canvasData })
+          .then(result=>{
+               console.log('result',result)
+               resolve(result)
+          })
+          .catch(er=>{console.error(er)})
+     })
+}
+
+
+function deleteImageFromIDB(fileName){
+     //console.log(fileName, picturesDB.item)
+     return new Promise((resolve, reject)=>{
+          
+
+          picturesDB.item.where('fileName').equals(fileName).delete()
+          .then(something=>{
+
+               console.log('deleted?',something)
+               resolve(something)
+          })
+          .catch(er=>console.error(er))        
+     })
+
+}
+
+
+function removeFormRatingChecked(){
+     const radios = document.querySelectorAll('input[type="radio"][name="newRating"]')
+     radios.forEach(radio=>radio.removeAttribute('checked') )
+}
+function nodeListToArray(list){
+     console.log(list)
+     let result = []
+     for (let item of list) result.push(item)
+     
+     return result
+}
 function getFormattedDate(date){
      //console.log('typeof Date',typeof date, date)
  
@@ -2054,48 +2135,6 @@ function getFormattedDate(date){
 
      return `${obj.year}-${obj.month}-${obj.day}_T${obj.hours}-${obj.minutes}-${obj.secs}`
 }
-function saveImageToIDB(fileName){
-     console.log(getDeviceUser(), fileName)
-
-     return new Promise((resolve, reject)=>{
-          if (!fileName || !window.canvasData) reject(null)
-          let user = getDeviceUser()
-                  //{data: fileName, userName,                  data
-          picturesDB.item.put({ 'fileName': fileName, 'userName': user, 'data': window.canvasData })
-          .then(result=>{
-               console.log('result',result)
-               resolve(result)
-          })
-          .catch(er=>{console.error(er)})
-     })
-}
-
-//let testDel = 'okram@protonmail.ch_D2018-01-12_T22-09-07'
-//deleteImageFromIDB(testDel).then(()=>{console.log('deleted?')})
-
-function deleteImageFromIDB(fileName){
-     //console.log(fileName, picturesDB.item)
-     return new Promise((resolve, reject)=>{
-          
-
-          picturesDB.item.where('fileName').equals(fileName).delete() //(fileName)  
-          .then(something=>{
-
-               console.log('deleted?',something)
-               resolve(something)
-          })
-          .catch(er=>console.error(er))        
-     })
-
-}
-
-function nodeListToArray(list){
-     let result = []
-     for (let item of list) result.push(item)
-     
-     return result
-}
-
 
 
 const getPicURL = function(entry){

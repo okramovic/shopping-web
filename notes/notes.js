@@ -26,16 +26,15 @@ user stories:
 
 
 TODO
-- use something looking better than annoying alerts (e.g. when i want to modify product thats not mine)
-          - product could turn red for half second or shake itself to indicate user cant change it
-          - also small status bar could appear with announcement whats wrong
+- product could turn red for half second or shake itself to indicate user cant change it
+- small status bar could appear with announcement whats wrong
 - when adding/deleting products and user is not online, create queue of future requests to be sent when app is online
           1) files to be uploaded
           2) files to be deleted
 - add small status bar at bottom, that indicate suxess uploading to DBX or removing file from DBX
 
 
-- after new product submission - reset all form fields and canvas to empty
+
 - on mobile, user can choose to upload picture taken previously, or to take new one with camera (to enable user to store also old pictures)
 - if browsing in private mode, show message that all saved data will be deleted when tab is closed (browsers act like that)  https://developer.mozilla.org/en-US/docs/Web/API/Storage/LocalStorage
 
@@ -96,4 +95,8 @@ done:
 23 Jan
 - its possible to see products from all countries/all cities/all shops at the same time
 
+24 Jan
+- after new product submission - reset all form fields and canvas to empty
+- use something looking better than annoying alerts (e.g. when i want to modify product thats not mine)
+- user can edit and delete products (works again with new way products are displayed)
 */
