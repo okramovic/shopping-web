@@ -1,13 +1,22 @@
 h1 {
   color: #3fecb8; }
 
+h3 {
+  font-weight: 100; }
+
+body {
+  margin: 0; }
+
 #app {
   max-width: 500px;
-  width: 100vw;
+  width: 100%;
   margin: auto;
   display: flex;
   flex-direction: column;
   align-items: center; }
+
+#mainScreen {
+  width: 100%; }
 
 #addProductButton {
   position: fixed;
@@ -62,26 +71,35 @@ h1 {
   margin: 30px; }
 
 #productList {
+  width: 100%;
   padding-bottom: 50px; }
+
+.shopContainer {
+  margin-top: 10px;
+  margin-bottom: 10px; }
+
+h3.locationBanner {
+  font-family: Helvetica, sans-serif;
+  margin-top: 30px;
+  margin-bottom: 30px; }
 
 .product {
   box-shadow: 1px 1px 1px 1px gray;
-  width: 80vw;
+  width: 90%;
   margin: auto;
-  margin-top: 10px;
+  margin-top: 5px;
+  margin-bottom: 5px;
   padding: 10px 10px;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   position: relative; }
   .product .prodDataContainer {
     /*align-items: center;*/
-    width: calc(80vw - 150px); }
+    width: calc(95% - 100px); }
   .product .imgContainer {
     height: 100%; }
-  .product img {
-    width: 150px;
-    height: 150px; }
   .product p {
     margin: 0px; }
   .product .prodImgData {
@@ -89,5 +107,16 @@ h1 {
     left: 2000px;
     top: 0px; }
   .product:hover {
-    position: relative;
-    left: 10px; }
+    /*--position: relative;
+          left: 10px;*/
+    box-shadow: 1px 1px 3px 3px gray; }
+
+img {
+  width: 100px;
+  height: 100px;
+  transition: all ease-in .33s; }
+
+img.large {
+  width: 300px;
+  height: 300px;
+  transition: all ease-in .33s; }

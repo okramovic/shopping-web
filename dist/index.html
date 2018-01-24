@@ -15,7 +15,7 @@
      <!--img src="https://dl.dropboxusercontent.com/s/1mzslkpuoilup3l/okram%40protonmail.ch_D2018-01-21_T17-42-18.jpg?dl=0" 
           alt="img from DB"-->
      <div id="app">
-          <img id="preview">
+          <!--img id="preview"-->
 
 
           <div v-show="!userName">using app as unregistered</div>
@@ -94,7 +94,7 @@
           
           <br>
 
-          <div v-show="screen==='main'" class="vertical">
+          <div id="mainScreen" v-show="screen==='main'" class="vertical">
                   <div id="locButtons" v-show="screen==='main'">
                               <button v-on:click="openLocationInput('country',$event)">add country</button>
                               <button v-on:click="openLocationInput('city',$event)">add city</button>
@@ -133,31 +133,32 @@
                   </div>
                   <br>
 
-     
+               <!-- products display -->
                <div v-show="newProductForm === false" id="productList">
-                    <div v-for="country in countries" v-if="currentCountry == country.name || currentCountry=='all countries'">
+                    <div v-for="country in countries" v-if="currentCountry == country.name || currentCountry=='all countries'" class="countryContainer">
                          
-                         <div v-for="city in country.cities" v-if="currentCity == city.name || currentCity=='all cities'">
+                         <div v-for="city in country.cities" v-if="currentCity == city.name || currentCity=='all cities'" class="cityContainer">
                               
-                              <div v-for="shop in city.shops" v-if="currentShop==shop.name || currentShop == 'all shops'" class="vertical">
+                              <div v-for="shop in city.shops" v-if="currentShop==shop.name || currentShop == 'all shops'" class="shopContainer vertical">
                                    
                                    <!--div v-for="prod in shop.products">{{prod.name}}</div-->
                                    <!--h5 v-if="shop.products.length==0">nothing to display here</h5-->
                                    
-                                   <h3 v-if="shop.products.length>0">{{country.name}} - {{city.name}} - {{shop.name}}</h3>
+                                   <h3 class="locationBanner" v-if="shop.products.length>0">{{country.name}} - {{city.name}} - {{shop.name}}</h3>
                                    
-                                   <div v-for="prod in shop.products" class="product" v-if="shop.products.length>0" v-on:click="openProductFormToModify(prod)">
+                                   <div v-for="prod in shop.products" class="product" v-if="shop.products.length>0" v-on:mousedown="startTimer(prod)" v-on:mouseup="stopTimer($event, prod)"><!-- v-on:click="openProductFormToModify(prod)"  -->
+                                             
 
                                         <div v-if="!prod.owner">#</div>
-                                        <div class="imgContainer" v-if="prod.imgName || prod.dbxURL">
-                                             <img alt="img" :src="prod.dbxURL">
-                                        </div>
+                                        <!--div class="imgContainer" v-if="prod.imgName || prod.dbxURL"></div-->
+                                             <img alt="img" :src="prod.dbxURL" @click="enlargeImage($event)" v-if="prod.imgName || prod.dbxURL">
+                                        
                                         <div class="prodDataContainer vertical">
                                              <p>{{prod.type}}</p>
                                              <p>{{prod.name}}</p>
-                                             <p>{{prod.descr}}</p>
-                                             <p>{{prod.descrLong}}</p>
-                                             <p>{{prod.price}}</p>
+                                             <p v-if="prod.descr">{{prod.descr}}</p>
+                                             <p v-if="prod.descrLong">{{prod.descrLong}}</p>
+                                             <p v-if="prod.price">{{prod.price}}</p>
                                              <p>rating: {{prod.rating}}</p>
                                         </div>
                                         

@@ -10405,6 +10405,7 @@ const app = new Vue({
           shops: [],
           currentDisplayedProducts: [],
 
+          mouseMillis: 0,
           newProductForm: false,
           newProductPreview: false,
           newProductPreviewLastModified: null,
@@ -10805,6 +10806,38 @@ const app = new Vue({
                          }
                     })
                }
+          },
+          startTimer:function(prod){
+               //console.log('start timer')
+               const self = this
+               window.mouseTimer = setInterval(()=> self.mouseMillis += 10 ,10)
+          },
+          stopTimer:function(ev, prod){
+               
+               clearInterval(window.mouseTimer)
+               //console.log('stop timer', this.mouseMillis, prod, ev)
+
+               if (this.mouseMillis<300){} // its a click -> enlarge image
+               else this.openProductFormToModify(prod)
+               
+               this.mouseMillis = 0
+          },
+          enlargeImage:function(ev){
+               console.log('enlarging image', ev)
+               const textDiv = ev.path[2]
+
+               if (ev.srcElement.className==""){ 
+
+                    ev.srcElement.className = 'large'
+                    //textDiv.className = 'fadeAway'
+
+               } else {
+                    ev.srcElement.className ="" 
+                    //textDiv.className = ""
+               }
+
+               
+               
           },
           openProductForm:function(open){
                this.newProductForm = open
