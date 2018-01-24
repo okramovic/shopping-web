@@ -148,10 +148,12 @@
                               <div v-for="shop in city.shops" v-if="currentShop==shop.name || currentShop == 'all shops'" class="vertical">
                                    
                                    <!--div v-for="prod in shop.products">{{prod.name}}</div-->
+                                   <!--h5 v-if="shop.products.length==0">nothing to display here</h5-->
+                                   
                                    <h3 v-if="shop.products.length>0">{{country.name}} - {{city.name}} - {{shop.name}}</h3>
-
+                                   
                                    <div v-for="prod in shop.products" class="product" v-if="shop.products.length>0"
-                                             v-on:click="openProductForm(prod)" >
+                                             v-on:click="openProductFormToModify(prod)" >
 
                                         <div v-if="!prod.owner">#</div>
                                         <div class="imgContainer" v-if="prod.imgName || prod.dbxURL">
@@ -199,7 +201,7 @@
                   
 
 
-               <button id="addProductButton" v-show="!newProductForm" v-on:click="openNewProductForm(true)">add product</button>
+               <button id="addProductButton" v-show="!newProductForm" v-on:click="openProductForm(true)">add product</button>
 
                <div id="newProductFormContainer" v-show="newProductForm === true">
                     <form name="newProductForm">
@@ -234,7 +236,7 @@
                               </div>
                             
                     </form>
-                    <button id="closeNewProductForm" v-show="newProductForm===true" v-on:click="openNewProductForm(false)">cancel</button>
+                    <button id="closeNewProductForm" v-show="newProductForm===true" v-on:click="openProductForm(false)">cancel</button>
                     </div>
                   
                     
@@ -248,7 +250,6 @@
 
      </div ><!-- end vue app -->
         
-     <script src="js/db.js"></script>
      <script src="js/index.js"></script>
      
 </body>
