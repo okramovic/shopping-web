@@ -1,8 +1,12 @@
+$fontSerif: 'Times New Roman', Times, serif;
+
+
 $myColor: rgb(63, 236, 184);
 
 
 h1{
      color: $myColor;
+     /*--font-family: 'Times New Roman', Times, serif;*/
 }
 h3{
      font-weight: 100;
@@ -228,14 +232,52 @@ img{
      width: 100px;
      height: 100px;
      margin: auto;
-     transition: all ease-in .33s;
+     transition: all ease-in .25s;
 }
 img.large{
      width: 300px;
      margin: auto;
      height: 300px;
-     transition: all ease-in .33s;
+     transition: all ease-in .25s;
 }
 .hide{
      display: none;
+}
+
+
+
+#loader{
+     $ldrSize: 200px;
+     width: $ldrSize;
+     height: $ldrSize;
+
+     font-size: 50px;
+     
+     border: 7px solid aquamarine;
+     border-radius: 50%;
+     /*border-left: none;*/
+     /*border-bottom: 7px solid transparent;*/
+
+     position: absolute;
+     top: calc(50vh - 200px/2);
+     /*left: calc(20vw - $ldrSize/2); var doesnt work */
+
+     display: flex;
+     align-items: center;
+     justify-content: center;
+
+     transform: rotate(-90deg);
+
+     transition: opacity .25s;
+     
+     #loaderMsg{
+          font-family: $fontSerif;
+          color: aquamarine;
+     }
+}
+
+.nope{
+     display: none;
+     opacity: 0;
+     transition: all .25s;
 }

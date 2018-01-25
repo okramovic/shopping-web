@@ -10403,7 +10403,7 @@ const app = new Vue({
           countries: [],
           cities: [],
           shops: [],
-          currentDisplayedProducts: [],
+          //currentDisplayedProducts: [],
 
           mouseMillis: 0,
           newProductForm: false,
@@ -10417,6 +10417,7 @@ const app = new Vue({
 
           modifyingProduct: false,
           productModified: null,
+          animateLoader: false
      },
      methods:{
           switchScreen:function(screen){
@@ -10439,11 +10440,13 @@ const app = new Vue({
                let email = this.loginemail,
                    password = this.loginpass
 
-               console.log('longin', email, password)
+               console.log('loginin', email, password)
 
-               const tosend = {email, password}, self = this,
+               const tosend = {email, password}, self = this
 
-               xhr = new XMLHttpRequest()
+               animateLoader.call(this)
+
+               const xhr = new XMLHttpRequest()
                xhr.onreadystatechange = function() {
 
                     if (this.readyState == 4 && this.status == 200) {      console.log('received',typeof this.responseText, this.responseText)
@@ -10461,7 +10464,7 @@ const app = new Vue({
                          updateDeviceUser(loginResponse.userName)
                               
                          if (loginResponse.followedUsers) // this doesnt store their country data
-                                   loginResponse.followedUsers.forEach(user=>addUserToDeviceLS(user))
+                                   loginResponse.followedUsers.forEach(user=>addUserNameToFollowed(user))
 
                          self.userName = loginResponse.userName
 
@@ -10470,9 +10473,10 @@ const app = new Vue({
                          
                          return self.startApp()
 
-                    } else if (this.readyState == 4 && this.status == 400){
+                    } else if (this.readyState == 4 && this.status !== 200){
 
-                         self.informUser(`something went wrong, try again later`)
+                         stopLoaderAnimation.call(self)
+                         self.informUser(`something went wrong, try again`)
                     }
                }
                xhr.open("POST", serverURL + "API/login", true)
@@ -10481,10 +10485,11 @@ const app = new Vue({
           },
           signUp: function($event){
                $event.preventDefault()
-               let self = this
-                    let email = document.querySelector('input[name="reg-useremail"').value
-                    let userName = document.querySelector('input[name="reg-username"').value
-                    let password  = document.querySelector('input[name="reg-userpassword"').value
+
+               const self = this
+               let email = document.querySelector('input[name="reg-useremail"').value,
+                   userName = document.querySelector('input[name="reg-username"').value,
+                   password  = document.querySelector('input[name="reg-userpassword"').value
 
                if (userName==0) return alert(`sorry, '${userName}' can't be accepted as username`) // 0 is reserved for unregistered user in IDB
 
@@ -10493,7 +10498,9 @@ const app = new Vue({
 
                if (!email || !userName || ! password) return console.error('email or name or pass missing')
 
-               let xhr = new XMLHttpRequest()
+               animateLoader.call(this)
+
+               const xhr = new XMLHttpRequest()
                xhr.onreadystatechange = function() {
                     
                     if (this.readyState == 4 && this.status == 200) {  //this.responseText;
@@ -10505,7 +10512,6 @@ const app = new Vue({
                               updateDeviceUser(userName)
                               
                               self.userName = getDeviceUser()
-                              //.then(name=>self.userName = name)
                               self.screen = 'main'
 
                               return self.startApp()
@@ -10514,12 +10520,10 @@ const app = new Vue({
 
                               self.informUser(`Email address '${email}' is already used..`)
                     else {}
-
-                  };
+               };
 
                xhr.open("POST", serverURL + "API/signup", true)
-               //xhr.setRequestHeader('Access-Control-Allow-Origin', true)  //Access-Control-Allow-Origin
-               xhr.send(JSON.stringify( tosend))
+               xhr.send( JSON.stringify(tosend))
           },
           logout: function($ev){
                console.log('>> logouted <<')
@@ -10529,8 +10533,9 @@ const app = new Vue({
                'cities', 'shops']
 
                items.forEach(item=>{
-                    console.log('item to remove', item)
-                    return window.localStorage.removeItem(item) })
+                    //console.log('item to remove', item)
+                    return window.localStorage.removeItem(item) 
+               })
                
                //this.userName = undefined
                console.log('now will reload app')
@@ -10611,20 +10616,23 @@ const app = new Vue({
           followUser:function(email,userName){
                console.log('follow', email,userName)
                const self = this
-
                const xhr = new XMLHttpRequest()
+               animateLoader.call(this)
+
                xhr.onreadystatechange = function(){
 
                     if (this.readyState == 4 && this.status == 200) { 
                          console.log('follow sekces')
                          
-                         addUserToDeviceLS({userName, email})    // store new followdee in local storage
+                         addUserNameToFollowed({userName, email})    // store new followdee in local storage
 
                          fetchCountriesOfUser({userName, email})
                          .then(setOtherUserIDBData)              // hard-replaces whole document with new data
                          .then(self.startApp)                    // here it copies data(countries etc) to device users
+                         .catch(er=>stopLoaderAnimation.call(self))
 
-                    } else if (this.readyState == 4 && this.status == 400) { 
+                    } else if (this.readyState == 4 && this.status != 200) { 
+                         stopLoaderAnimation.call(self)
                          console.error('TRY AGAIN LATER')
                          this.informUser('TRY AGAIN LATER')
                          // finish this part
@@ -11018,7 +11026,8 @@ const app = new Vue({
                if (prod.descr) this.newProductDescription = prod.descr
                if (prod.descrLong) this.newProductDescriptionLong =prod.descrLong
                if (prod.price) this.newProductPrice = parseFloat( prod.price )
-               
+               //removeFormRatingChecked()
+
                if (prod.rating) document.querySelector(`input[name="newRating"][value="${prod.rating}"]`).setAttribute('checked', true)
                     
                // just showing product's image
@@ -11172,9 +11181,8 @@ const app = new Vue({
                               
                })
                .then(myresult=>{
-                         
-                         //console.log('my', myresult)
-                         //console.log('others', othersCountriesWProds)
+                         stopLoaderAnimation.call(this)
+
                          let copy = JSON.parse( JSON.stringify(othersCountriesWProds))
 
                          const withProducts = copyUserDataOrig.call(this, copy, myresult, 0)
@@ -11182,19 +11190,16 @@ const app = new Vue({
 
                          this.countries = withProducts.countries // update screen w new data available
 
-                         //const wURLs = loadProductIDBURLs(withProducts.countries)
-                         //console.log('prods wURLs', wURLs)
                     return loadProductIDBURLs(withProducts.countries) 
                })
                .then(result=>{
                     console.log('result w URLs',result)
-
+                    
                     initializeLocationSelects(this, result)
                })
-                         //initializeLocationSelects(this, withProducts.countries)
-                         //initializeLocationSelects(this, wURLs)
-               //})
-               
+               .catch(er=>{
+                    stopLoaderAnimation.call(this)
+               })
           },
           startApp:function(){
                //this.screen = 'main'
@@ -11221,20 +11226,22 @@ const app = new Vue({
 
                     // try to get other's MDB data to update IDB
                     if (navigator.onLine){
-                         const fetchedCountryData = this.followedUsers.map(fetchCountriesOfUser) // get new data for each user
-                         //console.log('nav online - fetched', fetchedCountryData)
+                         animateLoader.call(this)  // show Loader
+
+                         const fetchedCountryData = this.followedUsers.map(fetchCountriesOfUser) // get new data for each followed user
 
                          Promise.all(fetchedCountryData)
                          .then(userData=>{   // store new user data
+
                               console.log('nav online - fetched', fetchedCountryData)
                               const saved = userData.map(user=>setOtherUserIDBData(user))
                               
                               return Promise.all(saved)
                          })
-                         
                          .then(saved=>{      // reloadView() is where new locations get copied to users countries
 
                               console.log('starting app - other users data', saved)
+                              //stopLoaderAnimation.call(this)
                               return this.reloadView()     //getOtherUsersIDBData(this.followedUsers)
 
                          })
@@ -11416,8 +11423,9 @@ const app = new Vue({
           //console.log('CREATED')
      }
 })
-let closTest = function(){ //console.log('hi,', somename)
-}
+
+
+
 
 
 const loadProductIDBURLs = async (countries) =>{
@@ -11464,7 +11472,7 @@ const getSingleIDBimg = prod => new Promise((resolve, reject)=>{
                     resolve(null) 
           })
 })     
-//)
+
 
 
 const findProductLocations = (countries, imgName)=>{
@@ -11986,7 +11994,7 @@ function getLSfollowedUsers(){
      users = JSON.parse(users)
      return users
 }
-function addUserToDeviceLS(newUser){
+function addUserNameToFollowed(newUser){
 
      let users = window.localStorage.getItem('followedUsers')
      users = JSON.parse(users)
@@ -12397,6 +12405,27 @@ function getFormattedDate(date){
      return `${obj.year}-${obj.month}-${obj.day}_T${obj.hours}-${obj.minutes}-${obj.secs}`
 }
 
+function animateLoader(){
+
+     const div = document.querySelector('#loader')
+     div.className = ''
+     this.animateLoader = true
+     let rot = 0
+
+     const animate = () => {
+          rot += 2
+          div.style.transform = `rotate(${rot}deg)`
+          if (this.animateLoader) requestAnimationFrame(animate)
+     }
+     animate()
+}
+function stopLoaderAnimation(){
+     
+     document.querySelector('#loader').className = 'nope'
+     const self = this
+
+     setTimeout(()=> self.animateLoader = false, 250)
+}
 
 const getPicURL = function(entry){
 

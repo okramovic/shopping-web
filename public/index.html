@@ -182,7 +182,7 @@
                                    
                <!--h4 v-show="newProductForm === false && currentDisplayedProducts.length==0"
                     >no products to display</h4-->
-   
+
 
                <button id="addProductButton" v-show="!newProductForm" v-on:click="openProductForm(true)">+</button>
 
@@ -231,6 +231,7 @@
           
      <div id="console" v-show="console" class="vertical just_center">{{console}}</div>
           
+     <div id="loader" class="nope" v-show="animateLoader"><div id="loaderMsg">just a sec</div></div>
      <!--div id="templ1">
           <slot></slot> hi? {{msg}} <product></product>
      </div-->
