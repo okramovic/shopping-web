@@ -653,10 +653,8 @@ const app = new Vue({
           stopTimer:function(ev, prod){
                
                clearInterval(window.mouseTimer)
-               //console.log('stop timer', this.mouseMillis, prod, ev)
 
-               if (this.mouseMillis<300){} // its a click -> enlarge image
-               else this.openProductFormToModify(prod)
+               if (this.mouseMillis>300) this.openProductFormToModify(prod)
                
                this.mouseMillis = 0
           },
@@ -678,6 +676,9 @@ const app = new Vue({
                
           },
           openProductForm:function(open){
+
+               if (open===true && !navigator.onLine) return this.informUser(`You can't add products offline. Take a picture now and add a product when you are online.`,7000)
+               
                this.newProductForm = open
 
                if (open === false){

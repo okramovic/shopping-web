@@ -192,7 +192,7 @@
                               <canvas v-show="newProductPreview==true" width="300" height="300"></canvas>
                               <br>
                               <p v-show="!modifyingProduct">add picture</p>
-                              <input v-show="!modifyingProduct" type="file" accept="img/*" capture="environment" v-on:change="imageAdded($event)">
+                              <input v-show="!modifyingProduct" type="file" accept="img/*" v-on:change="imageAdded($event)"><!-- capture="environment" -->
                               <br>
 
                               <p>product type</p>
