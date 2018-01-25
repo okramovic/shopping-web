@@ -1012,8 +1012,18 @@ const app = new Vue({
 
                          this.countries = withProducts.countries // update screen w new data available
 
-                         initializeLocationSelects(this, withProducts.countries)
+                         //const wURLs = loadProductIDBURLs(withProducts.countries)
+                         //console.log('prods wURLs', wURLs)
+                    return loadProductIDBURLs(withProducts.countries) 
                })
+               .then(result=>{
+                    console.log('result w URLs',result)
+
+                    initializeLocationSelects(this, result)
+               })
+                         //initializeLocationSelects(this, withProducts.countries)
+                         //initializeLocationSelects(this, wURLs)
+               //})
                
           },
           startApp:function(){
@@ -1238,6 +1248,54 @@ const app = new Vue({
 })
 let closTest = function(){ //console.log('hi,', somename)
 }
+
+
+const loadProductIDBURLs = async (countries) =>{
+          //let result;
+          const pures = [], proms = []
+
+          countries.forEach((country, cI)=>
+               country.cities.forEach((city,ciI)=>
+                    city.shops.forEach((shop,sI)=>
+                         shop.products.forEach((prod,pI)=>{
+                              if (prod.imgName) {
+                                   //prod.displayURL = getSingleIDBimg(prod)
+                                   pures.push(prod)
+                                   proms.push( getSingleIDBimg(prod) )
+                              }
+                              /*if (cI == countries.length-1 && 
+                                  ciI== country.cities.length-1 && 
+                                  sI == city.shops.length-1 && 
+                                  pI == shop.products.length-1) {
+                                       //console.log('|||||  doing last item!', country.name, prod.name)
+                                       //resolve(countries)
+                                       //result = countries
+                              }*/
+                         })
+                    )
+               )
+          )
+          const urls = await Promise.all(proms)
+
+          pures.forEach((prod,i) => prod.displayURL = urls[i])
+          //console.log('this happens last', countries)
+          return countries
+}
+
+const getSingleIDBimg = prod => new Promise((resolve, reject)=>{
+          
+          picturesDB.item.get({fileName:prod.imgName})
+          .then(result => 
+                    //console.log('img idb result?', result.data.substr(0, 50))
+                    resolve(result.data)
+          )
+          .catch(er=>{ 
+                    console.error('error getting IDB img data', er)
+                    resolve(null) 
+          })
+})     
+//)
+
 
 const findProductLocations = (countries, imgName)=>{
 

@@ -70,6 +70,7 @@ input[type=file]:focus, button{
      display: flex;
      flex-direction: column;
      align-items: center;
+     padding-top: 20px;
      padding-bottom: 40px;
      form{
           display: flex;
@@ -178,8 +179,8 @@ h3.locationBanner.noBottomMarg{
 
 
 .product{
-     box-shadow: 1px 1px 1px 1px gray;
-     border-radius: 3px;
+     box-shadow: 1px 1px 3px 0px gray;
+     border-radius: 2px;
      width: 90%;
 
      margin: auto;
@@ -216,6 +217,10 @@ h3.locationBanner.noBottomMarg{
           left: 10px;*/
           box-shadow: 1px 1px 3px 3px gray;
      }
+}
+.product.others{
+     /*background-color: rgb(129, 129, 129);*/
+     font-style: italic;
 }
 
 img{

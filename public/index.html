@@ -17,10 +17,10 @@
           <!--img id="preview"-->
 
           
-          <div v-show="!userName && newProductForm === false">using app as unregistered</div>
+          <div v-show="!userName && newProductForm === false">you are unregistered</div>
           <div style="width: 100%; display: flex; justify-content: space-around;">
 
-               <div v-show="userName && newProductForm === false">using app as {{userName}}</div>
+               <div v-show="userName && newProductForm === false">you are {{userName}}</div>
                <button v-show="screen=='settings' && userName"  @click="logout"
                     >logout {{userName}}</button>
                
@@ -157,13 +157,14 @@
                                    
                                    <div v-if="shop.products.length>0" v-for="prod in shop.products" class="product" 
                                              v-on:mousedown="startTimer(prod)"
-                                             v-on:mouseup="stopTimer($event, prod)"
+                                             v-on:mouseup="stopTimer($event, prod)" :class="{others: prod.owner===undefined}"
                                              ><!-- v-on:click="openProductFormToModify(prod)"  -->
                                              
 
-                                        <div v-if="!prod.owner">#</div>
+                                        <!--div v-if="!prod.owner">#</div-->
                                         <!--div class="imgContainer" v-if="prod.imgName || prod.dbxURL"></div-->
-                                        <img alt="img" :src="prod.dbxURL" @click="enlargeImage($event)" v-if="prod.imgName || prod.dbxURL">
+                                        <img alt="img" :src="prod.dbxURL" @click="enlargeImage($event)" v-if="!prod.displayURL && prod.dbxURL"> <!-- v-if="prod.imgName || prod.dbxURL" -->
+                                        <img :alt="prod.name" :src="prod.displayURL" @click="enlargeImage($event)"  style="border: 0px solid dodgerblue;"><!-- v-if="prod.displayURL" -->
                                         
                                         <div class="prodDataContainer vertical">
                                              <p>{{prod.type}}</p>
@@ -187,9 +188,10 @@
 
                <div id="newProductFormContainer" v-show="newProductForm === true">
                     <form name="newProductForm">
+                         
                               <canvas v-show="newProductPreview==true" width="300" height="300"></canvas>
                               <br>
-                              <p>add picture</p>
+                              <p v-show="!modifyingProduct">add picture</p>
                               <input v-show="!modifyingProduct" type="file" accept="img/*" capture="environment" v-on:change="imageAdded($event)">
                               <br>
 
