@@ -5,7 +5,12 @@ h3 {
   font-weight: 100; }
 
 body {
-  margin: 0; }
+  margin: 0;
+  margin-top: 15px; }
+
+select, select:active, select:hover, input[type=file]:active, input[type=file]:hover,
+input[type=file]:focus, button {
+  outline: none; }
 
 #app {
   max-width: 500px;
@@ -18,25 +23,75 @@ body {
 #mainScreen {
   width: 100%; }
 
+#locButtons {
+  width: 100%; }
+  #locButtons button {
+    font-size: 15px;
+    width: 33%;
+    min-height: 48px;
+    border: none;
+    background-color: white; }
+
+#locations {
+  width: 100%; }
+  #locations select {
+    width: 30%;
+    height: 48px;
+    font-size: 12px;
+    overflow: hidden;
+    text-align-last: center;
+    background-image: none;
+    background-color: transparent;
+    border: none; }
+
 #addProductButton {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  background-color: aquamarine; }
+  font-size: 20px;
+  background-color: aquamarine;
+  border-radius: 50%;
+  border-color: aquamarine;
+  box-shadow: 0px 0px 3px 1px gray;
+  height: 40px;
+  width: 40px;
+  padding-bottom: 5px; }
 
 #newProductFormContainer {
   display: flex;
   flex-direction: column;
-  align-items: center; }
+  align-items: center;
+  padding-bottom: 40px; }
   #newProductFormContainer form {
     display: flex;
     flex-direction: column;
     align-items: center;
     padding-bottom: 30px; }
   #newProductFormContainer #closeNewProductForm {
-    position: absolute;
-    bottom: 20px;
-    left: 20px; }
+    /*position: absolute; bottom: 20px;left: 20px;*/ }
+  #newProductFormContainer input[type=text], #newProductFormContainer input[type=number] {
+    text-align: center;
+    text-decoration: underline; }
+  #newProductFormContainer input[type=text]::placeholder {
+    text-decoration: underline; }
+  #newProductFormContainer input[type=text]::placeholder {
+    text-align: center; }
+  #newProductFormContainer textarea {
+    margin-top: 15px;
+    padding: 10px;
+    text-align: center;
+    border: 1px solid black;
+    border-radius: 5px; }
+  #newProductFormContainer #productFormButtonsContainer {
+    margin-top: 20px; }
+  #newProductFormContainer button {
+    margin-left: 10px;
+    margin-right: 10px;
+    height: 48px;
+    font-size: 20px;
+    background-color: white;
+    border: 2px solid black;
+    border-radius: 5px; }
 
 #console {
   width: 80vw;
@@ -51,6 +106,10 @@ body {
 .vertical {
   display: flex;
   flex-direction: column;
+  align-items: center; }
+
+.flex {
+  display: flex;
   align-items: center; }
 
 .center {
@@ -75,16 +134,21 @@ body {
   padding-bottom: 50px; }
 
 .shopContainer {
-  margin-top: 10px;
-  margin-bottom: 10px; }
-
-h3.locationBanner {
-  font-family: Helvetica, sans-serif;
   margin-top: 30px;
   margin-bottom: 30px; }
 
+h3.locationBanner {
+  font-family: Helvetica, sans-serif;
+  font-weight: 200;
+  margin-top: 10px;
+  margin-bottom: 30px; }
+
+h3.locationBanner.noBottomMarg {
+  margin-bottom: 0px; }
+
 .product {
   box-shadow: 1px 1px 1px 1px gray;
+  border-radius: 3px;
   width: 90%;
   margin: auto;
   margin-top: 5px;
@@ -97,7 +161,8 @@ h3.locationBanner {
   position: relative; }
   .product .prodDataContainer {
     /*align-items: center;*/
-    width: calc(95% - 100px); }
+    width: calc(95% - 100px);
+    margin: auto; }
   .product .imgContainer {
     height: 100%; }
   .product p {
@@ -112,11 +177,17 @@ h3.locationBanner {
     box-shadow: 1px 1px 3px 3px gray; }
 
 img {
+  border-radius: 3px;
   width: 100px;
   height: 100px;
+  margin: auto;
   transition: all ease-in .33s; }
 
 img.large {
   width: 300px;
+  margin: auto;
   height: 300px;
   transition: all ease-in .33s; }
+
+.hide {
+  display: none; }

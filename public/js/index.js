@@ -491,7 +491,7 @@ const app = new Vue({
           },
           addNewLocation: function(){
                
-               if (!this.newLocation) this.informUser('no name?',1500)
+               if (!this.newLocation || this.newLocation=='') return this.informUser('no name?',1500)
                if (this.newLocation == 'all countries' || this.newLocation == 'all cities' || this.newLocation == 'all shops'){
                          this.informUser(`sorry, '${this.newLocation}' is one of names that are not allowed`,3000)
                          return this.newLocation = ''
