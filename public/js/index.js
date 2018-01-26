@@ -218,7 +218,7 @@ const app = new Vue({
 
           searchText: null,
           searchResults: null,
-          followedUsers: [],
+          followedUsers: getLSfollowedUsers(),
 
           showSettings: false,
           userName: undefined,
@@ -488,8 +488,8 @@ const app = new Vue({
                     if (!users || users.some(user=>user.email== email)===false) return false
                     else return true
           },
-          unfollowUser:function(email){
-
+          unfollowUser:function(user){
+               console.log(`>> unfollowing ${user.userName} <<`)
                // delete local storage country data of that user only if he isnt followed by any other deviceUser in IDB
           },
           openLocationInput: function(set,ev){
