@@ -21,11 +21,21 @@ getting products from more locations (all countries/all cities/all shops)
 
 user stories:
 - i can filter products viewed using text input
-- i can choose for each user (in settings menu) if to download his images to my device
+- i can choose for each user (in settings menu) if to download his images to my device with their data
 
 
 
 TODO
+
+- show followed users in settings
+- add button and function to download my pics to device
+
+
+- prepare html head for PWA
+- create manifest.json
+- create service worker
+
+
 - product could turn red for half second or shake itself to indicate user cant change it
 - small status bar could appear with announcement whats wrong
 - when adding/deleting products and user is not online, create queue of future requests to be sent when app is online
@@ -99,4 +109,13 @@ done:
 - after new product submission - reset all form fields and canvas to empty
 - use something looking better than annoying alerts (e.g. when i want to modify product thats not mine)
 - user can edit and delete products (works again with new way products are displayed)
+
+25 Jan
+- loading images from IDB rather than from online source
+
+26 Jan
+- 'fetch and push my data' buttons - show them only if user is online
+     - also search bar
+     - also dropbox button
+
 */

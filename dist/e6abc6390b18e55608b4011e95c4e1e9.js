@@ -10436,6 +10436,11 @@ const app = new Vue({
                if (show) this.screen = 'settings'
                else this.screen = 'main'
           },
+          onLine:function(){
+               
+               if (navigator.onLine) return true
+               else return false
+          },
           login:function(){
                let email = this.loginemail,
                    password = this.loginpass
