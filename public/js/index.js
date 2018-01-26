@@ -247,7 +247,9 @@ const app = new Vue({
 
           modifyingProduct: false,
           productModified: null,
-          animateLoader: false
+          animateLoader: false,
+
+          fetchPicsAlso: false
      },
      methods:{
           switchScreen:function(screen){
@@ -387,25 +389,61 @@ const app = new Vue({
           },
           fetchMyCountries:function(){
                console.log('fetching my countries of >', this.userName, '<')
-
-               if (!this.userName) return alert('unregistered user cant back up his data')
+               animateLoader.call(this)               
+               const errorHandlerLocal = errorHandler.bind(this)
 
                fetchCountriesOfUser({   userName: this.userName,
                                         email: localStorage.getItem('deviceUserEmail')
-               }).then(userData =>{
+               }).then( userData =>{
 
-                    console.log('|||  userData fecthed', userData)
-
+                    console.log('|||  userData fetched', userData)
                     return updateDeviceUserCountries(this.userName, userData.countries)
                     
                })
-               .then( (result) => {
-                    console.log('after saving user own data', result)
-                    this.informUser(`Sukces - your own data updated!`)
+               .then( resultCountries => {
+                    console.log('saved user own data', resultCountries)
 
-                    return this.startApp()
-               })
+                    if (this.fetchPicsAlso){
+
+                         let picsNamesAndURLs;
+                         getListOfImgNamesAndURLs(resultCountries)
+                         .then(namesAndURLs=>{
+                              
+                              picsNamesAndURLs = namesAndURLs
+                              //const urlsOnly = namesAndURLs.map(obj=>obj.url)
+                              const imgData = namesAndURLs.map(obj=>obj.url).map(fetchDbxImage)
+                              return Promise.all(imgData)
+
+                         }).then(dataOfImgs=>{ // array of raw data strings
+                              
+                              dataOfImgs = dataOfImgs.map((dataURL,i)=>{
+                                             return { imgName: picsNamesAndURLs[i].imgName, data: dataURL, userName: this.userName}
+                                           })
+
+                              const promises = dataOfImgs.map( img => saveImageToIDB(img.imgName, img.data, this.userName) )
+                              return Promise.all(promises)
+                         })
+                         .then( imageNames =>{
+
+                              stopLoaderAnimation.call(this)
+                              this.switchScreen('main')
+                              return this.startApp()
+                         })
+                         .catch(errorHandlerLocal)
+
+
+                    } else {
+                         stopLoaderAnimation.call(this)
+                         this.informUser(`Sukces - your own data updated!`,2500)
+
+                         this.switchScreen('main')
+                         return this.startApp()
+                    }
                     
+                    
+               }).catch(errorHandlerLocal)
+
+               
           },
           pushMyCountries:function(){
                if (!this.userName ) return alert('unregistered user cant back up data online')
@@ -594,7 +632,7 @@ const app = new Vue({
 
 
                               //
-                              return getImagesData(prodsWImages)
+                              return getImgIDBDataOf(prodsWImages)
                               
                          })
                          // give images their data
@@ -664,20 +702,14 @@ const app = new Vue({
                this.mouseMillis = 0
           },
           enlargeImage:function(ev){
-               console.log('enlarging image', ev)
+               //console.log('enlarging image', ev)
                const textDiv = ev.path[2]
 
-               if (ev.srcElement.className==""){ 
-
-                    ev.srcElement.className = 'large'
+               if (ev.srcElement.className=="") ev.srcElement.className = 'large'
                     //textDiv.className = 'fadeAway'
 
-               } else {
-                    ev.srcElement.className ="" 
+               else ev.srcElement.className ="" 
                     //textDiv.className = ""
-               }
-
-               
                
           },
           openProductForm:function(open){
@@ -749,7 +781,7 @@ const app = new Vue({
                                    console.log('link', link)
                                    productToAdd.dbxURL = link
 
-                              return saveImageToIDB(fileName)
+                              return saveImageToIDB(fileName, window.canvasData, this.userName)
                          })
                          .then(result =>{
                               console.log('result 2', result)
@@ -767,7 +799,7 @@ const app = new Vue({
                          .catch(er=>alert('huge arror storing new product'))
                
 
-               else saveImageToIDB(fileName)
+               else saveImageToIDB(fileName, window.canvasData, this.userName)
                .then(()=>{
                     window.toUploadToDropbox = undefined
                     // create task to upload image when user is online
@@ -775,7 +807,7 @@ const app = new Vue({
                })
                .then(()=> addProduct('product', productToAdd) )
                .then(()=>{
-
+                    window.canvasData = null
                     this.newProductForm = false
                     this.newProductPreview = false
                     return this.reloadView()
@@ -867,7 +899,7 @@ const app = new Vue({
                if (prod.rating) document.querySelector(`input[name="newRating"][value="${prod.rating}"]`).setAttribute('checked', true)
                     
                // just showing product's image
-               if (prod.imgName) getImagesData([prod.imgName])   
+               if (prod.imgName) getImgIDBDataOf([prod.imgName])   
                .then(data=>{
                     const self = this,
                           img = new Image(),
@@ -1260,7 +1292,11 @@ const app = new Vue({
      }
 })
 
-
+function errorHandler(er){
+     stopLoaderAnimation.call(this)
+     console.error(er)
+     return this.informUser(`error occured, please try again later`)
+}
 
 
 
@@ -1308,6 +1344,258 @@ const getSingleIDBimg = prod => new Promise((resolve, reject)=>{
                     resolve(null) 
           })
 })     
+
+const getListOfImgNamesAndURLs = countries =>
+
+     new Promise((resolve, reject)=>{
+          //getOwnIDBData(this.userName)     
+          //.then( countries =>{
+               const urls = []
+               countries.forEach(country=>
+                    country.cities.forEach(city=>
+                         city.shops.forEach(shop=>
+                              shop.products.forEach(prod=>{
+                                   if (prod.dbxURL) urls.push({url: prod.dbxURL, imgName: prod.imgName})
+                              })
+                         )
+                    )
+               )
+               if (urls.length>0) resolve(urls)
+               else reject(null)
+          //})
+})
+     
+
+
+
+
+const fetchDbxImage = url =>
+     new Promise((resolve, reject)=>{
+
+          //let d2    = 'https://dl.dropboxusercontent.com/s/jl15lcir35926i5/okram%40protonmail.ch_D2018-01-12_T22-09-07.jpg' 
+          //let dbximg= 'https://www.dropbox.com/s/jl15lcir35926i5/okram%40protonmail.ch_D2018-01-12_T22-09-07.jpg'
+          //  https://www.dropboxforum.com/t5/API-support/CORS-issue-when-trying-to-download-shared-file/td-p/82466/page/2
+          
+
+          const req1 = new Request(url,{
+               headers: new Headers({
+                    //'Content-Type': 'image/png'
+               }),
+               method: 'GET'
+          })
+          var image = new Image(); //image.crossOrigin = "Anonymous"
+
+          fetch(req1)
+          .then(result=>{
+               console.log('img result',result)
+               return  result.blob()//result.arrayBuffer()
+               
+               
+          }).then(blob=>{
+               //console.log('res', blob)
+               let r = new FileReader()
+
+               r.onloadend = function(ev){
+                    resolve(ev.target.result)
+               }
+               r.onerror = function(er){
+                    console.error('reader error - reading image', er)
+                    resolve(null)
+               }
+               r.readAsDataURL(blob)
+               
+               //const URL = window.URL || window.webkitURL;
+               //image.src = URL.createObjectURL(blob);
+          })
+          .catch(er=>{
+               console.error('ERROR fetching dbx image data', er)
+               resolve(null)
+               //reject(er)
+          })
+          
+          /*let xhr = new XMLHttpRequest()
+               if ("withCredentials" in xhr) { console.log('with creds') }
+               xhr.onreadystatechange = function(){
+                    if (this.readyState == 4 && this.status == 200) {
+                         console.log(this.response, this.responseText, this.responseType)
+
+                    } else console.log(this.status, this.response)
+               }
+               xhr.open('GET', CE + 'https://www.dropbox.com/s/jl15lcir35926i5/okram%40protonmail.ch_D2018-01-12_T22-09-07.jpg?dl=0', true)
+               console.log(xhr)
+               xhr.send()*/
+})
+
+
+const deleteDropboxImg = (email, fileName)=>{
+
+     return new Promise((resolve, reject)=>{
+          if (!email || ! fileName) reject(null)
+
+          const xhr = new XMLHttpRequest()
+          xhr.onreadystatechange = function(){
+               if (this.readyState == 4 && this.status == 200) {
+
+                    console.log('SUKCES deleting dbx image', this.response, this.responseText)
+                    resolve(this.response)
+
+               } else console.log('so?', this.status, this.responseText) //this.getAllResponseHeaders())
+          }
+          xhr.open('POST', serverURL + '/API/deleteDrbxImage' + `?email=${email}&fileName=${fileName}` , true)
+          xhr.send()
+     })
+}
+
+
+// set image property so its accessible publicly any time it ll be needed by others
+const uploadImgToDropbox = function(newName='test', imgData, file, blobb){
+     return new Promise((resolve, reject)=>{
+
+          let fileName = newName// + new Date()
+          //console.log(this.userName,'fileName', fileName, file, blobb)
+
+          const email = localStorage.getItem('deviceUserEmail')
+          const toSend = { email }//data: JSON.stringify(imgData)
+          
+          // https://stackoverflow.com/questions/9395911/send-a-file-as-multipart-through-xmlhttprequest
+          // https://stackoverflow.com/questions/15001822/sending-large-image-data-over-http-in-node-js
+          // https://stackoverflow.com/questions/5052165/streaming-an-octet-stream-from-request-to-s3-with-knox-on-node-js
+          // https://stackoverflow.com/questions/3146483/html5-file-api-read-as-text-and-binary
+          /*let fd = new FormData()
+               fd.append('json', JSON.stringify(toSend))
+               fd.append('imgData', imgData )  // stringify imgData didnt work
+               //fd.append('blob', new Blob([ file ] ))
+               fd.append('ffile',  file  )
+               fd.append('blobb', blobb )
+          */
+          /*fetch(serverURL + '/API/postPicToDrbx' + '?' + 'name='+ this.userName,{
+               method: 'POST',
+               body: imgData
+               })*/
+
+               /*fd.append('json_data', JSON.stringify({a: 1, b: 2}))
+               fd.append('binary_data', new Blob([binary.buffer])
+          */
+
+          const xhr = new XMLHttpRequest()
+          xhr.onreadystatechange = function(){
+               if (this.readyState == 4 && this.status == 200) {
+
+                    console.log('SUKCES uploading to dbx -link?', this.response)//, this.responseText)
+                    //resolve(this.status)
+                    resolve(this.response)
+
+               } else console.log('so?', this.status, this.responseText) //this.getAllResponseHeaders())
+          }
+          xhr.open('POST', serverURL + '/API/postPicToDrbx' + `?email=${email}&fileName=${fileName}` , true)
+          xhr.send(imgData)
+          // 
+          //
+          //xhr.send(fd) // imgData
+          
+               /*let params = {
+                    "path": fileName,
+                    "mode": "add"
+               }  // "autorename": true, "mute": false
+               params = JSON.stringify(params)  
+
+               let bearer = "Bearer " + window.accessToken
+               bearer = JSON.stringify(bearer)
+               console.log('bearer', bearer)
+               
+               xhr.open('POST','https://content.dropboxapi.com/2/files/upload', true)
+               xhr.setRequestHeader("Authorization", bearer)
+               xhr.setRequestHeader("Dropbox-API-Arg", params)
+               xhr.setRequestHeader('Content_Type','application/octet-stream')
+
+               //xhr.setRequestHeader("Authorization", "Bearer qAZQ0ocdGioAAAAAAAACt4axxwChUOZ5U2XLXB1hvSzxXai4btwbq7O3LjzMst5c")
+               //xhr.setRequestHeader("Dropbox-API-Arg", obj)
+               //xhr.responseType = 'blob';
+               //xhr.send()
+               
+               
+          xhr.send(imgData)*/
+          // later set images to be accessible from dropbox publicly?
+     })
+}
+
+
+function getImgIDBDataOf(names){
+
+     //console.log('getting img data', names)
+
+     const promises = names.map(name=>
+          new Promise((resolve, reject)=>
+               
+               picturesDB.item.get({fileName:name})
+
+               .then(result=>{ resolve(result.data) })
+               .catch(er=>{ resolve(null) })
+
+          )
+     )
+     return Promise.all(promises)
+}
+
+
+function saveImageToIDB(fileName, data, userName){
+     //console.log(getDeviceUser(), fileName)
+     if (!userName) return alert('proived userName to function')
+
+     return new Promise((resolve, reject)=>{
+          if (!fileName || !data || !userName) reject(null)
+
+          picturesDB.item.put({ 'fileName': fileName, 'userName': userName, 'data': data })
+          .then(result=>{
+               console.log('saved img to IDB ->',result)
+               resolve(result)
+          })
+          .catch(er=>{
+               console.error('Error saving image raw data to IDB',er)
+          })
+     })
+}
+
+
+function deleteImageFromIDB(fileName){
+     //console.log(fileName, picturesDB.item)
+     return new Promise((resolve, reject)=>{
+          
+
+          picturesDB.item.where('fileName').equals(fileName).delete()
+          .then(something=>{
+
+               console.log('deleted?',something)
+               resolve(something)
+          })
+          .catch(er=>console.error(er))        
+     })
+
+}
+
+const getPicURL = function(entry){
+
+     return new Promise((resolve, reject)=>{
+
+          let obj = {"path": entry.path_display }
+          obj = JSON.stringify( entry) 
+          const xhr = new XMLHttpRequest()
+          xhr.onreadystatechange = function(){
+
+               if (this.readyState == 4 && this.status == 200) {
+
+                         console.log('SUKCES', this.status)//this.response, this.responseText)
+                         resolve(this.responseText)
+
+               } else console.log(this.status)
+          }
+          xhr.open('POST', serverURL + '/API/getPicURL', true)
+          xhr.send(obj)
+     })
+}
+
+
+
 
 
 
@@ -1449,171 +1737,6 @@ const copyUserDataOrig = (users, owndata, removeProds) => {
      
 }
 
-const getMyPic =()=>{
-          let d2    = 'https://dl.dropboxusercontent.com/s/jl15lcir35926i5/okram%40protonmail.ch_D2018-01-12_T22-09-07.jpg' 
-          let dbximg= 'https://www.dropbox.com/s/jl15lcir35926i5/okram%40protonmail.ch_D2018-01-12_T22-09-07.jpg'
-          //  https://www.dropboxforum.com/t5/API-support/CORS-issue-when-trying-to-download-shared-file/td-p/82466/page/2
-
-          //   https://dl.dropboxusercontent.com/s/1mzslkpuoilup3l/okram%40protonmail.ch_D2018-01-21_T17-42-18.jpg?dl=0
-          
-          const req1 = new Request(d2,{  // './test1.png'
-               headers: new Headers({
-                    //'Content-Type': 'image/png'
-               }),
-               method: 'GET'
-               
-               //body: JSON.stringify({ email, token })
-          })
-          var image = new Image(); //image.crossOrigin = "Anonymous"
-
-          fetch(req1)
-          .then(result=>{
-               console.log('img result',result)
-               return  result.blob()//result.arrayBuffer()//.blob()
-               
-               
-          }).then(blob=>{
-               console.log('res', blob)
-               let r = new FileReader()
-               r.onload = function(obj){
-                    
-                    
-                    //let x = fin.replace('data:text/html', 'data:image/png')
-                    image.src = obj.target.result //URL.createObjectURL(blob);
-                    //document.body.appendChild(image);
-               }
-               r.readAsDataURL(blob)
-               
-               
-               //const URL = window.URL || window.webkitURL;
-               //console.log(URL)
-               //image.src = URL.createObjectURL(blob);
-          })
-          
-          /*let xhr = new XMLHttpRequest()
-          if ("withCredentials" in xhr) { console.log('with creds') }
-          xhr.onreadystatechange = function(){
-               if (this.readyState == 4 && this.status == 200) {
-                    console.log(this.response, this.responseText, this.responseType)
-
-               } else console.log(this.status, this.response)
-          }
-          xhr.open('GET', CE + 'https://www.dropbox.com/s/jl15lcir35926i5/okram%40protonmail.ch_D2018-01-12_T22-09-07.jpg?dl=0', true)
-          console.log(xhr)
-          //xhr.send()*/
-}
-//getMyPic()
-
-const deleteDropboxImg = (email, fileName)=>{
-
-     return new Promise((resolve, reject)=>{
-          if (!email || ! fileName) reject(null)
-
-          const xhr = new XMLHttpRequest()
-          xhr.onreadystatechange = function(){
-               if (this.readyState == 4 && this.status == 200) {
-
-                    console.log('SUKCES deleting dbx image', this.response, this.responseText)
-                    resolve(this.response)
-
-               } else console.log('so?', this.status, this.responseText) //this.getAllResponseHeaders())
-          }
-          xhr.open('POST', serverURL + '/API/deleteDrbxImage' + `?email=${email}&fileName=${fileName}` , true)
-          xhr.send()
-     })
-}
-
-
-// set image property so its accessible publicly any time it ll be needed by others
-const uploadImgToDropbox = function(newName='test', imgData, file, blobb){
-     return new Promise((resolve, reject)=>{
-
-          let fileName = newName// + new Date()
-          //console.log(this.userName,'fileName', fileName, file, blobb)
-
-          const email = localStorage.getItem('deviceUserEmail')
-          const toSend = { email }//data: JSON.stringify(imgData)
-          
-          // https://stackoverflow.com/questions/9395911/send-a-file-as-multipart-through-xmlhttprequest
-          // https://stackoverflow.com/questions/15001822/sending-large-image-data-over-http-in-node-js
-          // https://stackoverflow.com/questions/5052165/streaming-an-octet-stream-from-request-to-s3-with-knox-on-node-js
-          // https://stackoverflow.com/questions/3146483/html5-file-api-read-as-text-and-binary
-          /*let fd = new FormData()
-               fd.append('json', JSON.stringify(toSend))
-               fd.append('imgData', imgData )  // stringify imgData didnt work
-               //fd.append('blob', new Blob([ file ] ))
-               fd.append('ffile',  file  )
-               fd.append('blobb', blobb )
-          */
-          /*fetch(serverURL + '/API/postPicToDrbx' + '?' + 'name='+ this.userName,{
-               method: 'POST',
-               body: imgData
-               })*/
-
-               /*fd.append('json_data', JSON.stringify({a: 1, b: 2}))
-               fd.append('binary_data', new Blob([binary.buffer])
-          */
-
-          const xhr = new XMLHttpRequest()
-          xhr.onreadystatechange = function(){
-               if (this.readyState == 4 && this.status == 200) {
-
-                    console.log('SUKCES uploading to dbx -link?', this.response)//, this.responseText)
-                    //resolve(this.status)
-                    resolve(this.response)
-
-               } else console.log('so?', this.status, this.responseText) //this.getAllResponseHeaders())
-          }
-          xhr.open('POST', serverURL + '/API/postPicToDrbx' + `?email=${email}&fileName=${fileName}` , true)
-          xhr.send(imgData)
-          // 
-          //
-          //xhr.send(fd) // imgData
-          
-               /*let params = {
-                    "path": fileName,
-                    "mode": "add"
-               }  // "autorename": true, "mute": false
-               params = JSON.stringify(params)  
-
-               let bearer = "Bearer " + window.accessToken
-               bearer = JSON.stringify(bearer)
-               console.log('bearer', bearer)
-               
-               xhr.open('POST','https://content.dropboxapi.com/2/files/upload', true)
-               xhr.setRequestHeader("Authorization", bearer)
-               xhr.setRequestHeader("Dropbox-API-Arg", params)
-               xhr.setRequestHeader('Content_Type','application/octet-stream')
-
-               //xhr.setRequestHeader("Authorization", "Bearer qAZQ0ocdGioAAAAAAAACt4axxwChUOZ5U2XLXB1hvSzxXai4btwbq7O3LjzMst5c")
-               //xhr.setRequestHeader("Dropbox-API-Arg", obj)
-               //xhr.responseType = 'blob';
-               //xhr.send()
-               
-               
-          xhr.send(imgData)*/
-          // later set images to be accessible from dropbox publicly?
-     })
-}
-
-
-function getImagesData(names){
-
-     //console.log('getting img data', names)
-
-     const promises = names.map(name=>
-          new Promise((resolve, reject)=>
-               
-               picturesDB.item.get({fileName:name})
-
-               .then(result=>{ resolve(result.data) })
-               .catch(er=>{ resolve(null) })
-
-          )
-     )
-     return Promise.all(promises)
-}
-
 function addNewLocationToDB(set, toAdd){
      console.log('adding', set, this.userName)
      //return console.log('this', this)
@@ -1737,7 +1860,6 @@ function addNewLocationToDB(set, toAdd){
           return this.switchScreen('main')
      })
 }
-
 
 const sendCountryDataOfUser = userObj =>
 
@@ -2172,38 +2294,7 @@ const copyUserData_text = `
 
 
 
-function saveImageToIDB(fileName){
-     console.log(getDeviceUser(), fileName)
 
-     return new Promise((resolve, reject)=>{
-          if (!fileName || !window.canvasData) reject(null)
-          let user = getDeviceUser()
-                  //{data: fileName, userName,                  data
-          picturesDB.item.put({ 'fileName': fileName, 'userName': user, 'data': window.canvasData })
-          .then(result=>{
-               console.log('result',result)
-               resolve(result)
-          })
-          .catch(er=>{console.error(er)})
-     })
-}
-
-
-function deleteImageFromIDB(fileName){
-     //console.log(fileName, picturesDB.item)
-     return new Promise((resolve, reject)=>{
-          
-
-          picturesDB.item.where('fileName').equals(fileName).delete()
-          .then(something=>{
-
-               console.log('deleted?',something)
-               resolve(something)
-          })
-          .catch(er=>console.error(er))        
-     })
-
-}
 
 
 function removeFormRatingChecked(){
@@ -2263,26 +2354,7 @@ function stopLoaderAnimation(){
      setTimeout(()=> self.animateLoader = false, 250)
 }
 
-const getPicURL = function(entry){
 
-     return new Promise((resolve, reject)=>{
-
-          let obj = {"path": entry.path_display }
-          obj = JSON.stringify( entry) 
-          const xhr = new XMLHttpRequest()
-          xhr.onreadystatechange = function(){
-
-               if (this.readyState == 4 && this.status == 200) {
-
-                         console.log('SUKCES', this.status)//this.response, this.responseText)
-                         resolve(this.responseText)
-
-               } else console.log(this.status)
-          }
-          xhr.open('POST', serverURL + '/API/getPicURL', true)
-          xhr.send(obj)
-     })
-}
 
 
 

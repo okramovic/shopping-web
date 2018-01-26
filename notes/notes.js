@@ -1,41 +1,20 @@
-/* img capt:
-     on mobile   http://www.syntaxxx.com/accessing-user-device-photos-with-the-html5-camera-api/
-     on web  https://developers.google.com/web/fundamentals/media/capturing-images/
-
-          get a photo from dropbox
-          i might need both thumbnails 
-              and full pic file   https://www.dropbox.com/developers/documentation/http/documentation#sharing-get_shared_link_file
-              in different situations
-
-- should user be able to add product to all countries/all cities/all shops?
-          i think yes, it might be needed in some cases
-               - example1: on airplane, EasyJet is in DB as country, but why force to specify it's cities and shops, thats nonsense)
-               - example2: Amazon - that would be in DB probably as country, 
-                         but user wouldnt give it it's own cities or shops in most cases
-
-
-getting products from more locations (all countries/all cities/all shops)
-     - how should mixed products be ordered on screen? (suppose they'll come from more users)
-     - will it be needed to be able to switch their order on screen?
-
-
-user stories:
-- i can filter products viewed using text input
-- i can choose for each user (in settings menu) if to download his images to my device with their data
+/* 
+          
 
 
 
 TODO
-
-- show followed users in settings
-- add button and function to download my pics to device
-
-
 - prepare html head for PWA
 - create manifest.json
 - create service worker
 
 
+- issue: after adding new product, screen reloads without new product visible
+- i can filter products viewed using text input
+- i can choose for each user (in settings menu) if to download his images to my device with their data
+
+
+smaller ideas
 - product could turn red for half second or shake itself to indicate user cant change it
 - small status bar could appear with announcement whats wrong
 - when adding/deleting products and user is not online, create queue of future requests to be sent when app is online
@@ -45,8 +24,11 @@ TODO
 
 
 
-- on mobile, user can choose to upload picture taken previously, or to take new one with camera (to enable user to store also old pictures)
+
 - if browsing in private mode, show message that all saved data will be deleted when tab is closed (browsers act like that)  https://developer.mozilla.org/en-US/docs/Web/API/Storage/LocalStorage
+
+
+
 
 ---------------------------------------------------------------------------------------------------
 
@@ -58,6 +40,17 @@ dropbox stuff
      temp link      https://www.dropbox.com/developers/documentation/http/documentation#files-get_temporary_link
 
      with each API request include header "Authorization: Bearer <YOUR_ACCESS_TOKEN_HERE>"
+
+get a photo from dropbox
+     i might need both thumbnails 
+         and full pic file   https://www.dropbox.com/developers/documentation/http/documentation#sharing-get_shared_link_file
+         in different situations
+
+
+img capt:
+     on mobile   http://www.syntaxxx.com/accessing-user-device-photos-with-the-html5-camera-api/
+     on web  https://developers.google.com/web/fundamentals/media/capturing-images/
+
 
 
 done:
@@ -112,10 +105,13 @@ done:
 
 25 Jan
 - loading images from IDB rather than from online source
+- on mobile, user can choose to upload picture taken previously, or to take new one with camera (to enable user to store also old pictures)
 
 26 Jan
 - 'fetch and push my data' buttons - show them only if user is online
      - also search bar
      - also dropbox button
+- show followed users in settings
+- add button and function to download my pics to device
 
 */

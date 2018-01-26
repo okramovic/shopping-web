@@ -74,6 +74,7 @@
                </div>
                <br>
 
+               <!-- followed users -->
                <div v-if="followedUsers" class="vertical">
                     <h4>users you follow</h4>
                     <div v-for="user in followedUsers"
@@ -81,7 +82,7 @@
                               <button @click="unfollowUser(user)" v-if="onLine()===true">unfollow</button>
                     </div>
                </div>
-               <h4 v-show="userName && (!followedUsers || followedUsers.length===0) ">you dont follow any users yet</h4>
+               <h4 v-if="userName && (!followedUsers || followedUsers.length===0) ">you dont follow any users yet</h4>
                <br>
 
                <h2>settings</h2>
@@ -89,6 +90,11 @@
                     <button @click="fetchMyCountries()">&#10549; my countries</button>
                     <button @click="pushMyCountries()">my countries &#10548;</button>
                </div>
+               <div v-if="userName && onLine()===true" class="flex">
+                    <input type="checkbox" v-model="fetchPicsAlso">
+                    <p>&#10549; my pics too</p>
+               </div>
+               
                <br>
                <button @click="requestDropboxAccess()" v-if="userName && onLine()===true">connect my Dropbox</button>
                <br>
