@@ -7,8 +7,8 @@
      <title>shppp</title>
      <link rel="stylesheet" type="text/css" href="/dist/52e6306f9e66fd5a4b1fc7a3c41213b5.css">
      
-          <!--script src="https://cdn.jsdelivr.net/npm/vue"></script>
-          <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script-->
+          <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+          <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
           
 </head>
 <body>
@@ -167,7 +167,7 @@
                                         <!--div v-if="!prod.owner">#</div-->
                                         <!--div class="imgContainer" v-if="prod.imgName || prod.dbxURL"></div-->
                                         <img alt="img" :src="prod.dbxURL" @click="enlargeImage($event)" v-if="!prod.displayURL && prod.dbxURL" style="border: 2px solid orange;"> <!-- v-if="prod.imgName || prod.dbxURL" -->
-                                             
+
                                         <img :alt="prod.name" :src="prod.displayURL" @click="enlargeImage($event)" v-if="prod.displayURL" style="border: 2px solid dodgerblue;"><!-- v-if="prod.displayURL" -->
                                         
                                         <div class="prodDataContainer vertical">

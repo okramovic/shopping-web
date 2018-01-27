@@ -2,187 +2,46 @@
  *        simple state management http://vuetips.com/simple-state-management-vue-stash
  * 
  */
-
-
-// for each product do display in DOM, use Component or template
-
-
-
 'use strict'
 
-const Dexie = require('./vendor/Dexie.2.0.1.js'),
-      Vue = require('./vendor/Vue.2.5.13.js')
+/*const Dexie = require('./vendor/Dexie.2.0.1.js'),
+      Vue = require('./vendor/Vue.2.5.13.js')*/
 
 const serverURL = 'https://shopp.glitch.me/'
-
-//import {addLocationToDB2} from './copy.js';
-
-//const token = 'qAZQ0ocdGioAAAAAAAACs8r7cWwxjlWLJx6b-qwlQOGEURMf-srx2X1wS_RnHari'
-
-var Dropbox = require('dropbox');
-//let dbx //= new Dropbox({ accessToken: token });
-
-
-/*dbx.filesListFolder({path: ''})
-  .then(function(response) {
-     console.log('DBDBDBDBDBD')
-     console.log(response);
-     //getfileThumb(response.entries[0])
-     response.entries.forEach(entry=>{
-          getPicURL(entry)
-          .then(url=>{
-               let img = new Image()
-               img.onload = function(){
-                    this.width=144
-                    this.height=256
-               }
-                    
-               img.src = url
-               let body = document.querySelector('body')
-               body.appendChild(img)
-          })
-     })
-     //  convert url to file?  https://stackoverflow.com/questions/28042535/converting-image-object-to-file-object-javascript
-  })
-  .catch(function(error) {
-    console.log(error);
-  });
-*/
-
-const getfileThumb = function(fileEntry){
-          
-          const id = fileEntry.id
-
-          //let obj = { "path": id , format: "jpeg", size: "w128h128" }
-          let obj = {"path": fileEntry.path_display }
-          obj = JSON.stringify( obj) 
-          console.log(obj)
-
-          const xhr = new XMLHttpRequest()
-          xhr.onreadystatechange = function(){
-               if (this.readyState == 4 && this.status == 200) {
-
-                    console.log('SUKCES', this.response, this.responseText)
-                    
-                    let img = document.querySelector('#preview')
-                    img.src = this.responseText
-                    //const URL = window.URL || window.webkitURL
-                    //img.src = URL.createObjectURL(this.response) 
-
-               } else console.log('header', this.responseText, this.getAllResponseHeaders())
-          }
-          //xhr.open('POST','https://content.dropboxapi.com/2/files/get_thumbnail',true)
-          xhr.open('POST','https://api.dropboxapi.com/2/files/get_temporary_link', true)
-          xhr.setRequestHeader('Access-Control-Allow-Origin', '*')
-          xhr.setRequestHeader("Access-Control-Allow-Headers", "X-Requested-With");
-          //xhr.setRequestHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-          xhr.setRequestHeader("Authorization", "Bearer qAZQ0ocdGioAAAAAAAACt4axxwChUOZ5U2XLXB1hvSzxXai4btwbq7O3LjzMst5c")
-          //xhr.setRequestHeader("Dropbox-API-Arg", obj)
-          //xhr.responseType = 'blob';
-          //xhr.send()
-          xhr.setRequestHeader('Content_Type','application/json')
-          
-          xhr.send(obj)
-}
-
-
-/*let getDropToken = function(){
-     const xhr = new XMLHttpRequest()
-     xhr.onreadystatechange = function(){
-                    if (this.readyState == 4 && this.status == 200) {
-
-                         console.log('SUKCES', this.response, this.responseText)
-                         
-                         
-
-                    } else console.log('header',this.status, this.getAllResponseHeaders())
-     }
-          //let url = 'https://www.dropbox.com/oauth2/authorize?' + 'response_type=token&' + 'client_id=hqdb69ima3zv29t&' + 'redirect_uri=http://localhost:1234/'
-     let url = 'https://api.dropboxapi.com/oauth2/token'
-     xhr.open('POST',url, true)
-     //xhr.send(   )
-
-}*/
-
-const checkDrBxToken = function(){
-
-     const user = localStorage.getItem('deviceUserEmail')
-     if (!user) return;
-
-     if ( navigator.onLine && window.location.hash && 
-          window.location.hash.includes('access_token=') && 
-          window.location.hash.includes('token_type=bearer')){
-          
-
-          // #access_token=qAZQ0ocdGioAAAAAAAACvzPeVzvTqmMsfEDCwQap8UvEMVAu8F0Zqatd1IypdhAt
-          // &token_type=bearer  // &uid=300342838  // &account_id=dbid%3AAAC5NUHLEil2GAOA3Si3wQmQ2pBC6qKCsEo
-
-          let str = window.location.hash.substr(1)
-          let arr = decodeURI(str).split('&')
-          //console.log(str,'arr',arr)
-          const token = arr[0].replace('access_token=','')
-          //window.accessToken = 
-          console.log('    token', token)
-
-          updateDBXToken(user, token)
-
-          window.dbx = new Dropbox({accessToken:token})
-
-          /*dbx.filesListFolder({path: ''})
-          .then(function(response) {
-               console.log('    ',response);
-
-          })*/
-          
-     } else console.log('####   no new dropbox token   ####')
-}
-const updateDBXToken = function(email, token){
-     console.log('tokenizing', email, token)
-
-     const request = new Request(serverURL + 'API/updateDBXToken',{
-          headers: new Headers({
-               'Content-Type': 'application/json'
-          }),
-          method: 'POST',
-          mode:'no-cors',
-          body: JSON.stringify({ email, token })
-     })
-
-
-     fetch(request)
-     .then(console.log)
-}
-
-
 const initalCountryData = [{
      name: 'all countries' , 
      cities: [
                {
-                name: 'all cities', 
-                shops:[{
-                         name: 'all shops',
-                         products: [{"name":"časopis"},{"name":"denní tisk"},{"name":"česká igelitka"}]
-                }]
+                    name: 'all cities', 
+                    shops:[{
+                              name: 'all shops',
+                              products: [
+                                        {"name":"magazine"},
+                                        {"name":"daily tabloid"},
+                                        {"name":"plastic bag"}
+                              ]
+                    }]
                }
      ]
 }]
 
 
 
-window.otherUsers = []
+//window.otherUsers = []
+//window.indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
 
 
-window.deviceUserData = new Dexie('deviceUserData')
+const deviceUserData = new Dexie('deviceUserData')
 
-window.deviceUserData.version(1).stores({  userData: 'userName, countries'  })
-window.deviceUserData.open()
-     .then(data=>{
-               //console.log('open own DB, data:', data)
+     deviceUserData.version(1).stores({  userData: 'userName, countries'  })
+     deviceUserData.open()
+     .then(result =>{
+               console.log('open own DB, data:', result)
      })
      .catch(function(error) {
                console.error('Uh oh : ' + error);
      });
+console.log(window.webkitIndexedDB)
 
 
 const users_followed = new Dexie('users_followed')
@@ -291,7 +150,7 @@ const app = new Vue({
                     if (this.readyState == 4 && this.status == 200) {      console.log('received',typeof this.responseText, this.responseText)
 
                          let LSitems = ['deviceUserEmail', 'deviceUser', 
-                                        'autoFetchOthersData','autoFetchOthersImages',
+                                        'autoFetchOthersData','autoFetchOthersImages', 'hasToken',
                                         'followedUsers', 'countries',
                                         'cities', 'shops']
                          LSitems.forEach(item=> window.localStorage.removeItem(item) )
@@ -301,6 +160,7 @@ const app = new Vue({
                          if (typeof this.responseText==='string') loginResponse = JSON.parse(this.responseText)
 
                          window.localStorage.setItem('deviceUserEmail', email)
+                         if (loginResponse.hasToken == 1) window.localStorage.setItem('hasToken', loginResponse.hasToken )
                          updateDeviceUser(loginResponse.userName)
                               
                          if (loginResponse.followedUsers) // this doesnt store their country data
@@ -309,8 +169,10 @@ const app = new Vue({
                          self.userName = loginResponse.userName
 
                          self.informUser(`You hip'n'roll! Now logged iN`) // rock'n'hop
+
                          self.screen = 'main'
-                         
+                         stopLoaderAnimation.call(self)
+
                          return self.startApp()
 
                     } else if (this.readyState == 4 && this.status !== 200){
@@ -369,7 +231,7 @@ const app = new Vue({
                console.log('>> logouted <<')
                
                let items = ['deviceUserEmail', 'deviceUser', 
-               'autoFetchOthersData','autoFetchOthersImages',
+               'autoFetchOthersData','autoFetchOthersImages', 'hasToken',
                'followedUsers', 'countries',
                'cities', 'shops']
 
@@ -484,14 +346,14 @@ const app = new Vue({
                xhr.onreadystatechange = function(){
                     if (this.readyState == 4 && this.status == 200) { 
 
-                         console.log('recevide', this.responseText, typeof this.responseText)
+                         //console.log('recevide', this.responseText, typeof this.responseText)
                          const users = JSON.parse(this.responseText)
                          console.log(users)
                          self.searchResults = users
                     }
                }
                xhr.open('GET', serverURL + 'API/search?string=' + string + "&useremail=" + window.localStorage.getItem('deviceUserEmail'), true)
-               xhr.send( string)
+               xhr.send( string)        // useremail is added to server can remove user himself from search results
 
           },
           informUser: function(msg, millis = 3000){
@@ -787,9 +649,13 @@ const app = new Vue({
                console.log('product to add\n', productToAdd)
 
                const uploadToDBX = uploadImgToDropbox.bind(self),
-                     addProduct = addNewLocationToDB.bind(this)
+                     addProduct = addNewLocationToDB.bind(this),
+                     hasToken = localStorage.getItem('hasToken')
 
-               if (navigator.onLine) // save image
+               console.log('hasToken?',hasToken)
+
+               if (navigator.onLine && hasToken==1) // upload image to dbx
+
                          uploadToDBX(fileName, window.toUploadToDropbox)
                          .then(link =>{
                                    
@@ -839,8 +705,8 @@ const app = new Vue({
                          readBin = new FileReader(),
                          self = this,
                          file = ev.target.files[0]
-                    
-                    this.newProductPreviewLastModified = file.lastModified  // when storing pic to IDB, its part of filename
+                    // getPicDate(file.lastModifiedDate || file.lastModified) // lastMod is epoch time on nonSafari
+                    this.newProductPreviewLastModified = file.lastModified    // when storing pic to IDB, its part of filename
                     console.log(file)
 
                     reader.onload = function(fileObj){
@@ -1028,7 +894,7 @@ const app = new Vue({
                .then( ownData =>{
 
                     //ownCountries = ownData
-                    ownCountries = addOwner(ownData, this.userName)  // owner key serves later when allowing/blocking user to modify product
+                    ownCountries = addOwner(ownData, this.userName || '0')  // owner key serves later when allowing/blocking user to modify product
                     
                     if (!this.userName || !this.followedUsers) {
                          
@@ -1130,7 +996,7 @@ const app = new Vue({
 
                getOwnIDBData(this.userName)
                .then( ownData =>{  
-
+                    console.log('halo halo')
                     if (!this.userName || !this.followedUsers || this.followedUsers.length===0){ 
                          stopLoaderAnimation.call(this)
                          return this.reloadView()
@@ -1161,6 +1027,7 @@ const app = new Vue({
                          }).catch(er=>console.error('error in online branch',er))
                          
 
+                         // finds images that should be displayed but are missing on device -> fetches and saves them to device IDB
                          if (this.autoFetchOthersImages===true){  console.log('||| getting also images')
                               
                               let picsNamesAndURLs;
@@ -1193,8 +1060,7 @@ const app = new Vue({
                                    console.log('imgNames fetched & saved?', imgNames)
                                    return this.reloadView()
                               })
-                              .catch(er=>this.informUser(`downloading others' images failed`))
-                              
+                              .catch(er=>this.informUser(`downloading others' images failed`)) 
                          }
                          
                     } else {
@@ -1352,31 +1218,25 @@ const app = new Vue({
           }
      },
      mounted: function(){
-          window.initializeLocationSelects = initializeLocationSelects.bind(this)  // its used on few occasions w different contexts
+          //window.initializeLocationSelects = initializeLocationSelects.bind(this)
           
           this.startApp()
 
-          // should unregistered user be able to upload pics to his dropbox?
-
-          // check logged in user ('deviceUserEmail' is set?) and find out if he got new dropbox token
-          // if yes, update his MDB token field
-          checkDrBxToken()
-
-          //window.addNewLocationToDB = addNewLocationToDB.bind(this)
-          //console.log( window.addNewLocationToDB == addNewLocationToDB, addNewLocationToDB)
-
-          
+          //checkDrBxToken()
      },
      created:function(){
           //console.log('CREATED')
      }
 })
 
+
+
 function errorHandler(er){
      stopLoaderAnimation.call(this)
      console.error(er)
      return this.informUser(`error occured, please try again later`)
 }
+
 
 
 
@@ -1640,8 +1500,7 @@ function getImgIDBDataOf(names){
      return Promise.all(promises)
 }
 
-
-function saveImageToIDB(fileName, data, userName){
+function saveImageToIDB(fileName, data, userName = 0){
      //console.log(getDeviceUser(), fileName)
      if (!userName) return alert('proived userName to function')
 
@@ -1660,8 +1519,6 @@ function saveImageToIDB(fileName, data, userName){
 }
 
 // deleteImageFromIDB("auntie@auntie.at_D2018-01-27_T14-19-45")
-// deleteImageFromIDB("auntie@auntie.at_D2018-01-27_T14-20-05")
-// deleteImageFromIDB("auntie@auntie.at_D2018-01-27_T14-20-12")
 function deleteImageFromIDB(fileName){
      //console.log(fileName, picturesDB.item)
      return new Promise((resolve, reject)=>{
@@ -1698,6 +1555,7 @@ const getPicURL = function(entry){
           xhr.send(obj)
      })
 }
+
 
 
 
@@ -2102,9 +1960,14 @@ function getOwnIDBData(user = 0){
                console.log('!! 1st condition')
                return reject(null)
           }*/
+          console.log('test test', window.indexedDB)//deviceUserData.userData)
 
-          deviceUserData.userData.get({userName:user})//.toArray()   // https://dexie.org/docs/Table/Table.get()
+          //.toArray()   // https://dexie.org/docs/Table/Table.get()
+          return deviceUserData.userData.get({"userName":user})
           .then(data => {
+               //alert('test test 22')
+               console.log('device user data',data)
+
                if (data==undefined) {
                     console.log('no data, probably initializing app?')
                     return reject(null)
@@ -2398,6 +2261,99 @@ const copyUserData_text = `
 //
 
 
+function updateDBXToken (email, token){
+     return new Promise((resolve, reject)=>{
+          console.log('tokenizing', email, token)
+
+          const request = new Request(serverURL + 'API/updateDBXToken',{
+               headers: new Headers({
+                    'Content-Type': 'application/json'
+               }),
+               method: 'POST',
+               mode:'no-cors',
+               body: JSON.stringify({ email, token })
+          })
+     
+     
+          fetch(request)
+          .then(response=>resolve(response))
+     })
+}
+function checkDrBxToken (){
+
+     const user = localStorage.getItem('deviceUserEmail')
+     if (!user) return alert('token? no user')
+
+     if ( navigator.onLine && window.location.hash && 
+          window.location.hash.includes('access_token=') && 
+          window.location.hash.includes('token_type=bearer')){
+          
+          animateLoader.call(app)
+
+          // #access_token=aL0Dh78132HV...
+          // &token_type=bearer  // &uid=302342838  // &account_id=dbid%3CCCB5NUHLEil2GAOA3Si3wQmQ2pBC6qKCsEo  // some fake credentials
+
+          let str = window.location.hash.substr(1)
+          let arr = decodeURI(str).split('&')
+          //console.log(str,'arr',arr)
+          const token = arr[0].replace('access_token=','')
+
+          // save token to MDB and reload window to prevent accidental reupdates if leaving token in address bar
+          updateDBXToken(user, token)
+          .then(resp => window.location.href = window.location.origin )
+          
+          
+     } else { }//console.log('####   no new dropbox token   ####')
+}
+/*let getDropToken = function(){
+     const xhr = new XMLHttpRequest()
+     xhr.onreadystatechange = function(){
+                    if (this.readyState == 4 && this.status == 200) {
+                         console.log('SUKCES', this.response, this.responseText)
+                    } else console.log('header',this.status, this.getAllResponseHeaders())
+     }
+          //let url = 'https://www.dropbox.com/oauth2/authorize?' + 'response_type=token&' + 'client_id=111111hwhqd69ima3zv29t&' + 'redirect_uri=http://localhost:1234/'
+     let url = 'https://api.dropboxapi.com/oauth2/token'
+     xhr.open('POST',url, true)
+     //xhr.send(   )
+     }
+const getfileThumb = function(fileEntry){
+          
+          const id = fileEntry.id
+
+          //let obj = { "path": id , format: "jpeg", size: "w128h128" }
+          let obj = {"path": fileEntry.path_display }
+          obj = JSON.stringify( obj) 
+          console.log(obj)
+
+          const xhr = new XMLHttpRequest()
+          xhr.onreadystatechange = function(){
+               if (this.readyState == 4 && this.status == 200) {
+
+                    console.log('SUKCES', this.response, this.responseText)
+                    
+                    let img = document.querySelector('#preview')
+                    img.src = this.responseText
+                    //const URL = window.URL || window.webkitURL
+                    //img.src = URL.createObjectURL(this.response) 
+
+               } else console.log('header', this.responseText, this.getAllResponseHeaders())
+          }
+          //xhr.open('POST','https://content.dropboxapi.com/2/files/get_thumbnail',true)
+          xhr.open('POST','https://api.dropboxapi.com/2/files/get_temporary_link', true)
+          xhr.setRequestHeader('Access-Control-Allow-Origin', '*')
+          xhr.setRequestHeader("Access-Control-Allow-Headers", "X-Requested-With");
+          //xhr.setRequestHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+          xhr.setRequestHeader("Authorization", "Bearer x")
+          //xhr.setRequestHeader("Dropbox-API-Arg", obj)
+          //xhr.responseType = 'blob';
+          //xhr.send()
+          xhr.setRequestHeader('Content_Type','application/json')
+          
+          xhr.send(obj)
+     }
+*/
 
 
 
@@ -2437,6 +2393,7 @@ function getFormattedDate(date){
      return `${obj.year}-${obj.month}-${obj.day}_T${obj.hours}-${obj.minutes}-${obj.secs}`
 }
 
+
 function animateLoader(){
 
      const div = document.querySelector('#loader')
@@ -2458,31 +2415,6 @@ function stopLoaderAnimation(){
 
      setTimeout(()=> self.animateLoader = false, 250)
 }
-
-
-
-
-
-
-
-
-
-/*let somelet = 44
-const funText = 'console.log("hi " + somelet)'
-function fun(){
-
-     let somelet = 33
-     let f2 = new Function(funText) 
-     let f3 = function(){
-          let somelet = 33
-          let f4 = new Function(funText) 
-          return f4()
-     }
-     console.log(f3)
-     //hi = function(){ console.log('oh ' + somelet)} 
-     return f3()    //hi()
-}*/
-//fun()
 
 
 
