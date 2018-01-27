@@ -249,7 +249,9 @@ const app = new Vue({
           productModified: null,
           animateLoader: false,
 
-          fetchPicsAlso: false
+          fetchPicsAlso: false,
+          autoFetchOthersData: (localStorage.getItem('autoFetchOthersData')=='true') ? true : false,
+          autoFetchOthersImages: (localStorage.getItem('autoFetchOthersImages')=='true') ? true : false,
      },
      methods:{
           switchScreen:function(screen){
@@ -289,6 +291,7 @@ const app = new Vue({
                     if (this.readyState == 4 && this.status == 200) {      console.log('received',typeof this.responseText, this.responseText)
 
                          let LSitems = ['deviceUserEmail', 'deviceUser', 
+                                        'autoFetchOthersData','autoFetchOthersImages',
                                         'followedUsers', 'countries',
                                         'cities', 'shops']
                          LSitems.forEach(item=> window.localStorage.removeItem(item) )
@@ -366,13 +369,11 @@ const app = new Vue({
                console.log('>> logouted <<')
                
                let items = ['deviceUserEmail', 'deviceUser', 
+               'autoFetchOthersData','autoFetchOthersImages',
                'followedUsers', 'countries',
                'cities', 'shops']
 
-               items.forEach(item=>{
-                    //console.log('item to remove', item)
-                    return window.localStorage.removeItem(item) 
-               })
+               items.forEach(item => window.localStorage.removeItem(item) )
                
                //this.userName = undefined
                console.log('now will reload app')
@@ -459,6 +460,20 @@ const app = new Vue({
                .catch(er=>{
                     this.informUser(`Didnt work out as planned. Try again?`)
                })
+          },
+          changeAutoFetchOthersData:function(){
+               this.autoFetchOthersData = !this.autoFetchOthersData
+               console.log( 'saveing? ' , this.autoFetchOthersData)
+               localStorage.setItem('autoFetchOthersData', this.autoFetchOthersData)
+
+               /*if (this.autoFetchOthersData===true) {
+                    console.log('images?', localStorage.getItem('autoFetchOthersImages') )
+                    this.autoFetchOthersImages = localStorage.getItem('autoFetchOthersImages')
+               } else this.autoFetchOthersImages = false*/
+          },
+          changeAutoFetchOthersImages:function(){
+               this.autoFetchOthersImages = !this.autoFetchOthersImages
+               localStorage.setItem('autoFetchOthersImages', this.autoFetchOthersImages)
           },
           requestUsers:function(){
                let string = this.searchText
@@ -1012,18 +1027,30 @@ const app = new Vue({
                getOwnIDBData(this.userName)
                .then( ownData =>{
 
-                    if (!this.userName || !this.followedUsers) return initializeLocationSelects(this, ownData)
-
                     //ownCountries = ownData
                     ownCountries = addOwner(ownData, this.userName)  // owner key serves later when allowing/blocking user to modify product
-                    //console.log('countries w owner', ownCountries)     
+                    
+                    if (!this.userName || !this.followedUsers) {
+                         
+                         ownCountries = loadProductIDBURLs(ownCountries)
 
-                    return getOtherUsersIDBData(this.followedUsers)
+                         /*console.log('ownCountries with URLs', ownCountries)
+                         loadProductIDBURLs(ownCountries)
+                         .then(cntrs=>{
+                              //console.log('cntrs',cntrs)
+                              stopLoaderAnimation.call(this)
+                              return initializeLocationSelects(this, cntrs)
+                         })*/
+                         return null 
+
+
+                    } else return getOtherUsersIDBData(this.followedUsers)
+
                })
                .then(othersData=>{
-                         
+                    if (othersData){
                     let own = [...ownCountries], 
-                        Users = othersData.map(user=> user.countries )
+                        Users = othersData.map( user => user.countries )
 
                     othersCountriesWProds = JSON.parse(JSON.stringify(Users)) // it will be needed later in original state to show poducts
                          
@@ -1031,24 +1058,28 @@ const app = new Vue({
 
 
                     // returns Countries with added new locations from others (w/o their prods)
-                    // its needed when saving them to users IDB
-                    return copyUserDataOrig.call(this, Users, own, 1)  
+                    // -> for saving them to users IDB
+                    return copyUserDataOrig.call(this, Users, own, 1)
+                    } else return null 
                })
                .then(result=>{
-                    console.log('somethingChanged? ',result.somethingChanged)
-                    console.log('reloading - location w/o prods to save', result.countries)
+                    if (result){
+                         console.log('somethingChanged? ',result.somethingChanged)
+                         console.log('reloading - location w/o prods to save', result.countries)
 
-                         
-                    if (result.somethingChanged===true) 
-                         // save all locations without prods to device user IDB
-                         // return updateDeviceUserCountries(this.userName, result.countries)
-                              return result.countries
-                    //     .then(initializeLocationSelects(this, result.countries))
-
-                    else return result.countries
                               
+                         if (result.somethingChanged===true) 
+                              // save all locations without prods to device user IDB
+                              // return updateDeviceUserCountries(this.userName, result.countries)
+                                   return result.countries
+                         //     .then(initializeLocationSelects(this, result.countries))
+
+                         else return result.countries
+                    } else return null         
                })
                .then(myresult=>{
+                    if (myresult){
+
                          stopLoaderAnimation.call(this)
 
                          let copy = JSON.parse( JSON.stringify(othersCountriesWProds))
@@ -1058,15 +1089,29 @@ const app = new Vue({
 
                          this.countries = withProducts.countries // update screen w new data available
 
-                    return loadProductIDBURLs(withProducts.countries) 
+                         return loadProductIDBURLs(withProducts.countries)
+
+                    } else return null
                })
                .then(result=>{
-                    console.log('result w URLs',result)
+                    if (result){
+
+                         console.log('result w URLs',result)
+                         return initializeLocationSelects(this, result)
+
+                    } else ownCountries.then(result=>{
+
+                         console.log('!! my own countries resolved', result)
+                         initializeLocationSelects(this, result)  
+                    })
                     
-                    initializeLocationSelects(this, result)
                })
                .catch(er=>{
-                    stopLoaderAnimation.call(this)
+                    //console.log('ownCountries', ownCountries)
+                    console.error(er)
+                    /*ownCountries.then(result=>{
+                    })*/
+                    //stopLoaderAnimation.call(this)
                })
           },
           startApp:function(){
@@ -1074,7 +1119,7 @@ const app = new Vue({
 
                this.userName = getDeviceUser()
                //if (this.userName===null) this.userName = 'null'  // because of IDB so user can be found, it doesnt store null as value
-               //console.log('userName', this.userName)
+
                
                if (this.userName) this.followedUsers = getLSfollowedUsers()
                else this.followedUsers = null
@@ -1084,16 +1129,18 @@ const app = new Vue({
                let somethingChanged = false
 
                getOwnIDBData(this.userName)
-
-               
                .then( ownData =>{  
 
-                    if (!this.userName || !this.followedUsers) return initializeLocationSelects(this, ownData)
-
+                    if (!this.userName || !this.followedUsers || this.followedUsers.length===0){ 
+                         stopLoaderAnimation.call(this)
+                         return this.reloadView()
+                         //return initializeLocationSelects(this, ownData)
+                    }
                     ownCountries = ownData
 
-                    // try to get other's MDB data to update IDB
-                    if (navigator.onLine){
+                    // get other's MDB data to update IDB
+                    if (navigator.onLine && this.autoFetchOthersData === true){
+
                          animateLoader.call(this)  // show Loader
 
                          const fetchedCountryData = this.followedUsers.map(fetchCountriesOfUser) // get new data for each followed user
@@ -1116,13 +1163,29 @@ const app = new Vue({
                          .catch(er=>console.error('error in online branch',er))
                          
 
+                         if (this.autoFetchOthersImages===true){  console.log('||| getting also images')
+                              
+                              getOtherUsersIDBData(this.followedUsers)
+                              .then(users=>{
+                                   console.log('othersCountries',users)
+                                   users = users.map(user=>{
+                                        console.log(user.countries)
+                                        return getListOfImgNamesAndURLs(user.countries)
+                                   })
+                                   console.log('users mapped', users)
+                                   //return Promise.all(users)
+                              }).then(idk=>{
+                                   console.log('idk ===', idk)
+                              })
+                              
+                         }
                          
                     } else {
-
-                         console.log('|||  not online')
-                    
+                         console.log('|||  not online || dont autofetch')
+                         return this.reloadView()
                          //return getOtherUsersIDBData(this.followedUsers)  
                     }
+               // this stuff doesnt happen now
                }).then(users=>{
                          
                     if (users){
@@ -1261,7 +1324,7 @@ const app = new Vue({
                          .then( data =>{
                               console.log('- - - stored?', data)
                               initializeLocationSelects(this, initalCountryData)
-                              //this.startApp()
+                              //this.reloadView()
                          })
 
                     } else 
@@ -1355,11 +1418,12 @@ const getListOfImgNamesAndURLs = countries =>
                     country.cities.forEach(city=>
                          city.shops.forEach(shop=>
                               shop.products.forEach(prod=>{
-                                   if (prod.dbxURL) urls.push({url: prod.dbxURL, imgName: prod.imgName})
+                                   if (prod.dbxURL) urls.push({ imgName: prod.imgName, url: prod.dbxURL})
                               })
                          )
                     )
                )
+               console.log('urls found in countries', urls)
                if (urls.length>0) resolve(urls)
                else reject(null)
           //})

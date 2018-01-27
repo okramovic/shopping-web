@@ -70,7 +70,7 @@ input[type=file]:focus, button {
     align-items: center;
     padding-bottom: 30px; }
   #newProductFormContainer #closeNewProductForm {
-    /*position: absolute; bottom: 20px;left: 20px;*/ }
+    /*-position: absolute; -bottom: 20px;-left: 20px;*/ }
   #newProductFormContainer input[type=text], #newProductFormContainer input[type=number] {
     text-align: center;
     text-decoration: underline; }
@@ -97,13 +97,13 @@ input[type=file]:focus, button {
 
 #console {
   width: 80vw;
-  /*margin-left: 10vw;*/
+  /*-margin-left: 10vw;*/
   height: 20vh;
   padding: 20px;
   text-align: center;
   font-size: 20px;
   position: fixed;
-  /*left: 0;*/
+  /*-left: 0;*/
   top: 40vh;
   background-color: white;
   box-shadow: 3px 10px 10px 15px gray; }
@@ -133,6 +133,9 @@ input[type=file]:focus, button {
 
 .marginAround30 {
   margin: 30px; }
+
+#settings .disable {
+  color: gray; }
 
 #productList {
   width: 100%;

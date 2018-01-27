@@ -86,6 +86,19 @@
                <br>
 
                <h2>settings</h2>
+
+               <div v-if="userName && followedUsers && followedUsers.length>0" class="flex vertical">
+                    <div class="flex">
+                         <p>fetch other's data on app start</p>
+                         <input type="checkbox" name="autoFetchOthersData" v-model="autoFetchOthersData" @click="changeAutoFetchOthersData">
+                    </div>
+                    <div class="flex">
+                         <p :class="{disable: !autoFetchOthersData}">fetch their images too</p>
+                         <input type="checkbox" name="" v-model="autoFetchOthersImages" :disabled="!autoFetchOthersData"
+                              @click="changeAutoFetchOthersImages">
+                    </div>
+               </div>
+               <br><br>
                <div v-if="userName && onLine()===true">
                     <button @click="fetchMyCountries()">&#10549; my countries</button>
                     <button @click="pushMyCountries()">my countries &#10548;</button>

@@ -9,10 +9,17 @@ TODO
 - create service worker
 
 
-- issue: after adding new product, screen reloads without new product visible
+- issue: 
+- after adding new product, screen reloads without new product visible
+          - in case user follows nobody - after new prod is added, its loaded not as user's own prod
 - i can filter products viewed using text input
 - i can choose for each user (in settings menu) if to download his images to my device with their data
 
+
+- user has to verify their dropbox email to be able to push pics there -> fix this 
+          STATUS: 409 ??
+          { error_summary: 'email_not_verified/..',
+               error: { '.tag': 'email_not_verified' } }
 
 smaller ideas
 - product could turn red for half second or shake itself to indicate user cant change it
