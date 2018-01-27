@@ -166,8 +166,9 @@
 
                                         <!--div v-if="!prod.owner">#</div-->
                                         <!--div class="imgContainer" v-if="prod.imgName || prod.dbxURL"></div-->
-                                        <img alt="img" :src="prod.dbxURL" @click="enlargeImage($event)" v-if="!prod.displayURL && prod.dbxURL"> <!-- v-if="prod.imgName || prod.dbxURL" -->
-                                        <img :alt="prod.name" :src="prod.displayURL" @click="enlargeImage($event)" style="border: 0px solid dodgerblue;"><!-- v-if="prod.displayURL" -->
+                                        <img alt="img" :src="prod.dbxURL" @click="enlargeImage($event)" v-if="!prod.displayURL && prod.dbxURL" style="border: 2px solid orange;"> <!-- v-if="prod.imgName || prod.dbxURL" -->
+                                             
+                                        <img :alt="prod.name" :src="prod.displayURL" @click="enlargeImage($event)" v-if="prod.displayURL" style="border: 2px solid dodgerblue;"><!-- v-if="prod.displayURL" -->
                                         
                                         <div class="prodDataContainer vertical">
                                              <p>{{prod.type}}</p>

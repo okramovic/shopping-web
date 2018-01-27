@@ -1035,12 +1035,12 @@ const app = new Vue({
                          ownCountries = loadProductIDBURLs(ownCountries)
 
                          /*console.log('ownCountries with URLs', ownCountries)
-                         loadProductIDBURLs(ownCountries)
-                         .then(cntrs=>{
-                              //console.log('cntrs',cntrs)
-                              stopLoaderAnimation.call(this)
-                              return initializeLocationSelects(this, cntrs)
-                         })*/
+                              loadProductIDBURLs(ownCountries)
+                              .then(cntrs=>{
+                                   //console.log('cntrs',cntrs)
+                                   stopLoaderAnimation.call(this)
+                                   return initializeLocationSelects(this, cntrs)
+                              })*/
                          return null 
 
 
@@ -1152,40 +1152,57 @@ const app = new Vue({
                               const saved = userData.map(user=>setOtherUserIDBData(user))
                               
                               return Promise.all(saved)
-                         })
-                         .then(saved=>{      // reloadView() is where new locations get copied to users countries
+                         }).then(saved=>{      // reloadView() is where new locations get copied to users countries
 
                               console.log('starting app - other users data', saved)
                               //stopLoaderAnimation.call(this)
                               return this.reloadView()     //getOtherUsersIDBData(this.followedUsers)
 
-                         })
-                         .catch(er=>console.error('error in online branch',er))
+                         }).catch(er=>console.error('error in online branch',er))
                          
 
                          if (this.autoFetchOthersImages===true){  console.log('||| getting also images')
                               
+                              let picsNamesAndURLs;
                               getOtherUsersIDBData(this.followedUsers)
                               .then(users=>{
-                                   console.log('othersCountries',users)
-                                   users = users.map(user=>{
-                                        console.log(user.countries)
-                                        return getListOfImgNamesAndURLs(user.countries)
-                                   })
-                                   console.log('users mapped', users)
-                                   //return Promise.all(users)
-                              }).then(idk=>{
-                                   console.log('idk ===', idk)
+                                   //console.log('othersCountries',users)
+                                   users = users.map(user => getListOfImgNamesAndURLs(user.countries) )  // of other users
+                                   return Promise.all(users)
+
+                              }).then(listsOfImgNamesAndURLs=>{ // array of arrays or nulls
+                                   //console.log('idk ===', listsOfImgNamesAndURLs)    
+                                   // find only those imgs that arent already saved on device
+                                   return findImgNamesNotInIDB( listsOfImgNamesAndURLs )
+                              }).then(toFetch=>{
+                                   picsNamesAndURLs = toFetch
+                                   //const proms = toFetch.map(img)
+                                   const imgData = toFetch.map(obj=>obj.url).map(fetchDbxImage)
+                                   return Promise.all(imgData)
+                              }).then( dataOfImgs => { // array of raw data strings
+                              
+                                   dataOfImgs = dataOfImgs.map((dataURL,i)=>{
+                                                  return { imgName: picsNamesAndURLs[i].imgName, data: dataURL, userName: this.userName}
+                                                })
+                                   // save img dataURLs to IDB
+                                   const promises = dataOfImgs.map( img => saveImageToIDB(img.imgName, img.data, this.userName) )
+
+                                   return Promise.all(promises)
+                                   //return null
+                              }).then(imgNames=>{
+                                   console.log('imgNames fetched & saved?', imgNames)
+                                   return this.reloadView()
                               })
+                              .catch(er=>this.informUser(`downloading others' images failed`))
                               
                          }
                          
                     } else {
                          console.log('|||  not online || dont autofetch')
-                         return this.reloadView()
+                         this.reloadView()
                          //return getOtherUsersIDBData(this.followedUsers)  
                     }
-               // this stuff doesnt happen now
+               // this stuff doesnt ever happen now
                }).then(users=>{
                          
                     if (users){
@@ -1331,7 +1348,7 @@ const app = new Vue({
                          console.error('!!!!!  there was real error\n error getting init data',er)
                })
           
-     
+
           }
      },
      mounted: function(){
@@ -1363,6 +1380,26 @@ function errorHandler(er){
 
 
 
+const findImgNamesNotInIDB = arrays => 
+     new Promise((resolve, reject)=>{
+
+          const flatArray = []     // all images that will be used in others countries
+          arrays.forEach(array=>{ if (array) flatArray.push(...array) })
+          console.log('  -- flatArray', flatArray)
+
+          picturesDB.item.toArray()
+          .then(allImgs => {
+     
+               //console.log('array result?', allImgs)
+
+               //find images that arent present on device
+               const imgsToBeFetched = flatArray.filter(img=> allImgs.some(idbImg=>img.imgName===idbImg.fileName)==false)
+
+               console.log('  -- imgsToBeFetched', imgsToBeFetched)
+               resolve(imgsToBeFetched)
+          })
+})
+
 const loadProductIDBURLs = async (countries) =>{
           //let result;
           const pures = [], proms = []
@@ -1383,7 +1420,7 @@ const loadProductIDBURLs = async (countries) =>{
                                        //console.log('|||||  doing last item!', country.name, prod.name)
                                        //resolve(countries)
                                        //result = countries
-                              }*/
+                                   }*/
                          })
                     )
                )
@@ -1398,10 +1435,12 @@ const loadProductIDBURLs = async (countries) =>{
 const getSingleIDBimg = prod => new Promise((resolve, reject)=>{
           
           picturesDB.item.get({fileName:prod.imgName})
-          .then(result => 
+          .then(result => {
                     //console.log('img idb result?', result.data.substr(0, 50))
-                    resolve(result.data)
-          )
+                    //console.log('img idb result?',result)
+                    if (result) resolve(result.data)
+                    else resolve (null)
+          })
           .catch(er=>{ 
                     console.error('error getting IDB img data', er)
                     resolve(null) 
@@ -1425,7 +1464,7 @@ const getListOfImgNamesAndURLs = countries =>
                )
                console.log('urls found in countries', urls)
                if (urls.length>0) resolve(urls)
-               else reject(null)
+               else resolve(null)
           //})
 })
      
@@ -1620,7 +1659,9 @@ function saveImageToIDB(fileName, data, userName){
      })
 }
 
-
+// deleteImageFromIDB("auntie@auntie.at_D2018-01-27_T14-19-45")
+// deleteImageFromIDB("auntie@auntie.at_D2018-01-27_T14-20-05")
+// deleteImageFromIDB("auntie@auntie.at_D2018-01-27_T14-20-12")
 function deleteImageFromIDB(fileName){
      //console.log(fileName, picturesDB.item)
      return new Promise((resolve, reject)=>{
@@ -1717,10 +1758,10 @@ const copyUserDataOrig = (users, owndata, removeProds) => {
      
                     let others_cleaned
                     if (removeProds) {
-                         console.log('removing prods')
+                         //console.log('removing prods')
                          others_cleaned = other_countries.map( country => removeProducts(country,0))
                     } else {
-                         console.log('keeping products')
+                         //console.log('keeping products')
                          others_cleaned = other_countries
                     }
 

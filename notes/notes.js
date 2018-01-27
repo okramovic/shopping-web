@@ -12,8 +12,10 @@ TODO
 - issue: 
 - after adding new product, screen reloads without new product visible
           - in case user follows nobody - after new prod is added, its loaded not as user's own prod
+
+
 - i can filter products viewed using text input
-- i can choose for each user (in settings menu) if to download his images to my device with their data
+
 
 
 - user has to verify their dropbox email to be able to push pics there -> fix this 
@@ -121,4 +123,7 @@ done:
 - show followed users in settings
 - add button and function to download my pics to device
 
+27 Jan
+- issue - when i dont autofetch other's data on app start, it throws error
+- i can choose if on app start it should auto-download other users country data & images to my device
 */
