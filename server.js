@@ -26,11 +26,19 @@ const clientOrigin = 'http://localhost:1234'
 /*var dbx = new Dropbox({ accessToken: process.env.token });
 dbx.filesListFolder({path: ''})
 .then(function(response) { //getfile(response.entries[0])
+  //console.log(response)
   })
 .catch(function(error) { console.log(error);
 });*/
 
+// http://expressjs.com/en/starter/static-files.html
+//app.use(express.static('public'));
+app.use(express.static('public'));
 
+// http://expressjs.com/en/starter/basic-routing.html
+app.get("/", function (request, response) {
+  response.sendFile(__dirname + '/views/index.html');
+});
 
 
 const getfile = function(fileEntry){
@@ -321,13 +329,7 @@ const setFileToPublic = settings =>
 
 
 
-// http://expressjs.com/en/starter/static-files.html
-app.use(express.static('public'));
 
-// http://expressjs.com/en/starter/basic-routing.html
-app.get("/", function (request, response) {
-  response.sendFile(__dirname + '/views/index2.html');
-});
 
 app.post('/API/pushCountriesOfUser',(req, res)=>{
     res.setHeader('Access-Control-Allow-Origin',clientOrigin)
@@ -401,7 +403,12 @@ app.get ('/API/search',(req,res)=>{
             col.find(searchObject,{'username':1, 'email':1}).toArray((er, results)=>{
               
                 //console.log(results)
-                results = results.filter(user=>user.email!==req.query.useremail).map(user=>{delete user.password; delete user._id; return user})
+                results = results.filter(user=>user.email!==req.query.useremail)
+                          .map(user=>{
+                                return {"email": user.email,"userName": user.userName}
+                                //delete user.password; delete user._id; delete user.dbxToken
+                                //return user
+                          })
                 console.log(results)
               
                 res.setHeader('Access-Control-Allow-Origin',clientOrigin)
@@ -463,7 +470,11 @@ app.post('/API/login', (req,res)=>{
                 console.log('result', result)
                 if (er || !result) return res.sendStatus(400)
                 
-                const toSend = { userName: result.userName, followedUsers:result.followedUsers}
+                const toSend = { 
+                    userName: result.userName, 
+                    followedUsers: result.followedUsers,
+                    hasToken: (result.dbxToken)? 1 : 0
+                }
                 
                 res.setHeader('Content-Type', 'application/json')
                 res.json(toSend)

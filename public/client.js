@@ -17,7 +17,7 @@ db.open()
 		alert('Uh oh : ' + error);
 });
 
-document.addEventListener('click',function(){
+/*document.addEventListener('click',function(){
                console.log('dropbox requested')
                
                const xhr = new XMLHttpRequest()
@@ -38,7 +38,7 @@ document.addEventListener('click',function(){
                //xhr.send()
                //const w = window.open(url)
                window.location.href = url
-})
+})*/
 
 document.addEventListener('DOMContentLoaded',ev=>{
         //console.log('loaded? \n', db)
