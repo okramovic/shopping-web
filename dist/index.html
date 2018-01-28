@@ -21,8 +21,8 @@
           <div style="width: 100%; display: flex; justify-content: space-around;">
 
                <div v-show="userName && newProductForm === false">you are {{userName}}</div>
-               <button v-show="screen=='settings' && userName" @click="logout">logout {{userName}}</button>
                
+               <button v-show="screen=='settings'" @click="switchScreen('main')">close settings</button>
                <button id="" @click="switchScreen('settings')" v-show="screen=='main' && newProductForm === false">show settings</button>
           </div>
           <!--br><br-->
@@ -104,9 +104,9 @@
                </div>
                
                <br>
-               <button @click="requestDropboxAccess()" v-if="userName && onLine()===true">connect my Dropbox</button>
+               <button @click="requestDropboxAccess()" v-if="userName && onLine()===true && !token">connect my Dropbox</button>
                <br>
-               <button @click="switchScreen('main')">close settings</button>
+               <button v-show="userName" @click="logout">logout {{userName}}</button>
           </div>
 
 
@@ -230,7 +230,7 @@
                     
           </div>
           
-     <div id="console" v-show="console" class="vertical just_center">{{console}}</div>
+     <div id="console" :class="{active:console}" class="vertical just_center">{{console}}</div>
           
      <div id="loader" class="nope" v-show="animateLoader"><div id="loaderMsg">just a sec</div></div>
      

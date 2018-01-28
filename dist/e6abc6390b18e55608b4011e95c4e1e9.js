@@ -112,7 +112,7 @@ const deviceUserData = new Dexie('deviceUserData')
      .catch(function(error) {
                console.error('Uh oh : ' + error);
      });
-console.log(window.webkitIndexedDB)
+//console.log(window.webkitIndexedDB)
 
 
 const users_followed = new Dexie('users_followed')
@@ -182,6 +182,7 @@ const app = new Vue({
           fetchPicsAlso: false,
           autoFetchOthersData: (localStorage.getItem('autoFetchOthersData')=='true') ? true : false,
           autoFetchOthersImages: (localStorage.getItem('autoFetchOthersImages')=='true') ? true : false,
+          token: (localStorage.getItem('hasToken')== 1 ) ? 1 : 0,
      },
      methods:{
           switchScreen:function(screen){
@@ -322,6 +323,9 @@ const app = new Vue({
                window.location.href = url
           },
           fetchMyCountries:function(){
+               return new Promise((resolve, reject)=>{
+
+               
                console.log('fetching device countries of >', this.userName, '<')
                animateLoader.call(this)               
                const errorHandlerLocal = errorHandler.bind(this)
@@ -334,51 +338,34 @@ const app = new Vue({
                     return updateDeviceUserCountries(this.userName, userData.countries)
                     
                })
-               .then( resultCountries => {
-                    console.log('saved user own data', resultCountries)
+               .then( countries => {
+                    console.log('saved user own data', countries)
 
-                    if (this.fetchPicsAlso){
+                    if (this.fetchPicsAlso)
 
-                         let picsNamesAndURLs;
-                         getListOfImgNamesAndURLs(resultCountries)
-                         .then(namesAndURLs=>{
-                              
-                              picsNamesAndURLs = namesAndURLs
-                              //const urlsOnly = namesAndURLs.map(obj=>obj.url)
-                              const imgData = namesAndURLs.map(obj=>obj.url).map(fetchDbxImage)
-                              return Promise.all(imgData)
-
-                         }).then(dataOfImgs=>{ // array of raw data strings
-                              
-                              dataOfImgs = dataOfImgs.map((dataURL,i)=>{
-                                             return { imgName: picsNamesAndURLs[i].imgName, data: dataURL, userName: this.userName}
-                                           })
-
-                              const promises = dataOfImgs.map( img => saveImageToIDB(img.imgName, img.data, this.userName) )
-                              return Promise.all(promises)
-                         })
-                         .then( imageNames =>{
-
+                         fetchAndSaveMyImages.call(this, countries)
+                         .then(()=>{
                               stopLoaderAnimation.call(this)
-                              this.switchScreen('main')
-                              return this.startApp()
+                              //this.switchScreen('main')
+                              //this.startApp()
+                              resolve(countries)
                          })
-                         .catch(errorHandlerLocal)
 
-
-                    } else {
+                    else {
 
                          stopLoaderAnimation.call(this)
-                         this.informUser(`Sukces - your own data updated!`,2500)
+                         this.informUser(`Sukces - your data downloaded!`,2500)
 
-                         this.switchScreen('main')
-                         return this.startApp()
+                         //this.switchScreen('main')
+                         //this.startApp()
+                         //return countries
+                         resolve(countries)
                     }
                     
                     
                }).catch(errorHandlerLocal)
 
-               
+               })               
           },
           pushMyCountries:function(){
                if (!this.userName ) return alert('unregistered user cant back up data online')
@@ -430,10 +417,7 @@ const app = new Vue({
           },
           informUser: function(msg, millis = 3000){
                this.console = msg
-
-               setTimeout(()=>{
-                    this.console = undefined
-               },millis)
+               setTimeout(()=>this.console = undefined ,millis)
           },
           followUser:function(email,userName){
                console.log('follow', email,userName)
@@ -1070,8 +1054,7 @@ const app = new Vue({
                })
           },
           startApp:function(){
-               //this.screen = 'main'
-
+               
                this.userName = getDeviceUser()
                //if (this.userName===null) this.userName = 'null'  // because of IDB so user can be found, it doesnt store null as value
 
@@ -1152,8 +1135,7 @@ const app = new Vue({
                               }).then(imgNames=>{
                                    console.log('imgNames fetched & saved?', imgNames)
                                    return this.reloadView()
-                              })
-                              .catch(er=>this.informUser(`downloading others' images failed`)) 
+                              }).catch(er=>this.informUser(`downloading others' images failed`)) 
                          }
                          
                     } else {
@@ -1297,7 +1279,7 @@ const app = new Vue({
                // this must stay
                .catch( er => {
                     
-                    if (er===null && !this.userName){
+                    if (!er && !this.userName){
                          //console.log('- - - will initialize Country data')
                          
                          storeInitialDBData(this.userName)
@@ -1306,10 +1288,30 @@ const app = new Vue({
                               initializeLocationSelects(this, initalCountryData)
                               //this.reloadView()
                          })
-                    } else if (er === null && this.userName) {
+                    } else if (!er && this.userName) {
                          console.log(`- - - will autofetch MDB data of ${this.userName}`)
                          // autofetch users MDB data and restart app
                          this.fetchMyCountries()
+                         .then(newCountries =>{
+                              console.log('newCountries', newCountries)
+                              if ( confirm('Want to download pics too?\nPress OK if yes'))
+
+                                   //getOwnIDBData(this.userName)
+                                   //.then(countries => 
+                                   fetchAndSaveMyImages.call(this, newCountries)//)
+                                   .then(()=>{
+                                        stopLoaderAnimation.call(this)
+                                        this.switchScreen('main')
+                                        return this.startApp()
+                                   })
+
+                              else {
+                                   console.log('NO CONFIRMATION')
+                                   stopLoaderAnimation.call(this)
+                                   this.switchScreen('main')
+                                   return this.startApp() 
+                              }
+                         })
 
                     } else 
                          console.error('!!!!!  there was real error\n error getting init data',er)
@@ -1339,6 +1341,40 @@ function errorHandler(er){
 }
 
 
+function fetchAndSaveMyImages(countries){
+     console.log('this', this, countries)
+     return new Promise((resolve, reject)=>{
+          let picsNamesAndURLs;
+
+          getListOfImgNamesAndURLs(countries)
+          .then(namesAndURLs=>{
+                              
+               picsNamesAndURLs = namesAndURLs
+               //const urlsOnly = namesAndURLs.map(obj=>obj.url)
+               const imgData = namesAndURLs.map(obj=>obj.url).map(fetchDbxImage)
+               return Promise.all(imgData)
+
+          }).then(dataOfImgs=>{ // array of raw data strings
+                              
+               dataOfImgs = dataOfImgs.map((dataURL,i)=>{
+                              return { imgName: picsNamesAndURLs[i].imgName, data: dataURL, userName: this.userName}
+                            })
+
+               const promises = dataOfImgs.map( img => saveImageToIDB(img.imgName, img.data, this.userName) )
+               return Promise.all(promises)
+          })
+          .then( imageNames =>{
+
+               //stopLoaderAnimation.call(this)
+               resolve()
+               //this.switchScreen('main')
+               //return this.startApp()
+          })
+          .catch(reject)
+          
+     })
+
+}
 
 
 const findImgNamesNotInIDB = arrays => 
@@ -1408,9 +1444,9 @@ const getSingleIDBimg = prod => new Promise((resolve, reject)=>{
           })
 })     
 
-const getListOfImgNamesAndURLs = countries =>
+function getListOfImgNamesAndURLs(countries){
 
-     new Promise((resolve, reject)=>{
+     return new Promise((resolve, reject)=>{
           //getOwnIDBData(this.userName)     
           //.then( countries =>{
                const urls = []
@@ -1427,8 +1463,8 @@ const getListOfImgNamesAndURLs = countries =>
                if (urls.length>0) resolve(urls)
                else resolve(null)
           //})
-})
-     
+     })
+}     
 
 
 
