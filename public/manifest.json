@@ -1,0 +1,26 @@
+{
+     "name": "Shopping memo",
+     "short_name": "Shopping memo",
+     "start_url": "index.html",
+     "icons": [
+       {"src": "https://cdn.glitch.com/038921b8-1367-44b7-9236-c21e67003bd2%2Ficon48.png?1517145460209",
+         "sizes": "48x48",
+         "type": "image/png",
+         "density": 1
+
+       },
+       {"src": "https://cdn.glitch.com/038921b8-1367-44b7-9236-c21e67003bd2%2Ficon144.png?1517145460656",
+         "sizes": "144x144",
+         "type": "image/png",
+         "density": 1
+       },
+       {"src": "https://cdn.glitch.com/038921b8-1367-44b7-9236-c21e67003bd2%2Ficon192.png?1517145242512",
+         "sizes": "192x192",
+         "type": "image/png"
+       }
+     ],
+     "background_color": "#66ff66",
+     "theme_color": "#ffffff",
+     "display": "standalone",
+     "orientation": "portrait"
+   }

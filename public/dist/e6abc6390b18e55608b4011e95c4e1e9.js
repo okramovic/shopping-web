@@ -96,21 +96,33 @@ const initalCountryData = [{
      ]
 }]
 
+let ttt;
+let m = 0
+function starMer(){
 
+          ttt = setInterval(()=>
+                     {   console.log('m', m)
+                          m += 50 
+                          //if (m>300) clearInterval(ttt)
+                         }
+          ,50)
+}
 
 //window.otherUsers = []
+//window.indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
 
 
 const deviceUserData = new Dexie('deviceUserData')
 
      deviceUserData.version(1).stores({  userData: 'userName, countries'  })
      deviceUserData.open()
-     .then(data=>{
-               //console.log('open own DB, data:', data)
+     .then(result =>{
+               //console.log('open own DB, data:', result)
      })
      .catch(function(error) {
                console.error('Uh oh : ' + error);
      });
+//console.log(window.webkitIndexedDB)
 
 
 const users_followed = new Dexie('users_followed')
@@ -164,6 +176,8 @@ const app = new Vue({
           //currentDisplayedProducts: [],
 
           mouseMillis: 0,
+          mouseTimer: null,
+
           newProductForm: false,
           newProductPreview: false,
           newProductPreviewLastModified: null,
@@ -180,6 +194,7 @@ const app = new Vue({
           fetchPicsAlso: false,
           autoFetchOthersData: (localStorage.getItem('autoFetchOthersData')=='true') ? true : false,
           autoFetchOthersImages: (localStorage.getItem('autoFetchOthersImages')=='true') ? true : false,
+          token: (localStorage.getItem('hasToken')== 1 ) ? 1 : 0,
      },
      methods:{
           switchScreen:function(screen){
@@ -230,7 +245,7 @@ const app = new Vue({
 
                          window.localStorage.setItem('deviceUserEmail', email)
                          if (loginResponse.hasToken == 1) window.localStorage.setItem('hasToken', loginResponse.hasToken )
-                         updateDeviceUser(loginResponse.userName)
+                         updateDeviceUser(loginResponse.userName)     // stores userName and login date
                               
                          if (loginResponse.followedUsers) // this doesnt store their country data
                                    loginResponse.followedUsers.forEach(user=>addUserNameToFollowed(user))
@@ -280,7 +295,7 @@ const app = new Vue({
                               self.informUser(`You rock'n'b! Account created, check your email, spam etc`)
                               window.localStorage.setItem('deviceUserEmail', email)
 
-                              updateDeviceUser(userName)
+                              updateDeviceUser(userName)    // stores userName and login date to local storage
                               
                               self.userName = getDeviceUser()
                               self.screen = 'main'
@@ -320,7 +335,10 @@ const app = new Vue({
                window.location.href = url
           },
           fetchMyCountries:function(){
-               console.log('fetching my countries of >', this.userName, '<')
+               return new Promise((resolve, reject)=>{
+
+               
+               console.log('fetching device countries of >', this.userName, '<')
                animateLoader.call(this)               
                const errorHandlerLocal = errorHandler.bind(this)
 
@@ -332,50 +350,34 @@ const app = new Vue({
                     return updateDeviceUserCountries(this.userName, userData.countries)
                     
                })
-               .then( resultCountries => {
-                    console.log('saved user own data', resultCountries)
+               .then( countries => {
+                    console.log('saved user own data', countries)
 
-                    if (this.fetchPicsAlso){
+                    if (this.fetchPicsAlso)
 
-                         let picsNamesAndURLs;
-                         getListOfImgNamesAndURLs(resultCountries)
-                         .then(namesAndURLs=>{
-                              
-                              picsNamesAndURLs = namesAndURLs
-                              //const urlsOnly = namesAndURLs.map(obj=>obj.url)
-                              const imgData = namesAndURLs.map(obj=>obj.url).map(fetchDbxImage)
-                              return Promise.all(imgData)
-
-                         }).then(dataOfImgs=>{ // array of raw data strings
-                              
-                              dataOfImgs = dataOfImgs.map((dataURL,i)=>{
-                                             return { imgName: picsNamesAndURLs[i].imgName, data: dataURL, userName: this.userName}
-                                           })
-
-                              const promises = dataOfImgs.map( img => saveImageToIDB(img.imgName, img.data, this.userName) )
-                              return Promise.all(promises)
-                         })
-                         .then( imageNames =>{
-
+                         fetchAndSaveMyImages.call(this, countries)
+                         .then(()=>{
                               stopLoaderAnimation.call(this)
-                              this.switchScreen('main')
-                              return this.startApp()
+                              //this.switchScreen('main')
+                              //this.startApp()
+                              resolve(countries)
                          })
-                         .catch(errorHandlerLocal)
 
+                    else {
 
-                    } else {
                          stopLoaderAnimation.call(this)
-                         this.informUser(`Sukces - your own data updated!`,2500)
+                         this.informUser(`Sukces - your data downloaded!`,2500)
 
-                         this.switchScreen('main')
-                         return this.startApp()
+                         //this.switchScreen('main')
+                         //this.startApp()
+                         //return countries
+                         resolve(countries)
                     }
                     
                     
                }).catch(errorHandlerLocal)
 
-               
+               })               
           },
           pushMyCountries:function(){
                if (!this.userName ) return alert('unregistered user cant back up data online')
@@ -427,10 +429,7 @@ const app = new Vue({
           },
           informUser: function(msg, millis = 3000){
                this.console = msg
-
-               setTimeout(()=>{
-                    this.console = undefined
-               },millis)
+               setTimeout(()=>this.console = undefined ,millis)
           },
           followUser:function(email,userName){
                console.log('follow', email,userName)
@@ -634,18 +633,53 @@ const app = new Vue({
                     })
                }
           },
-          startTimer:function(prod){
-               //console.log('start timer')
-               const self = this
-               window.mouseTimer = setInterval(()=> self.mouseMillis += 10 ,10)
-          },
-          stopTimer:function(ev, prod){
-               
-               clearInterval(window.mouseTimer)
+          startTimer:function(prod,ev){
+               ev.preventDefault()
 
-               if (this.mouseMillis>300) this.openProductFormToModify(prod)
+               this.mouseMillis ++
+
+               var T = 'fjkqfb'
+
+               if (this.mouseMillis < 2){
+                    
+
+                    T = setTimeout(()=>{
+                         this.mouseMillis = 0
+                         console.log('stop timer')
+                    },500)
+
+                    //console.log('starting timer', T)
+               }
+               if (this.mouseMillis>=2) {
+                    
+                    console.log('open menu',T) //clearTimeout(T)
+                    this.mouseMillis = 0
+                    this.openProductFormToModify(prod)
+                    window.scrollTo(0,160)
+               }
                
-               this.mouseMillis = 0
+               /*const self = this;
+              // window.mouseTimer = 
+              this.mouseMillis = 0;
+               //this.mouseTimer 
+               //ttt = 
+               setInterval(()=>
+                     {   console.log('m', self.mouseMillis)
+                          self.mouseMillis += 50 }
+               ,50)*/
+
+               //console.log('start timer',ttt , this.mouseTimer)//window.mouseTimer)
+          },
+          stopTimer:function(prod, ev){
+               //ev.preventDefault()
+               //clearInterval(ttt )
+               //console.log('stop timer',ttt, m)
+               //this.mouseTimer)
+               //clearInterval(window.mouseTimer)
+
+               //if (this.mouseMillis>300) this.openProductFormToModify(prod)
+               
+               //this.mouseMillis = 0
           },
           enlargeImage:function(ev){
                //console.log('enlarging image', ev)
@@ -965,6 +999,8 @@ const app = new Vue({
                     //ownCountries = ownData
                     ownCountries = addOwner(ownData, this.userName || '0')  // owner key serves later when allowing/blocking user to modify product
                     
+                    console.log('!this.followedUsers?',!this.followedUsers)
+
                     if (!this.userName || !this.followedUsers) {
                          
                          ownCountries = loadProductIDBURLs(ownCountries)
@@ -983,19 +1019,34 @@ const app = new Vue({
 
                })
                .then(othersData=>{
+                    console.log('others data', othersData)
                     if (othersData){
-                    let own = [...ownCountries], 
-                        Users = othersData.map( user => user.countries )
+                         let own = [...ownCountries], 
+                         Users = othersData.map( user => user.countries )
 
-                    othersCountriesWProds = JSON.parse(JSON.stringify(Users)) // it will be needed later in original state to show poducts
-                         
-                    //let woProducts = copyUserDataOrig.call(this, Users, own, 1) //return woProducts
+                         othersCountriesWProds = JSON.parse(JSON.stringify(Users))
+                         // it will be needed later in original state to show products
+                              
+                         //let woProducts = copyUserDataOrig.call(this, Users, own, 1) //return woProducts
 
 
-                    // returns Countries with added new locations from others (w/o their prods)
-                    // -> for saving them to users IDB
-                    return copyUserDataOrig.call(this, Users, own, 1)
-                    } else return null 
+                         // returns Countries with added new locations from others (w/o their prods)
+                         // -> for saving them to users IDB
+                         return copyUserDataOrig.call(this, Users, own, 1)
+
+                    } else {
+                         console.log('------  other user data should be here but isnt')
+                         // in case of logging in on device where no followed users' data is stored but user actually follows someone
+                         //ownCountries = loadProductIDBURLs(ownCountries)   
+                         // show user suggestion to fetch others' data? or do it automatically?
+                         if (this.userName && this.followedUsers)
+
+                              fetchDataOfFollowedUsers.call(this)
+
+                              .then(()=> this.reloadView() )
+
+                         else return null 
+                    }
                })
                .then(result=>{
                     if (result){
@@ -1050,8 +1101,7 @@ const app = new Vue({
                })
           },
           startApp:function(){
-               //this.screen = 'main'
-
+               
                this.userName = getDeviceUser()
                //if (this.userName===null) this.userName = 'null'  // because of IDB so user can be found, it doesnt store null as value
 
@@ -1065,7 +1115,7 @@ const app = new Vue({
 
                getOwnIDBData(this.userName)
                .then( ownData =>{  
-
+                    console.log('start app ownData ->', ownData)
                     if (!this.userName || !this.followedUsers || this.followedUsers.length===0){ 
                          stopLoaderAnimation.call(this)
                          return this.reloadView()
@@ -1078,23 +1128,27 @@ const app = new Vue({
 
                          animateLoader.call(this)  // show Loader
 
-                         const fetchedCountryData = this.followedUsers.map(fetchCountriesOfUser) // get new data for each followed user
+                         fetchDataOfFollowedUsers.call(this)
 
-                         Promise.all(fetchedCountryData)
-                         .then(userData=>{   // store new user data
+                         .then(()=> this.reloadView() )
+                         /*   // copied to separate function:
+                              const fetchedCountryData = this.followedUsers.map(fetchCountriesOfUser) // get new data for each followed user
 
-                              console.log('nav online - fetched', fetchedCountryData)
-                              const saved = userData.map(user=>setOtherUserIDBData(user))
-                              
-                              return Promise.all(saved)
-                         }).then(saved=>{      // reloadView() is where new locations get copied to users countries
+                              Promise.all(fetchedCountryData)
+                              .then(userData=>{   // store new user data
 
-                              console.log('starting app - other users data', saved)
-                              //stopLoaderAnimation.call(this)
-                              return this.reloadView()     //getOtherUsersIDBData(this.followedUsers)
+                                   console.log('nav online - fetched', fetchedCountryData)
+                                   const saved = userData.map(user=>setOtherUserIDBData(user))
+                                   
+                                   return Promise.all(saved)
+                              }).then(saved=>{      // reloadView() is where new locations get copied to users countries
 
-                         }).catch(er=>console.error('error in online branch',er))
-                         
+                                   console.log('starting app - other users data', saved)
+                                   //stopLoaderAnimation.call(this)
+                                   return this.reloadView()     //getOtherUsersIDBData(this.followedUsers)
+
+                              }).catch(er=>console.error('error in online branch',er))
+                         */
 
                          // finds images that should be displayed but are missing on device -> fetches and saves them to device IDB
                          if (this.autoFetchOthersImages===true){  console.log('||| getting also images')
@@ -1128,8 +1182,7 @@ const app = new Vue({
                               }).then(imgNames=>{
                                    console.log('imgNames fetched & saved?', imgNames)
                                    return this.reloadView()
-                              })
-                              .catch(er=>this.informUser(`downloading others' images failed`)) 
+                              }).catch(er=>this.informUser(`downloading others' images failed`)) 
                          }
                          
                     } else {
@@ -1137,9 +1190,10 @@ const app = new Vue({
                          this.reloadView()
                          //return getOtherUsersIDBData(this.followedUsers)  
                     }
+
                // this stuff doesnt ever happen now
                }).then(users=>{
-                         
+                        
                     if (users){
                          console.log('my own', ownCountries)
                          
@@ -1268,15 +1322,42 @@ const app = new Vue({
                          }*/
                     }
                })
+
+               // this must stay
                .catch( er => {
                     
-                    if (er===null){  //console.log('- - - will initialize Country data')
+                    if (!er && !this.userName){
+                         //console.log('- - - will initialize Country data')
                          
                          storeInitialDBData(this.userName)
                          .then( data =>{
                               console.log('- - - stored?', data)
                               initializeLocationSelects(this, initalCountryData)
                               //this.reloadView()
+                         })
+                    } else if (!er && this.userName) {
+                         console.log(`- - - will autofetch MDB data of ${this.userName}`)
+                         // autofetch users MDB data and restart app
+                         this.fetchMyCountries()
+                         .then(newCountries =>{
+                              console.log('newCountries', newCountries)
+                              if ( confirm('Want to download pics too?\nPress OK if yes'))
+
+                                   //getOwnIDBData(this.userName)
+                                   //.then(countries => 
+                                   fetchAndSaveMyImages.call(this, newCountries)//)
+                                   .then(()=>{
+                                        stopLoaderAnimation.call(this)
+                                        this.switchScreen('main')
+                                        return this.startApp()
+                                   })
+
+                              else {
+                                   console.log('NO CONFIRMATION')
+                                   stopLoaderAnimation.call(this)
+                                   this.switchScreen('main')
+                                   return this.startApp() 
+                              }
                          })
 
                     } else 
@@ -1307,6 +1388,40 @@ function errorHandler(er){
 }
 
 
+function fetchAndSaveMyImages(countries){
+     console.log('this', this, countries)
+     return new Promise((resolve, reject)=>{
+          let picsNamesAndURLs;
+
+          getListOfImgNamesAndURLs(countries)
+          .then(namesAndURLs=>{
+                              
+               picsNamesAndURLs = namesAndURLs
+               //const urlsOnly = namesAndURLs.map(obj=>obj.url)
+               const imgData = namesAndURLs.map(obj=>obj.url).map(fetchDbxImage)
+               return Promise.all(imgData)
+
+          }).then(dataOfImgs=>{ // array of raw data strings
+                              
+               dataOfImgs = dataOfImgs.map((dataURL,i)=>{
+                              return { imgName: picsNamesAndURLs[i].imgName, data: dataURL, userName: this.userName}
+                            })
+
+               const promises = dataOfImgs.map( img => saveImageToIDB(img.imgName, img.data, this.userName) )
+               return Promise.all(promises)
+          })
+          .then( imageNames =>{
+
+               //stopLoaderAnimation.call(this)
+               resolve()
+               //this.switchScreen('main')
+               //return this.startApp()
+          })
+          .catch(reject)
+          
+     })
+
+}
 
 
 const findImgNamesNotInIDB = arrays => 
@@ -1376,9 +1491,9 @@ const getSingleIDBimg = prod => new Promise((resolve, reject)=>{
           })
 })     
 
-const getListOfImgNamesAndURLs = countries =>
+function getListOfImgNamesAndURLs(countries){
 
-     new Promise((resolve, reject)=>{
+     return new Promise((resolve, reject)=>{
           //getOwnIDBData(this.userName)     
           //.then( countries =>{
                const urls = []
@@ -1395,8 +1510,8 @@ const getListOfImgNamesAndURLs = countries =>
                if (urls.length>0) resolve(urls)
                else resolve(null)
           //})
-})
-     
+     })
+}     
 
 
 
@@ -1629,6 +1744,31 @@ const getPicURL = function(entry){
 
 
 
+function fetchDataOfFollowedUsers(){
+
+     return new Promise((resolve, reject)=>{
+
+     
+     const fetchedCountryData = this.followedUsers.map(fetchCountriesOfUser) // get new data for each followed user
+
+     Promise.all(fetchedCountryData)
+     .then(userData=>{   // store new user data
+
+          console.log('nav online - fetched', fetchedCountryData)
+          const saved = userData.map(user=>setOtherUserIDBData(user))
+                              
+          return Promise.all(saved)
+     }).then(saved=>{      // reloadView() is where new locations get copied to users countries
+
+          console.log('starting app - other users data', saved)
+          //stopLoaderAnimation.call(this)
+          //return this.reloadView()
+          resolve('test')
+
+     }).catch(er=>console.error('error in online branch',er))
+
+     })
+}
 
 
 const findProductLocations = (countries, imgName)=>{
@@ -2019,7 +2159,7 @@ function getDeviceUser(){
 }
 
 function getOwnIDBData(user = 0){
-     console.log(`getting data of ${user}`)
+     console.log(`getting IDB country data of ${user}`)
 
      return new Promise((resolve, reject)=>{
 
@@ -2029,14 +2169,17 @@ function getOwnIDBData(user = 0){
                console.log('!! 1st condition')
                return reject(null)
           }*/
-          //console.log('test test', deviceUserData.userData)
-          deviceUserData.userData.get({userName:user})//.toArray()   // https://dexie.org/docs/Table/Table.get()
+          //console.log('test test', window.indexedDB)//deviceUserData.userData)
+
+          //.toArray()   // https://dexie.org/docs/Table/Table.get()
+          return deviceUserData.userData.get({"userName":user})
           .then(data => {
+               //alert('test test 22')
                console.log('device user data',data)
 
                if (data==undefined) {
                     console.log('no data, probably initializing app?')
-                    return reject(null)
+                    return reject(null) // used now to store intitial country data
                } 
 
                const res = data.countries
@@ -2049,7 +2192,7 @@ function getOwnIDBData(user = 0){
                }
           })
           .catch(er => {
-               console.log('||||||||||  er',er)
+               console.log('||||||||||  error',er)
                reject(er) 
           })
      })
@@ -2348,7 +2491,7 @@ function updateDBXToken (email, token){
 function checkDrBxToken (){
 
      const user = localStorage.getItem('deviceUserEmail')
-     if (!user) return;
+     if (!user) return; //alert('token? no user')
 
      if ( navigator.onLine && window.location.hash && 
           window.location.hash.includes('access_token=') && 
@@ -2369,7 +2512,8 @@ function checkDrBxToken (){
           .then(resp => window.location.href = window.location.origin )
           
           
-     } else {}//console.log('####   no new dropbox token   ####')
+     } else { console.log('####   no new dropbox token   ####')
+     }//
 }
 /*let getDropToken = function(){
      const xhr = new XMLHttpRequest()

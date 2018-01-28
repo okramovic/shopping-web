@@ -8,14 +8,15 @@ const db = new Dexie("product_pictures");
           db.version(1).stores({
               data: 'data'
 });*/
+console.log(db)
 
-
-db.open()
+/*db.open()
   .then(idk=>{  console.log(idk)
+              alert('hoho')// + idk)
   })
   .catch(function(error) {
 		alert('Uh oh : ' + error);
-});
+});*/
 
 /*document.addEventListener('click',function(){
                console.log('dropbox requested')
@@ -41,12 +42,14 @@ db.open()
 })*/
 
 document.addEventListener('DOMContentLoaded',ev=>{
-        //console.log('loaded? \n', db)
+        console.log('loaded? \n', db.isOpen(), db)
   
+      setTimeout(()=>{
+        console.log('outtime')
         db.pictures.toArray().then(data=>{
                   
-                  console.log(data)
-                  //alert(data.length || 'nothing')
+                  console.log('data from IDB',data)
+                  alert('oh ' + data.length)
           
                   data.forEach( pic =>{
                         console.log(pic)
@@ -63,7 +66,7 @@ document.addEventListener('DOMContentLoaded',ev=>{
                         document.querySelector('body').appendChild(img)
                   })
         })
-  
+      }, 3000)
         /*new Dexie('product_pictures').open()
           .then(function (db) {
                 //console.log (db);
@@ -102,12 +105,7 @@ document.getElementById('mobileSwitch').addEventListener('change',ev=>{
       }
       reader.readAsDataURL(file)
       
-      
-      
       // windowURL.revokeObjectURL(picURL);
-  
-  
-  
       
 })
 

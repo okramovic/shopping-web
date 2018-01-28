@@ -37,7 +37,8 @@ app.use(express.static('public'));
 
 // http://expressjs.com/en/starter/basic-routing.html
 app.get("/", function (request, response) {
-  response.sendFile(__dirname + '/views/index.html');
+  //response.sendFile(__dirname + '/views/index.html');
+  response.sendFile(__dirname + '/index.html');
 });
 
 
@@ -453,7 +454,7 @@ app.post('/API/followuser', (req, res)=>{
     })
 })
 app.post('/API/login', (req,res)=>{
-  res.setHeader('Access-Control-Allow-Origin',clientOrigin)
+  //res.setHeader('Access-Control-Allow-Origin',clientOrigin)
   
   console.log('login request', req.query, req.body)
     let data =""
