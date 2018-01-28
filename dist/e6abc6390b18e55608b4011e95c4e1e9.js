@@ -96,7 +96,17 @@ const initalCountryData = [{
      ]
 }]
 
+let ttt;
+let m = 0
+function starMer(){
 
+          ttt = setInterval(()=>
+                     {   console.log('m', m)
+                          m += 50 
+                          //if (m>300) clearInterval(ttt)
+                         }
+          ,50)
+}
 
 //window.otherUsers = []
 //window.indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
@@ -166,6 +176,8 @@ const app = new Vue({
           //currentDisplayedProducts: [],
 
           mouseMillis: 0,
+          mouseTimer: null,
+
           newProductForm: false,
           newProductPreview: false,
           newProductPreviewLastModified: null,
@@ -621,18 +633,53 @@ const app = new Vue({
                     })
                }
           },
-          startTimer:function(prod){
-               //console.log('start timer')
-               const self = this
-               window.mouseTimer = setInterval(()=> self.mouseMillis += 10 ,10)
-          },
-          stopTimer:function(ev, prod){
-               
-               clearInterval(window.mouseTimer)
+          startTimer:function(prod,ev){
+               ev.preventDefault()
 
-               if (this.mouseMillis>300) this.openProductFormToModify(prod)
+               this.mouseMillis ++
+
+               var T = 'fjkqfb'
+
+               if (this.mouseMillis < 2){
+                    
+
+                    T = setTimeout(()=>{
+                         this.mouseMillis = 0
+                         console.log('stop timer')
+                    },500)
+
+                    //console.log('starting timer', T)
+               }
+               if (this.mouseMillis>=2) {
+                    
+                    console.log('open menu',T) //clearTimeout(T)
+                    this.mouseMillis = 0
+                    this.openProductFormToModify(prod)
+                    
+               }
                
-               this.mouseMillis = 0
+               /*const self = this;
+              // window.mouseTimer = 
+              this.mouseMillis = 0;
+               //this.mouseTimer 
+               //ttt = 
+               setInterval(()=>
+                     {   console.log('m', self.mouseMillis)
+                          self.mouseMillis += 50 }
+               ,50)*/
+
+               //console.log('start timer',ttt , this.mouseTimer)//window.mouseTimer)
+          },
+          stopTimer:function(prod, ev){
+               //ev.preventDefault()
+               //clearInterval(ttt )
+               //console.log('stop timer',ttt, m)
+               //this.mouseTimer)
+               //clearInterval(window.mouseTimer)
+
+               //if (this.mouseMillis>300) this.openProductFormToModify(prod)
+               
+               //this.mouseMillis = 0
           },
           enlargeImage:function(ev){
                //console.log('enlarging image', ev)
@@ -821,7 +868,7 @@ const app = new Vue({
                
                if (!prod.owner) return this.informUser(`You can only modify your own products`,1500)
                console.log('modify',prod)
-
+               window.scrollTo(0,160)
 
                this.modifyingProduct = true // to show correct submit button
                this.productModified = prod

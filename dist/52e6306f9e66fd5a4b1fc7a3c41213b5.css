@@ -95,6 +95,10 @@ input[type=file]:focus, button {
     border: 2px solid black;
     border-radius: 5px; }
 
+.smaller {
+  width: 125px;
+  height: auto; }
+
 #console {
   opacity: 0;
   z-index: -1;
@@ -183,7 +187,8 @@ h3.locationBanner.noBottomMarg {
   .product .imgContainer {
     height: 100%; }
   .product p {
-    margin: 0px; }
+    margin: 0px;
+    /*user-select: none; */ }
   .product .prodImgData {
     position: relative;
     left: 2000px;
@@ -202,7 +207,8 @@ img {
   width: 100px;
   height: 100px;
   margin: auto;
-  transition: all ease-in .25s; }
+  transition: all ease-in .25s;
+  user-select: none; }
 
 img.large {
   width: 300px;

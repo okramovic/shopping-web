@@ -180,8 +180,9 @@
                                         >{{shop.name}}</h3>
                                    
                                    <div v-if="shop.products.length>0" v-for="prod in shop.products" class="product" 
-                                             v-on:mousedown="startTimer(prod)"
-                                             v-on:mouseup="stopTimer($event, prod)" :class="{others: prod.owner===undefined}"
+                                              :class="{others: prod.owner===undefined}"
+                                             
+                                             
                                              ><!-- v-on:click="openProductFormToModify(prod)"  -->
                                              
 
@@ -195,7 +196,11 @@
                                              v-if="prod.displayURL"
                                              style="border: 2px solid dodgerblue;"><!-- v-if="prod.displayURL" -->
                                         
-                                        <div class="prodDataContainer vertical">
+                                        <div class="prodDataContainer vertical"
+                                             v-on:mousedown="startTimer(prod,$event)"
+                                             v-on:mouseup="stopTimer(prod)"
+                                             >
+
                                              <p>{{prod.type}}</p>
                                              <p>{{prod.name}}</p>
                                              <p v-if="prod.descr">{{prod.descr}}</p>
@@ -218,7 +223,7 @@
                <div id="newProductFormContainer" v-show="newProductForm === true">
                     <form name="newProductForm">
                          
-                              <canvas v-show="newProductPreview==true" width="300" height="300"></canvas>
+                              <canvas v-show="newProductPreview==true" :class="{smaller: modifyingProduct}" width="300" height="300"></canvas>
                               <br>
                               <p v-show="!modifyingProduct">add picture</p>
                               <input v-show="!modifyingProduct" type="file" accept="img/*" v-on:change="imageAdded($event)"><!-- capture="environment" -->
