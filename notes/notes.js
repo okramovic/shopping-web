@@ -9,8 +9,8 @@ TODO
 - create service worker
 
 
-- issue: 
-- after adding new product, screen reloads without new product visible
+- issue - after adding new location, products dont appear to be mine
+- issue - after adding new product, screen reloads without new product visible
           - in case user follows nobody - after new prod is added, its loaded not as user's own prod
 
 
