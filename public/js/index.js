@@ -25,17 +25,7 @@ const initalCountryData = [{
      ]
 }]
 
-let ttt;
-let m = 0
-function starMer(){
 
-          ttt = setInterval(()=>
-                     {   console.log('m', m)
-                          m += 50 
-                          //if (m>300) clearInterval(ttt)
-                         }
-          ,50)
-}
 
 //window.otherUsers = []
 //window.indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
@@ -73,7 +63,10 @@ const picturesDB = new Dexie('product_img')
       
 
 
-
+const tasks = new Dexie('tasks')
+      tasks.version(1).stores({task: 'imgName, userName, type, email'})
+      tasks.open()
+      .catch(er=>console.error(er))
 
 const app = new Vue({
      el: '#app',
@@ -623,7 +616,7 @@ const app = new Vue({
           },
           openProductForm:function(open){
 
-               if (open===true && !navigator.onLine) return this.informUser(`You can't add products offline. Take a picture now and add a product when you are online.`,7000)
+               //if (open===true && !navigator.onLine) return this.informUser(`You can't add products offline. Take a picture now and add a product when you are online.`,7000)
                
                this.newProductForm = open
 
@@ -643,93 +636,40 @@ const app = new Vue({
                     this.modifyingProduct = false;
                }
           },
-          newProductSubmit: function($event){
-               $event.preventDefault()
+          openProductFormToModify:function(prod){
                
-               if (!this.newProductPreview) 
-                         return this.informUser(`picture of product is required`,2000)
-               if (!this.newProductType || !this.newProductName ) 
-                         return this.informUser(`product type and name are required`,3000)
-               if (! document.querySelector('input[name="newRating"]:checked')) 
-                         return this.informUser('select product rating',2500)
+               if (!prod.owner) return this.informUser(`You can only modify your own products`,1500)
+               console.log('modify',prod)
+               window.scrollTo(0,160)
 
+               this.modifyingProduct = true // to show correct submit button
+               this.productModified = prod
 
-               const rating = document.querySelector('input[name="newRating"]:checked').value
+               if (prod.type) this.newProductType = prod.type
+               if (prod.name) this.newProductName = prod.name
+               if (prod.descr) this.newProductDescription = prod.descr
+               if (prod.descrLong) this.newProductDescriptionLong =prod.descrLong
+               if (prod.price) this.newProductPrice = parseFloat( prod.price )
+               //removeFormRatingChecked()
 
-               const fileName =`${window.localStorage.getItem('deviceUserEmail')
-                               }_D${getFormattedDate(this.newProductPreviewLastModified)}`
+               if (prod.rating) document.querySelector(`input[name="newRating"][value="${prod.rating}"]`).setAttribute('checked', true)
+                    
+               // just showing product's image
+               if (prod.imgName) getImgIDBDataOf([prod.imgName])   
+               .then(data=>{
+                    const self = this,
+                          img = new Image(),
+                          canv = document.querySelector('canvas'),
+                          ctx = canv.getContext('2d')
 
-               //console.log('submit', fileName)
-               //console.log(this.newProductType, this.newProductName, this.newProductDescription, this.newProductPrice, rating)
-               const fieldnames=['descr','descrLong','price'],
-                     otherFields = [this.newProductDescription, this.newProductDescriptionLong, this.newProductPrice]
-
-               const productToAdd = {
-                    imgName: fileName,
-                    type: this.newProductType,
-                    name: this.newProductName,
-                    rating
-               }
-               let voluntaryFields = otherFields.map(field=>{ 
-                                             if (!!field && field.toString().trim()!=='') return field
-                                             else return null 
+                    img.onload = function(){
+                         ctx.drawImage(this,0,0,300,300)
+                         self.newProductPreview = true
+                    }
+                    img.src = data
                })
-               
-               voluntaryFields.forEach((field,i)=>{
-                                   if (field) productToAdd[fieldnames[i]] = field.toString().trim()
-               })
-               console.log('product to add\n', productToAdd)
+               this.newProductForm = true
 
-               const uploadToDBX = uploadImgToDropbox.bind(self),
-                     addProduct = addNewLocationToDB.bind(this),
-                     hasToken = localStorage.getItem('hasToken')
-
-               console.log('hasToken?',hasToken)
-
-               if (navigator.onLine && hasToken==1) // upload image to dbx
-
-                         uploadToDBX(fileName, window.toUploadToDropbox)
-                         .then(link =>{
-                                   
-                                   console.log('link', link)
-                                   productToAdd.dbxURL = link
-
-                              return saveImageToIDB(fileName, window.canvasData, this.userName)
-                         })
-                         .then(result =>{
-                              console.log('result 2', result)
-                              window.toUploadToDropbox = undefined
-
-                              if (result) return result
-                         })
-                         .then(y => addProduct('product', productToAdd) )
-                         .then(()=>{
-                              
-                              this.newProductForm = false
-                              this.newProductPreview = false
-                              this.reloadView()
-                         })
-                         .catch(er=>alert('huge arror storing new product'))
-               
-
-               else saveImageToIDB(fileName, window.canvasData, this.userName)
-               .then(()=>{
-                    window.toUploadToDropbox = undefined
-                    // create task to upload image when user is online
-                    // return createUploadTaks
-               })
-               .then(()=> addProduct('product', productToAdd) )
-               .then(()=>{
-                    window.canvasData = null
-                    this.newProductForm = false
-                    this.newProductPreview = false
-                    return this.reloadView()
-               })
-               .catch(er => console.error('ERROR', er))
-
-               
-
-               
           },
           imageAdded:function(ev){
 
@@ -793,40 +733,119 @@ const app = new Vue({
                     reader.readAsDataURL(ev.target.files[0])
                     //this.newProductForm = false
           },
-          openProductFormToModify:function(prod){
+          newProductSubmit: function($event){
+               $event.preventDefault()
                
-               if (!prod.owner) return this.informUser(`You can only modify your own products`,1500)
-               console.log('modify',prod)
-               window.scrollTo(0,160)
+               if (!this.newProductPreview) 
+                         return this.informUser(`picture of product is required`,2000)
+               if (!this.newProductType || !this.newProductName ) 
+                         return this.informUser(`product type and name are required`,3000)
+               if (! document.querySelector('input[name="newRating"]:checked')) 
+                         return this.informUser('select product rating',2500)
 
-               this.modifyingProduct = true // to show correct submit button
-               this.productModified = prod
 
-               if (prod.type) this.newProductType = prod.type
-               if (prod.name) this.newProductName = prod.name
-               if (prod.descr) this.newProductDescription = prod.descr
-               if (prod.descrLong) this.newProductDescriptionLong =prod.descrLong
-               if (prod.price) this.newProductPrice = parseFloat( prod.price )
-               //removeFormRatingChecked()
+               const rating = document.querySelector('input[name="newRating"]:checked').value
 
-               if (prod.rating) document.querySelector(`input[name="newRating"][value="${prod.rating}"]`).setAttribute('checked', true)
-                    
-               // just showing product's image
-               if (prod.imgName) getImgIDBDataOf([prod.imgName])   
-               .then(data=>{
-                    const self = this,
-                          img = new Image(),
-                          canv = document.querySelector('canvas'),
-                          ctx = canv.getContext('2d')
+               const fileName =`${window.localStorage.getItem('deviceUserEmail')
+                               }_D${getFormattedDate(this.newProductPreviewLastModified)}`
 
-                    img.onload = function(){
-                         ctx.drawImage(this,0,0,300,300)
-                         self.newProductPreview = true
-                    }
-                    img.src = data
+               //console.log('submit', fileName)
+               //console.log(this.newProductType, this.newProductName, this.newProductDescription, this.newProductPrice, rating)
+               const fieldnames=['descr','descrLong','price'],
+                     otherFields = [this.newProductDescription, this.newProductDescriptionLong, this.newProductPrice]
+
+               const productToAdd = {
+                    imgName: fileName,
+                    type: this.newProductType,
+                    name: this.newProductName,
+                    rating
+               }
+               let voluntaryFields = otherFields.map(field=>{ 
+                                             if (!!field && field.toString().trim()!=='') return field
+                                             else return null 
                })
-               this.newProductForm = true
+               
+               voluntaryFields.forEach((field,i)=>{
+                                   if (field) productToAdd[fieldnames[i]] = field.toString().trim()
+               })
+               console.log('product to add\n', productToAdd)
 
+               const uploadToDBX = uploadImgToDropbox.bind(self),
+                     addProduct = addNewLocationToDB.bind(this)
+                     //hasToken = localStorage.getItem('hasToken') // this.token
+
+               /* if (navigator.onLine && this.token) // upload image to dbx
+
+                         uploadToDBX(fileName, window.toUploadToDropbox)
+                         .then(link =>{
+                                   
+                                   console.log('new dbx link', link)
+                                   productToAdd.dbxURL = link
+
+                              return saveImageToIDB(fileName, window.canvasData, this.userName)
+                         })
+                         .then(result =>{
+                              console.log('result 2', result,'<')
+                              window.toUploadToDropbox = undefined
+
+                              if (result) return result
+                         })
+                         .then(y => addProduct('product', productToAdd) )
+                         .then(()=>{
+                              
+                              this.newProductForm = false
+                              this.newProductPreview = false
+                              this.reloadView()
+                         })
+                         .catch(er=>alert('huge arror storing new product'))
+
+                 else if (!navigator.onLine && this.token){
+                         console.log('adding task!')
+                         createTask.call(this, fileName , 'upload')
+                         .then(res=>{
+
+                         })
+               }*/
+
+
+               saveImageToIDB(fileName, window.canvasData, this.userName)
+               .then(()=> {
+
+                    if (navigator.onLine && this.token) // upload image to dbx
+
+                         return uploadToDBX(fileName, window.toUploadToDropbox)
+
+                    else if (!navigator.onLine && this.token){
+
+                              createTask.call(this, fileName , 'upload')
+                              
+                              return null
+
+                    } else return null
+
+               }) 
+               .then(link=> {
+                    console.log('new dbx link', link)
+
+                    if (link) productToAdd.dbxURL = link
+
+                    return addProduct('product', productToAdd) 
+
+               }).then(()=>{
+                    window.canvasData = null
+                    window.toUploadToDropbox = undefined 
+
+                    this.newProductForm = false
+                    this.newProductPreview = false
+                    return this.reloadView()
+
+               }).catch(er => {
+                    console.error('ERROR', er)
+                    this.informUser(`product or image were not saved...`)
+                    this.reloadView()
+               })
+
+               
           },
           applyProductChanges:function(ev){
                ev.preventDefault()
@@ -893,17 +912,20 @@ const app = new Vue({
                          .then(()=>updateDeviceUserCountries(this.userName, ownData))
                          .then(this.UIafterProductFormSubmitted)
 
-                         if (this.productModified.imgName && navigator.onLine) 
+                         if (this.productModified.imgName && this.token){
 
-                              deleteDropboxImg( localStorage.getItem('deviceUserEmail'), this.productModified.imgName)
-                              .then(status=>this.informUser(`deleted Dropbox img: ${status}`, 3000))
-                              
-                              
-                         else if (this.productModified.imgName && !navigator.onLine){
+                              if (navigator.onLine)
 
-                              // create queue of files to get deleted from Dropbox
+                                   deleteDropboxImg( localStorage.getItem('deviceUserEmail'), this.productModified.imgName)
+                                   .then(status=>this.informUser(`deleted Dropbox img: ${status}`, 3000))
+                                   
+                                   
+                              else // add to tasks to be done when user is online again
+                                   createTask.call(this, this.productModified.imgName, 'delete')
+                                   .then(res=>{
+                                        console.log('del task created',res)
+                                   })
                          }
-                         
                     })
                }
           },
@@ -1039,6 +1061,9 @@ const app = new Vue({
                else this.followedUsers = null
                console.log('followedUsers', this.followedUsers)
                
+               // when checking tasks to be done
+               // upload only images that werent also deleted already
+
                let ownCountries
                let somethingChanged = false
 
@@ -1300,14 +1325,53 @@ const app = new Vue({
           //window.initializeLocationSelects = initializeLocationSelects.bind(this)
           
           this.startApp()
-
           checkDrBxToken()
+          console.log('this.token', this.token)
      },
      created:function(){
           //console.log('CREATED')
      }
 })
 
+function createTask(imgName, type){
+     
+     return new Promise((resolve, reject)=>{
+
+          const email = localStorage.getItem('deviceUserEmail'), userName = this.userName
+          if (!imgName || !type || !email || !userName) {
+               console.error('error adding task')
+               reject(null)
+          }
+
+          const newTask = { imgName, userName, type, email } 
+
+
+          tasks.task.add(newTask)
+          .then(result=>{
+
+               console.log('result added task ->', type ,result)
+               resolve(result)
+          })
+          .catch(er=>{
+
+               console.error('er adding task', er)
+               reject(er)
+          })
+     })
+}
+function getTasks(userName){
+     return new Promise((resolve, reject)=>{
+          // picturesDB.item.where('fileName').equals(fileName).delete()
+
+          tasks.task.where('userName').equals(this.userName).toArray()
+          .then(tasks=>{
+                    console.log('tasks', tasks, this.userName)
+                    //if (!tasks) tasks = []
+
+               })
+          .catch(console.error)
+     })
+}
 
 
 function errorHandler(er){
@@ -1315,6 +1379,8 @@ function errorHandler(er){
      console.error(er)
      return this.informUser(`error occured, please try again later`)
 }
+
+
 
 
 function fetchAndSaveMyImages(countries){

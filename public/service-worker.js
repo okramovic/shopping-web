@@ -1,6 +1,12 @@
-const shellName = "shopmem_v0.0",
+const shellName = "shopmem_v0.0.0",
      shellFiles = [
-  "/index.html"
+  "/index.html",
+  "/dist/52e6306f9e66fd5a4b1fc7a3c41213b5.css",
+  "/dist/e6abc6390b18e55608b4011e95c4e1e9.js",
+  "/sw-reg.js",
+       
+  "/vendor/vue2.5.13.js",
+  "/vendor/dexie.2.0.1.js"
 ]
 
 self.addEventListener('install', e =>{
@@ -19,9 +25,6 @@ self.addEventListener('install', e =>{
                })
      );
 });
-
-
-
 self.addEventListener('activate', e =>{
 
      console.log('[SW activate]');
@@ -43,9 +46,16 @@ self.addEventListener('activate', e =>{
           })
      );
 })
-
+//   https://stackoverflow.com/questions/46284872/service-worker-install-event-vs-activate-event
 
 self.addEventListener('fetch', e =>{
+
+     if (e.request.url.match('^.*(\/API\/).*$')) {
+        console.log('API request?')
+        return false;
+     }
+  
+     // from   https://stackoverflow.com/questions/47070258/service-worker-spreading
 
      e.respondWith(
                fromNetwork(e.request.url, 2000)

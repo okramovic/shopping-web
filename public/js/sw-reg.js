@@ -1,7 +1,5 @@
-console.log('registering sw')
-
 if ('serviceWorker' in navigator){
-     console.log('registering sw 2')
+     console.log('registering sw')
 
      navigator.serviceWorker
           .register('service-worker.js')

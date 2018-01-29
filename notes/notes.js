@@ -17,6 +17,10 @@ TODO
 - i can filter products viewed using text input
 
 
+when pressing upload product twice - error on server
+{ error_summary: 'shared_link_already_exists/..',
+  error: { '.tag': 'shared_link_already_exists' } }
+
 
 - user has to verify their dropbox email to be able to push pics there -> fix this 
           STATUS: 409 ??
@@ -36,6 +40,30 @@ smaller ideas
 
 - if browsing in private mode, show message that all saved data will be deleted when tab is closed (browsers act like that)  https://developer.mozilla.org/en-US/docs/Web/API/Storage/LocalStorage
 
+
+
+// shim stuff from dexie example here
+          https://rawgit.com/dfahlander/Dexie.js/releases/samples/codeproject-article/DexieAlgorithmsSamples.html
+
+          
+<title>Extended indexedDB queries using Dexie.js</title>
+    <script>
+        if (!(window.indexedDB || window.window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB))
+            // Pull down the polyfill if needed (Safari + older opera browser)
+            document.write('<script src="https://rawgit.com/axemclion/IndexedDBShim/master/dist/indexeddbshim.js">\x3C/script>');
+    </script>
+    <script type="text/javascript" src="../../dist/dexie.js"></script>
+    <script>
+        //
+        // App global database instance and schema
+        //
+        var db = new Dexie("MyDB");
+        db.version(1).stores({
+            friends: "++id,name,shoeSize"
+        });
+        db.open();
+
+*****************************************
 
 
 
