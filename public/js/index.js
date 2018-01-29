@@ -6,6 +6,7 @@
 
 /*const Dexie = require('./vendor/Dexie.2.0.1.js'),
       Vue = require('./vendor/Vue.2.5.13.js')*/
+const Vue = require('./vendor/Vue.2.5.13.nonmin.js')
 
 const serverURL = 'https://shopp.glitch.me/'
 const initalCountryData = [{
