@@ -454,7 +454,7 @@ app.post('/API/followuser', (req, res)=>{
     })
 })
 app.post('/API/login', (req,res)=>{
-  //res.setHeader('Access-Control-Allow-Origin',clientOrigin)
+  res.setHeader('Access-Control-Allow-Origin',clientOrigin)
   
   console.log('login request', req.query, req.body)
     let data =""
