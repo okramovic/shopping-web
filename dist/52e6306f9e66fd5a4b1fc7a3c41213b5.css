@@ -99,6 +99,42 @@ input[type=file]:focus, button {
   width: 125px;
   height: auto; }
 
+#prodSearchContainer {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 1;
+  height: 40px;
+  width: 39px;
+  font-size: 20px;
+  padding-left: 3px;
+  border-radius: 20px;
+  background-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0px 0px 3px 1px gray; }
+  #prodSearchContainer span {
+    margin-left: 5px; }
+  #prodSearchContainer #prodSearch {
+    font-size: 20px;
+    text-align: center;
+    height: 30px;
+    width: calc(100vw - 155px);
+    /* 155 is left space around this, width of Magn. glass, addNewProd button, its right space etc.*/
+    margin: 0 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    /*--background-color: rgba(63, 236, 184,.7);*/
+    background-color: transparent;
+    border: none; }
+    #prodSearchContainer #prodSearch:active, #prodSearchContainer #prodSearch:hover {
+      outline: none; }
+    #prodSearchContainer #prodSearch::placeholder {
+      font-style: italic; }
+
+#prodSearchContainer.open {
+  width: calc(100vw - 100px);
+  background-color: aquamarine;
+  /*--rgba(63, 236, 184, 1);*/ }
+
 #console {
   opacity: 0;
   z-index: -1;
@@ -156,7 +192,8 @@ input[type=file]:focus, button {
 
 .shopContainer {
   margin-top: 30px;
-  margin-bottom: 30px; }
+  margin-bottom: 0px;
+  /*padding: 30px 0px;*/ }
 
 h3.locationBanner {
   font-family: Helvetica, sans-serif;

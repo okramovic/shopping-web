@@ -96,6 +96,9 @@ const app = new Vue({
           countries: [],
           cities: [],
           shops: [],
+          toSearch: '',
+          showPSearch: false,
+          searchTimerOn: false,
           //currentDisplayedProducts: [],
 
           mouseMillis: 0,
@@ -938,6 +941,27 @@ const app = new Vue({
                this.reloadView()
                return this.switchScreen('main')
           },
+          showProdSearch:function(open){
+               this.showPSearch = !this.showPSearch
+
+               console.log('open?', open)
+               if (open) {
+                    
+                    //return true
+               } //else return false
+               
+          },
+          isSearched:function(prod){
+               //console.log('search prod >' + this.toSearch + '<', prod)
+               const str = this.toSearch.toString()
+
+               if ( prod.name.includes(str) || 
+                    (prod.type && prod.type.includes(str) ) || 
+                    (prod.descr && prod.descr.includes(str)) || 
+                    (prod.descrLong && prod.descrLong.includes(str))
+               ) return true
+               else return false
+          },
           reloadView:function(){
                     console.log('RELOADING VIEW')
 
@@ -1320,6 +1344,30 @@ const app = new Vue({
                })
           
 
+          }
+     },
+     watch:{
+          toSearch:function(n,o){
+               //console.log('watcher? n', n,'o', o, '<')
+               //o = o.toString()  //  && o.match(/w/)
+               if (n) this.searchTimerOn = false
+               else {
+                    
+                    if (!this.searchTimerOn){
+
+                         this.searchTimerOn = true
+                         //console.log('setting timer')
+                         setTimeout(()=>{
+
+                                   if (this.searchTimerOn) {
+                                        this.showPSearch = false
+                                        console.log('HIDING')
+                                   }
+                                   //console.log('-- end', this.searchTimerOn)
+                                   this.searchTimerOn = false
+                         },5000)
+                    }
+               }
           }
      },
      mounted: function(){

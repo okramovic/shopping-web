@@ -68,7 +68,7 @@ require = (function (modules, cache, entry) {
 
   // Override the current require with this new one
   return newRequire;
-})({16:[function(require,module,exports) {
+})({8:[function(require,module,exports) {
 var global = (1,eval)("this");
 /*!
  * Vue.js v2.5.13
@@ -10868,7 +10868,7 @@ Vue$3.compile = compileToFunctions;
 return Vue$3;
 
 })));
-},{}],10:[function(require,module,exports) {
+},{}],4:[function(require,module,exports) {
 /**
  *        simple state management http://vuetips.com/simple-state-management-vue-stash
  * 
@@ -10967,6 +10967,9 @@ const app = new Vue({
           countries: [],
           cities: [],
           shops: [],
+          toSearch: '',
+          showPSearch: false,
+          searchTimerOn: false,
           //currentDisplayedProducts: [],
 
           mouseMillis: 0,
@@ -11809,6 +11812,27 @@ const app = new Vue({
                this.reloadView()
                return this.switchScreen('main')
           },
+          showProdSearch:function(open){
+               this.showPSearch = !this.showPSearch
+
+               console.log('open?', open)
+               if (open) {
+                    
+                    //return true
+               } //else return false
+               
+          },
+          isSearched:function(prod){
+               //console.log('search prod >' + this.toSearch + '<', prod)
+               const str = this.toSearch.toString()
+
+               if ( prod.name.includes(str) || 
+                    (prod.type && prod.type.includes(str) ) || 
+                    (prod.descr && prod.descr.includes(str)) || 
+                    (prod.descrLong && prod.descrLong.includes(str))
+               ) return true
+               else return false
+          },
           reloadView:function(){
                     console.log('RELOADING VIEW')
 
@@ -12191,6 +12215,30 @@ const app = new Vue({
                })
           
 
+          }
+     },
+     watch:{
+          toSearch:function(n,o){
+               //console.log('watcher? n', n,'o', o, '<')
+               //o = o.toString()  //  && o.match(/w/)
+               if (n) this.searchTimerOn = false
+               else {
+                    
+                    if (!this.searchTimerOn){
+
+                         this.searchTimerOn = true
+                         //console.log('setting timer')
+                         setTimeout(()=>{
+
+                                   if (this.searchTimerOn) {
+                                        this.showPSearch = false
+                                        console.log('HIDING')
+                                   }
+                                   //console.log('-- end', this.searchTimerOn)
+                                   this.searchTimerOn = false
+                         },5000)
+                    }
+               }
           }
      },
      mounted: function(){
@@ -13531,7 +13579,7 @@ let productTemplate = Vue.component('product',{
           )
      }
 })*/
-},{"./vendor/Vue.2.5.13.nonmin.js":16}],0:[function(require,module,exports) {
+},{"./vendor/Vue.2.5.13.nonmin.js":8}],0:[function(require,module,exports) {
 var global = (1, eval)('this');
 var OldModule = module.bundle.Module;
 function Module() {
@@ -13549,7 +13597,7 @@ function Module() {
 module.bundle.Module = Module;
 
 if (!module.bundle.parent && typeof WebSocket !== 'undefined') {
-  var ws = new WebSocket('ws://localhost:56976/');
+  var ws = new WebSocket('ws://localhost:61407/');
   ws.onmessage = function(event) {
     var data = JSON.parse(event.data);
 
@@ -13650,4 +13698,4 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.require, id)
   });
 }
-},{}]},{},[0,10])
+},{}]},{},[0,4])

@@ -159,29 +159,42 @@
         
                   </div>
         
+               <div id="prodSearchContainer" class="flex" :class="{open: showPSearch}"
+                    v-show="screen==='main' && !newProductForm">
+                    <span @click="showProdSearch(true)">&#128269;</span>
+                    <input id="prodSearch" type="text" 
+                         v-show="showPSearch"
+                         v-model="toSearch" placeholder="avocado?">
+               </div>
                
-                  
+
 
                <!-- products display -->
                <div v-show="newProductForm === false" id="productList">
-                    <div v-for="country in countries" v-if="currentCountry == country.name || currentCountry=='all countries'"
+                    <div v-for="country in countries" v-show="currentCountry == country.name || currentCountry=='all countries'"
                          class="countryContainer">
                          
-                         <div v-for="city in country.cities" v-if="currentCity == city.name || currentCity=='all cities'"
-                              class="cityContainer" :class="{hide:city.shops.every(shop=>shop.products.length==0)}">
+                         <div v-for="city in country.cities" v-show="currentCity == city.name || currentCity=='all cities'"
+                              class="cityContainer" 
+                              :class="{hide:city.shops.every(shop=>shop.products.length==0 || shop.products.every(prod=>isSearched(prod)==false ) )}">
                               
-                              <div v-for="shop in city.shops" v-if="currentShop==shop.name || currentShop == 'all shops'" 
-                                   class="shopContainer vertical">
+                              <div v-for="shop in city.shops" 
+                              v-show="currentShop==shop.name || currentShop == 'all shops'" 
+                                   class="vertical"
+                                   :class="{shopContainer: shop.products.some(prod=>isSearched(prod)===true)}">
                                    
                                    <!--div v-for="prod in shop.products">{{prod.name}}</div-->
                                    <!--h5 v-if="shop.products.length==0">nothing to display here</h5-->
                                    
-                                   <h3 class="locationBanner noBottomMarg" v-if="shop.products.length>0"
+                                   <h3 class="locationBanner noBottomMarg" 
+                                       v-if="shop.products.length>0 && shop.products.some(prod=>isSearched(prod)===true)"
                                         >{{country.name}} - {{city.name}}</h3>
-                                   <h3 class="locationBanner" v-if="shop.products.length>0"
+
+                                   <h3 class="locationBanner" 
+                                       v-if="shop.products.length>0 && shop.products.some(prod=>isSearched(prod)===true)"
                                         >{{shop.name}}</h3>
                                    
-                                   <div v-if="shop.products.length>0" v-for="prod in shop.products" class="product" 
+                                   <div v-show="shop.products.length>0 && isSearched(prod)===true" v-for="prod in shop.products" class="product" 
                                               :class="{others: prod.owner===undefined}"
                                              
                                              
