@@ -1030,11 +1030,11 @@ const app = new Vue({
                          console.log('reloading - location w/o prods to save', result.countries)
 
                               
-                         if (result.somethingChanged===true) 
+                         if (result.somethingChanged) 
                               // save all locations without prods to device user IDB
-                              // return updateDeviceUserCountries(this.userName, result.countries)
-                                   return result.countries
-                         //     .then(initializeLocationSelects(this, result.countries))
+                              return updateDeviceUserCountries(this.userName, result.countries)
+                              //return result.countries
+                              
 
                          else return result.countries
                     } else return null         
@@ -1314,36 +1314,42 @@ const app = new Vue({
                               initializeLocationSelects(this, initalCountryData)
                               //this.reloadView()
                          })
+                         
                     } else if (!er && this.userName) {
                          console.log(`- - - will autofetch MDB data of ${this.userName}`)
                          // autofetch users MDB data and restart app
-                         this.fetchMyCountries()
-                         .then(newCountries =>{
-                              console.log('newCountries', newCountries)
-                              if ( confirm('Want to download pics too?\nPress OK if yes'))
+                         if (navigator.onLine) 
 
-                                   //getOwnIDBData(this.userName)
-                                   //.then(countries => 
-                                   fetchAndSaveMyImages.call(this, newCountries)//)
-                                   .then(()=>{
+                              this.fetchMyCountries()
+                              .then(newCountries =>{
+                                   console.log('newCountries', newCountries)
+                                   if ( confirm('Want to download pics too?\nPress OK if yes'))
+
+                                        //getOwnIDBData(this.userName)
+                                        //.then(countries => 
+                                        fetchAndSaveMyImages.call(this, newCountries)//)
+                                        .then(()=>{
+                                             stopLoaderAnimation.call(this)
+                                             this.switchScreen('main')
+                                             return this.startApp()
+                                        })
+                                   else {
+                                        console.log('NO CONFIRMATION')
                                         stopLoaderAnimation.call(this)
                                         this.switchScreen('main')
-                                        return this.startApp()
-                                   })
+                                        return this.startApp() 
+                                   }
+                              })
 
-                              else {
-                                   console.log('NO CONFIRMATION')
-                                   stopLoaderAnimation.call(this)
-                                   this.switchScreen('main')
-                                   return this.startApp() 
-                              }
-                         })
+                         else {
+                              stopLoaderAnimation.call(this)
+                              this.informUser(`Get online first so app can download your saved data. Otherwise app can't continue :(`,10000)
+                         }
 
                     } else 
                          console.error('!!!!!  there was real error\n error getting init data',er)
+                         alert('Error getting your data')
                })
-          
-
           }
      },
      watch:{
@@ -2407,15 +2413,19 @@ function copyUserData(users, owndata){
 function updateDeviceUserCountries(userName=0, countries){
      console.log(`save to user: ${userName} ${countries}`)
      let obj = { userName, countries }
-     //console.log(obj)
+
      return new Promise((resolve, reject)=>{
+          if (!countries) reject('no countries provided')
 
           deviceUserData.userData.put({ userName, countries })
           .then(result=>{
-               console.log(result)
+               console.log('updated IDB countries of',result)
                resolve(countries)
 
-          }).catch(er=>{})
+          }).catch(er=>{
+               console.error('error putting data of',userName,'to IDB',er)
+               reject(er)
+          })
      })
 }
 const copyUserData_text = `

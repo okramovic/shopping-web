@@ -1,12 +1,11 @@
 /* 
-          
-
-
 
 TODO
-- prepare html head for PWA
-- create manifest.json
-- create service worker
+
+- when filtering - add indicator h3 above products that products are filtered to search string
+                 - scroll to 60px top of page
+                 - remove add new product when filtering input is open
+
 
 
 - issue - after adding new location, products dont appear to be mine
@@ -14,7 +13,7 @@ TODO
           - in case user follows nobody - after new prod is added, its loaded not as user's own prod
 
 
-- i can filter products viewed using text input
+
 
 
 when pressing upload product twice - error on server
@@ -27,12 +26,10 @@ when pressing upload product twice - error on server
           { error_summary: 'email_not_verified/..',
                error: { '.tag': 'email_not_verified' } }
 
+
 smaller ideas
 - product could turn red for half second or shake itself to indicate user cant change it
 - small status bar could appear with announcement whats wrong
-- when adding/deleting products and user is not online, create queue of future requests to be sent when app is online
-          1) files to be uploaded
-          2) files to be deleted
 - add small status bar at bottom, that indicate suxess uploading to DBX or removing file from DBX
 
 
@@ -154,4 +151,21 @@ done:
 27 Jan
 - issue - when i dont autofetch other's data on app start, it throws error
 - i can choose if on app start it should auto-download other users country data & images to my device
+
+28 Jan
+- prepare html head for PWA
+- create manifest.json
+- create service worker
+
+29 Jan
+- when adding/deleting products and user is not online, create queue of future requests to be sent when app is online
+          1) files to be uploaded
+          2) files to be deleted
+- adding product filtering - i can filter products viewed using text input
+
+30 Jan
+- if something changed in user countries, save them to IDB
+- when app finds that user has no countries in IDB but should have, 
+          if online - fetch them
+          otherwise - alert user to connect to wifi first
 */
