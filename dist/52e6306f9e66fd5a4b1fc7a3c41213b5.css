@@ -7,7 +7,14 @@ h3 {
 
 body {
   margin: 0;
-  margin-top: 15px; }
+  margin-top: 15px;
+  text-align: center; }
+
+.genericText {
+  font-size: 15px; }
+
+.verdana {
+  font-family: Helvetica, sans-serif; }
 
 select, select:active, select:hover, input[type=file]:active, input[type=file]:hover,
 input[type=file]:focus, button {
@@ -24,14 +31,18 @@ input[type=file]:focus, button {
 #mainScreen {
   width: 100%; }
 
+.generalButton {
+  font-size: 15px;
+  /*border: none;*/
+  background-color: white; }
+
+.fingerSized {
+  height: 48px; }
+
 #locButtons {
   width: 100%; }
   #locButtons button {
-    font-size: 15px;
-    width: 33%;
-    min-height: 48px;
-    border: none;
-    background-color: white; }
+    width: 33%; }
 
 #locations {
   width: 100%; }
@@ -56,7 +67,12 @@ input[type=file]:focus, button {
   box-shadow: 0px 0px 3px 1px gray;
   height: 40px;
   width: 40px;
-  padding-bottom: 5px; }
+  padding-bottom: 5px;
+  transition: right 1s; }
+
+#addProductButton.noShow {
+  right: -20vw;
+  transition: right 1s; }
 
 #newProductFormContainer {
   display: flex;
@@ -99,6 +115,27 @@ input[type=file]:focus, button {
   width: 125px;
   height: auto; }
 
+#filteringIndicator {
+  font-size: 1.3em;
+  font-weight: 500;
+  width: 100%;
+  margin: 15px 0 0;
+  color: #3fecb8;
+  text-align: center;
+  transition: all .75s; }
+  #filteringIndicator span.big {
+    font-size: 1.8em; }
+
+#filteringIndicator.detached {
+  position: fixed;
+  top: 0;
+  margin-top: 0;
+  padding: 0.5em 0.5em 0.3em;
+  z-index: 1;
+  /*opacity: .6;*/
+  background-color: rgba(255, 255, 255, 0.85);
+  transition: all .75s; }
+
 #prodSearchContainer {
   position: fixed;
   bottom: 20px;
@@ -110,15 +147,15 @@ input[type=file]:focus, button {
   padding-left: 3px;
   border-radius: 20px;
   background-color: rgba(255, 255, 255, 0.4);
-  box-shadow: 0px 0px 3px 1px gray; }
+  box-shadow: 0px 0px 3px 1px gray;
+  transition: all 1s; }
   #prodSearchContainer span {
     margin-left: 5px; }
   #prodSearchContainer #prodSearch {
     font-size: 20px;
     text-align: center;
     height: 30px;
-    width: calc(100vw - 155px);
-    /* 155 is left space around this, width of Magn. glass, addNewProd button, its right space etc.*/
+    width: calc(100vw - 95px);
     margin: 0 5px;
     padding-left: 5px;
     padding-right: 5px;
@@ -131,9 +168,10 @@ input[type=file]:focus, button {
       font-style: italic; }
 
 #prodSearchContainer.open {
-  width: calc(100vw - 100px);
+  width: calc(100vw - 45px);
   background-color: aquamarine;
-  /*--rgba(63, 236, 184, 1);*/ }
+  /*--rgba(63, 236, 184, 1);*/
+  transition: all .3s; }
 
 #console {
   opacity: 0;
@@ -176,6 +214,9 @@ input[type=file]:focus, button {
 .just_around {
   justify-content: space-around; }
 
+.just_between {
+  justify-content: space-between; }
+
 .hidden {
   display: none;
   font-weight: 200; }
@@ -183,8 +224,36 @@ input[type=file]:focus, button {
 .marginAround30 {
   margin: 30px; }
 
+.width_eighty {
+  width: 80%; }
+
+.width_full {
+  width: 100%; }
+
+#settings input[type=text], #settings input[type=email], #settings input[type=password] {
+  border: 1px solid #b6b6b6;
+  height: 40px;
+  padding-left: 10px;
+  padding-right: 10px;
+  font-size: 15px; }
+
+#settings input[type=text]::placeholder, #settings input[type=email]::placeholder, #settings input[type=password]::placeholder {
+  text-align: center;
+  font-style: italic; }
+
 #settings .disable {
   color: gray; }
+
+#settings .followedUser {
+  width: 100%;
+  margin-bottom: 5px; }
+
+#settings .followedUser:last-child {
+  margin-bottom: 0; }
+
+#settings .followedUser span {
+  font-family: Helvetica, sans-serif;
+  text-transform: uppercase; }
 
 #productList {
   width: 100%;

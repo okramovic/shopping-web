@@ -68,7 +68,7 @@ require = (function (modules, cache, entry) {
 
   // Override the current require with this new one
   return newRequire;
-})({5:[function(require,module,exports) {
+})({4:[function(require,module,exports) {
 if ('serviceWorker' in navigator){
      console.log('registering sw')
 
@@ -98,7 +98,7 @@ function Module() {
 module.bundle.Module = Module;
 
 if (!module.bundle.parent && typeof WebSocket !== 'undefined') {
-  var ws = new WebSocket('ws://localhost:61407/');
+  var ws = new WebSocket('ws://localhost:50333/');
   ws.onmessage = function(event) {
     var data = JSON.parse(event.data);
 
@@ -199,4 +199,4 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.require, id)
   });
 }
-},{}]},{},[0,5])
+},{}]},{},[0,4])

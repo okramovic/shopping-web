@@ -2,16 +2,10 @@
 
 TODO
 
-- when filtering - add indicator h3 above products that products are filtered to search string
-                 - scroll to 60px top of page
-                 - remove add new product when filtering input is open
-
-
 
 - issue - after adding new location, products dont appear to be mine
 - issue - after adding new product, screen reloads without new product visible
           - in case user follows nobody - after new prod is added, its loaded not as user's own prod
-
 
 
 
@@ -168,4 +162,8 @@ done:
 - when app finds that user has no countries in IDB but should have, 
           if online - fetch them
           otherwise - alert user to connect to wifi first
+- when filtering - add indicator h3 above products that products are filtered to search string
+          - scroll to cca 160px top of page
+          - remove add new product when filtering input is open
+- scrolling event listener in vue - https://stackoverflow.com/questions/45437827/how-to-use-listeners-in-vue-js-for-events-like-scroll-and-windows-resizing
 */

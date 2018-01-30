@@ -96,10 +96,14 @@ const app = new Vue({
           countries: [],
           cities: [],
           shops: [],
+          //currentDisplayedProducts: [],
+
           toSearch: '',
           showPSearch: false,
-          searchTimerOn: false,
-          //currentDisplayedProducts: [],
+          //searchTimerOn: false,
+          sTimer: null,
+          detachSearchIndicator: false,
+          
 
           mouseMillis: 0,
           mouseTimer: null,
@@ -944,12 +948,15 @@ const app = new Vue({
           showProdSearch:function(open){
                this.showPSearch = !this.showPSearch
 
-               console.log('open?', open)
-               if (open) {
-                    
-                    //return true
-               } //else return false
-               
+               clearTimeout(this.sTimer)
+
+               if (open) this.sTimer = setTimeout(()=>{
+                                   
+                                        this.showPSearch = false
+                                        console.log('HIDING')
+              
+               },10000)
+          
           },
           isSearched:function(prod){
                //console.log('search prod >' + this.toSearch + '<', prod)
@@ -961,6 +968,17 @@ const app = new Vue({
                     (prod.descrLong && prod.descrLong.includes(str))
                ) return true
                else return false
+          },
+          scrollCheck:function(){
+
+               if (window.scrollY>195) {
+                    this.detachSearchIndicator = true
+                    return true
+
+               } else {
+                    this.detachSearchIndicator = false
+                    return false
+               }
           },
           reloadView:function(){
                     console.log('RELOADING VIEW')
@@ -1314,7 +1332,7 @@ const app = new Vue({
                               initializeLocationSelects(this, initalCountryData)
                               //this.reloadView()
                          })
-                         
+
                     } else if (!er && this.userName) {
                          console.log(`- - - will autofetch MDB data of ${this.userName}`)
                          // autofetch users MDB data and restart app
@@ -1352,28 +1370,38 @@ const app = new Vue({
                })
           }
      },
-     watch:{
+     watch:{   // takes care of UI when filtering products 
           toSearch:function(n,o){
                //console.log('watcher? n', n,'o', o, '<')
                //o = o.toString()  //  && o.match(/w/)
-               if (n) this.searchTimerOn = false
-               else {
+               window.scrollTo(0,195)
+
+               clearTimeout(this.sTimer)
+
+               if (n) {
+                    //this.searchTimerOn = false
+                    //clearTimeout(this.sTimer)
+               }
+               //else {
                     
-                    if (!this.searchTimerOn){
+                    //if (!this.searchTimerOn){
 
-                         this.searchTimerOn = true
+                         //this.searchTimerOn = true
                          //console.log('setting timer')
-                         setTimeout(()=>{
 
-                                   if (this.searchTimerOn) {
+                         this.sTimer = 
+                         setTimeout(()=>{
+                                   //console.log('-- end')//, this.searchTimerOn)
+
+                                   //if (this.searchTimerOn) {
                                         this.showPSearch = false
                                         console.log('HIDING')
-                                   }
-                                   //console.log('-- end', this.searchTimerOn)
-                                   this.searchTimerOn = false
-                         },5000)
-                    }
-               }
+                                   //}
+                                   
+                                   //this.searchTimerOn = false
+                         },7000)
+                    //}
+               //}
           }
      },
      mounted: function(){
@@ -1381,7 +1409,8 @@ const app = new Vue({
           
           this.startApp()
           checkDrBxToken()
-          console.log('this.token', this.token)
+          //console.log('this.token', this.token)
+          window.addEventListener('scroll', this.scrollCheck)
      },
      created:function(){
           //console.log('CREATED')

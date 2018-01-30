@@ -1,5 +1,5 @@
 $fontSerif: 'Times New Roman', Times, serif;
-
+$verdana: Helvetica, sans-serif;
 
 $myColor: rgb(63, 236, 184);
 
@@ -14,7 +14,16 @@ h3{
 body{
      margin: 0;
      margin-top: 15px;
+     text-align: center;
 }
+
+.genericText{
+     font-size: 15px;
+}
+.verdana{
+     font-family: $verdana;
+}
+
 
 select, select:active, select:hover, input[type=file]:active, input[type=file]:hover, 
 input[type=file]:focus, button{
@@ -32,15 +41,19 @@ input[type=file]:focus, button{
 #mainScreen{
      width: 100%;
 }
+.generalButton{
+     font-size: 15px;
+     /*border: none;*/
+     background-color: white;
+}
+.fingerSized{
+     height: 48px;
+}
 #locButtons{
      width: 100%;
 
      button{
-          font-size: 15px;
           width: 33%;
-          min-height: 48px;
-          border: none;
-          background-color: white;
      }
 }
 #locations{
@@ -57,7 +70,6 @@ input[type=file]:focus, button{
      }
 }
 #addProductButton{
-
      position: fixed;
      bottom: 20px;
      right: 20px;
@@ -69,6 +81,13 @@ input[type=file]:focus, button{
      height: 40px;
      width: 40px;
      padding-bottom: 5px;
+     
+     transition: right 1s;
+}
+#addProductButton.noShow{
+     right: -20vw;
+     transition: right 1s;
+
 }
 #newProductFormContainer{
      display: flex;
@@ -123,6 +142,31 @@ input[type=file]:focus, button{
      width: 125px;
      height: auto;
 }
+#filteringIndicator{
+     font-size: 1.3em;
+     font-weight: 500;
+
+     width: 100%;
+     margin: 15px 0 0;
+     
+     color: $myColor;
+
+     text-align: center;
+     transition: all .75s;
+     span.big{
+          font-size: 1.8em;
+     }
+}
+#filteringIndicator.detached{
+     position: fixed;
+     top: 0;
+     margin-top: 0; 
+     padding: 0.5em 0.5em 0.3em;
+     z-index: 1;
+     /*opacity: .6;*/
+     background-color: rgba(255,255,255, .85);
+     transition: all .75s;
+}
 
 #prodSearchContainer{
      position: fixed;
@@ -138,6 +182,7 @@ input[type=file]:focus, button{
      border-radius: 20px;
      background-color: rgba(255,255,255,.4);
      box-shadow: 0px 0px 3px 1px gray;
+     transition: all 1s;
 
      span{
           margin-left: 5px;
@@ -146,7 +191,7 @@ input[type=file]:focus, button{
           font-size: 20px;
           text-align: center;
           height: 30px;
-          width: calc(100vw - 155px); /* 155 is left space around this, width of Magn. glass, addNewProd button, its right space etc.*/
+          width: calc(100vw - 95px);
           margin: 0 5px;
           padding-left: 5px;
           padding-right: 5px;
@@ -161,11 +206,11 @@ input[type=file]:focus, button{
                font-style: italic;
           }
      }
-     
 }
 #prodSearchContainer.open{
-     width: calc(100vw - 100px);
+     width: calc(100vw - 45px);
      background-color: aquamarine;/*--rgba(63, 236, 184, 1);*/
+     transition: all .3s;
 }
 
 #console{
@@ -211,7 +256,9 @@ input[type=file]:focus, button{
 .just_around{
      justify-content: space-around;
 }
-
+.just_between{
+     justify-content: space-between;
+}
 .hidden{
      display: none;
      font-weight: 200;
@@ -221,10 +268,40 @@ input[type=file]:focus, button{
      margin: 30px;
 }
 
+.width_eighty{
+     width: 80%;         
+}
+.width_full{
+     width: 100%;
+}
 
 #settings{
+     input[type=text], input[type=email], input[type=password]{
+          border: 1px solid rgb(182, 182, 182);
+          height: 40px;
+          padding-left: 10px;
+          padding-right: 10px;
+          font-size: 15px;
+     }
+     input[type=text]::placeholder, input[type=email]::placeholder, input[type=password]::placeholder{
+          text-align: center;
+          font-style: italic;
+     }
+
      .disable{
           color: gray;  
+     }
+     
+     .followedUser{
+          width: 100%;
+          margin-bottom: 5px;
+     }
+     .followedUser:last-child{
+          margin-bottom: 0;
+     }
+     .followedUser span{
+          font-family: $verdana;
+          text-transform: uppercase;
      }
 }
 
@@ -248,7 +325,7 @@ input[type=file]:focus, button{
 }
 
 h3.locationBanner{
-     font-family: Helvetica, sans-serif;
+     font-family: $verdana;
      font-weight: 200;
      margin-top: 10px;
      margin-bottom: 30px;

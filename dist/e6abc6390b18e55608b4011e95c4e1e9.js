@@ -68,7 +68,7 @@ require = (function (modules, cache, entry) {
 
   // Override the current require with this new one
   return newRequire;
-})({8:[function(require,module,exports) {
+})({6:[function(require,module,exports) {
 var global = (1,eval)("this");
 /*!
  * Vue.js v2.5.13
@@ -10868,7 +10868,7 @@ Vue$3.compile = compileToFunctions;
 return Vue$3;
 
 })));
-},{}],4:[function(require,module,exports) {
+},{}],3:[function(require,module,exports) {
 /**
  *        simple state management http://vuetips.com/simple-state-management-vue-stash
  * 
@@ -10967,10 +10967,14 @@ const app = new Vue({
           countries: [],
           cities: [],
           shops: [],
+          //currentDisplayedProducts: [],
+
           toSearch: '',
           showPSearch: false,
-          searchTimerOn: false,
-          //currentDisplayedProducts: [],
+          //searchTimerOn: false,
+          sTimer: null,
+          detachSearchIndicator: false,
+          
 
           mouseMillis: 0,
           mouseTimer: null,
@@ -11815,12 +11819,15 @@ const app = new Vue({
           showProdSearch:function(open){
                this.showPSearch = !this.showPSearch
 
-               console.log('open?', open)
-               if (open) {
-                    
-                    //return true
-               } //else return false
-               
+               clearTimeout(this.sTimer)
+
+               if (open) this.sTimer = setTimeout(()=>{
+                                   
+                                        this.showPSearch = false
+                                        console.log('HIDING')
+              
+               },10000)
+          
           },
           isSearched:function(prod){
                //console.log('search prod >' + this.toSearch + '<', prod)
@@ -11832,6 +11839,17 @@ const app = new Vue({
                     (prod.descrLong && prod.descrLong.includes(str))
                ) return true
                else return false
+          },
+          scrollCheck:function(){
+
+               if (window.scrollY>195) {
+                    this.detachSearchIndicator = true
+                    return true
+
+               } else {
+                    this.detachSearchIndicator = false
+                    return false
+               }
           },
           reloadView:function(){
                     console.log('RELOADING VIEW')
@@ -11901,11 +11919,11 @@ const app = new Vue({
                          console.log('reloading - location w/o prods to save', result.countries)
 
                               
-                         if (result.somethingChanged===true) 
+                         if (result.somethingChanged) 
                               // save all locations without prods to device user IDB
-                              // return updateDeviceUserCountries(this.userName, result.countries)
-                                   return result.countries
-                         //     .then(initializeLocationSelects(this, result.countries))
+                              return updateDeviceUserCountries(this.userName, result.countries)
+                              //return result.countries
+                              
 
                          else return result.countries
                     } else return null         
@@ -12185,60 +12203,76 @@ const app = new Vue({
                               initializeLocationSelects(this, initalCountryData)
                               //this.reloadView()
                          })
+
                     } else if (!er && this.userName) {
                          console.log(`- - - will autofetch MDB data of ${this.userName}`)
                          // autofetch users MDB data and restart app
-                         this.fetchMyCountries()
-                         .then(newCountries =>{
-                              console.log('newCountries', newCountries)
-                              if ( confirm('Want to download pics too?\nPress OK if yes'))
+                         if (navigator.onLine) 
 
-                                   //getOwnIDBData(this.userName)
-                                   //.then(countries => 
-                                   fetchAndSaveMyImages.call(this, newCountries)//)
-                                   .then(()=>{
+                              this.fetchMyCountries()
+                              .then(newCountries =>{
+                                   console.log('newCountries', newCountries)
+                                   if ( confirm('Want to download pics too?\nPress OK if yes'))
+
+                                        //getOwnIDBData(this.userName)
+                                        //.then(countries => 
+                                        fetchAndSaveMyImages.call(this, newCountries)//)
+                                        .then(()=>{
+                                             stopLoaderAnimation.call(this)
+                                             this.switchScreen('main')
+                                             return this.startApp()
+                                        })
+                                   else {
+                                        console.log('NO CONFIRMATION')
                                         stopLoaderAnimation.call(this)
                                         this.switchScreen('main')
-                                        return this.startApp()
-                                   })
+                                        return this.startApp() 
+                                   }
+                              })
 
-                              else {
-                                   console.log('NO CONFIRMATION')
-                                   stopLoaderAnimation.call(this)
-                                   this.switchScreen('main')
-                                   return this.startApp() 
-                              }
-                         })
+                         else {
+                              stopLoaderAnimation.call(this)
+                              this.informUser(`Get online first so app can download your saved data. Otherwise app can't continue :(`,10000)
+                         }
 
                     } else 
                          console.error('!!!!!  there was real error\n error getting init data',er)
+                         alert('Error getting your data')
                })
-          
-
           }
      },
-     watch:{
+     watch:{   // takes care of UI when filtering products 
           toSearch:function(n,o){
                //console.log('watcher? n', n,'o', o, '<')
                //o = o.toString()  //  && o.match(/w/)
-               if (n) this.searchTimerOn = false
-               else {
+               window.scrollTo(0,195)
+
+               clearTimeout(this.sTimer)
+
+               if (n) {
+                    //this.searchTimerOn = false
+                    //clearTimeout(this.sTimer)
+               }
+               //else {
                     
-                    if (!this.searchTimerOn){
+                    //if (!this.searchTimerOn){
 
-                         this.searchTimerOn = true
+                         //this.searchTimerOn = true
                          //console.log('setting timer')
-                         setTimeout(()=>{
 
-                                   if (this.searchTimerOn) {
+                         this.sTimer = 
+                         setTimeout(()=>{
+                                   //console.log('-- end')//, this.searchTimerOn)
+
+                                   //if (this.searchTimerOn) {
                                         this.showPSearch = false
                                         console.log('HIDING')
-                                   }
-                                   //console.log('-- end', this.searchTimerOn)
-                                   this.searchTimerOn = false
-                         },5000)
-                    }
-               }
+                                   //}
+                                   
+                                   //this.searchTimerOn = false
+                         },7000)
+                    //}
+               //}
           }
      },
      mounted: function(){
@@ -12246,7 +12280,8 @@ const app = new Vue({
           
           this.startApp()
           checkDrBxToken()
-          console.log('this.token', this.token)
+          //console.log('this.token', this.token)
+          window.addEventListener('scroll', this.scrollCheck)
      },
      created:function(){
           //console.log('CREATED')
@@ -13278,15 +13313,19 @@ function copyUserData(users, owndata){
 function updateDeviceUserCountries(userName=0, countries){
      console.log(`save to user: ${userName} ${countries}`)
      let obj = { userName, countries }
-     //console.log(obj)
+
      return new Promise((resolve, reject)=>{
+          if (!countries) reject('no countries provided')
 
           deviceUserData.userData.put({ userName, countries })
           .then(result=>{
-               console.log(result)
+               console.log('updated IDB countries of',result)
                resolve(countries)
 
-          }).catch(er=>{})
+          }).catch(er=>{
+               console.error('error putting data of',userName,'to IDB',er)
+               reject(er)
+          })
      })
 }
 const copyUserData_text = `
@@ -13579,7 +13618,7 @@ let productTemplate = Vue.component('product',{
           )
      }
 })*/
-},{"./vendor/Vue.2.5.13.nonmin.js":8}],0:[function(require,module,exports) {
+},{"./vendor/Vue.2.5.13.nonmin.js":6}],0:[function(require,module,exports) {
 var global = (1, eval)('this');
 var OldModule = module.bundle.Module;
 function Module() {
@@ -13597,7 +13636,7 @@ function Module() {
 module.bundle.Module = Module;
 
 if (!module.bundle.parent && typeof WebSocket !== 'undefined') {
-  var ws = new WebSocket('ws://localhost:61407/');
+  var ws = new WebSocket('ws://localhost:50333/');
   ws.onmessage = function(event) {
     var data = JSON.parse(event.data);
 
@@ -13698,4 +13737,4 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.require, id)
   });
 }
-},{}]},{},[0,4])
+},{}]},{},[0,3])

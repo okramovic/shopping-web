@@ -24,13 +24,13 @@
           <!--img id="preview"-->
 
           
-          <div v-show="!userName && newProductForm === false">you are unregistered</div>
+          <div v-show="!userName && newProductForm === false" class="genericText verdana">you are unregistered</div>
           <div style="width: 100%; display: flex; justify-content: space-around;">
 
-               <div v-show="userName && newProductForm === false">you are {{userName}}</div>
+               <div v-show="userName && newProductForm === false" class="genericText verdana">you are {{userName}}</div>
                
-               <button v-show="screen=='settings'" @click="switchScreen('main')">close settings</button>
-               <button id="" @click="switchScreen('settings')" v-show="screen=='main' && newProductForm === false">show settings</button>
+               <button v-show="screen=='settings'" @click="switchScreen('main')" class="generalButton">close settings</button>
+               <button id="" @click="switchScreen('settings')" v-show="screen=='main' && newProductForm === false" class="generalButton">show settings</button>
           </div>
           <!--br><br-->
 
@@ -38,21 +38,21 @@
 
 
           <div id="settings" v-show="screen=='settings' || screen== 'signup'" class="vertical marginAround30">
-               <button @click="screen='signup'" v-show="screen=='settings' && !userName">create account</button>
+               <button @click="screen='signup'" v-show="screen=='settings' && !userName" class="generalButton">create account</button>
 
-               <button @click="screen='settings'" v-show="screen=='signup'">back</button>
+               <button @click="screen='settings'" v-show="screen=='signup'" class="generalButton">back</button>
                
                <!-- search users -->
-               <div style="display: flex" v-show="userName && onLine()===true">
-                    <input type="text" v-model="searchText" placeholder="find love of your life">
-                    <button @click="requestUsers">search</button>
+               <div v-show="userName && onLine()===true" class="flex width_full">
+                    <input type="text" v-model="searchText" placeholder="find love of your life" style="width: 72%;">
+                    <button @click="requestUsers" class="generalButton" style="width: 28%; height: 44px">search</button>
                </div>
-               <div v-if="!userName && onLine()===true">you cannot follow anyone without creating account</div>
+               <div v-if="!userName && onLine()===true"><br>you cannot follow anyone without creating account<br></div>
                <!-- search results -->
                <div v-show="searchResults">
                     <div v-for="user in searchResults" class="center just_around">
                          <h4>{{user.userName}}</h4>
-                         <button v-if="isFollowed(user.email)===false" @click="followUser(user.email, user.userName)">follow</button>
+                         <button v-if="isFollowed(user.email)===false" @click="followUser(user.email, user.userName)" class="generalButton">follow</button>
                          <br>
                          <p v-if="isFollowed(user.email)===true">you followdee</p>
                     </div>
@@ -65,24 +65,24 @@
                          <input type="text" name="reg-username" placeholder="username" required="">
                          <input type="email" name="reg-useremail" placeholder="your email" required="">
                          <input type="password" name="reg-userpassword" placeholder="password" required="">
-                         <button @click="signUp($event)">sign up</button>
+                         <button @click="signUp($event)" class="generalButton">sign up</button>
                     </form>
                </div>
                <!-- login-->
                <div class="vertical" v-if="screen!=='main' && screen!=='signup' && !userName && onLine()===true">
                     <h2>count me in</h2>
-                    <input type="email" placeholder="email" v-model="loginemail">
-                    <p>your password</p>
-                    <input type="password" placeholder="pass" v-model="loginpass">
-                    <button @click="login($event)">login</button>
+                    <input type="email" placeholder="your email" v-model="loginemail">
+                    <!--p>your password</p-->
+                    <input type="password" placeholder="your secret" v-model="loginpass">
+                    <button @click="login($event)" class="generalButton fingerSized">login</button>
                </div>
                <br>
 
                <!-- followed users -->
-               <div v-if="followedUsers" class="vertical">
+               <div v-if="followedUsers" class="vertical width_eighty">
                     <h4>users you follow</h4>
-                    <div v-for="user in followedUsers">{{user.userName}}
-                              <button @click="unfollowUser(user)" v-if="onLine()===true">unfollow</button>
+                    <div v-for="user in followedUsers" class="followedUser flex just_between"><span>{{user.userName}}</span>
+                              <button @click="unfollowUser(user)" v-if="onLine()===true" class="generalButton fingerSized">unfollow</button>
                     </div>
                </div>
                <h4 v-if="userName && (!followedUsers || followedUsers.length===0) ">you dont follow any users yet</h4>
@@ -92,39 +92,41 @@
 
                <div v-if="userName && followedUsers && followedUsers.length>0" class="flex vertical">
                     <div class="flex">
-                         <p>fetch other's data on app start</p>
+                         <p class="genericText verdana">fetch other's data on app start</p>
                          <input type="checkbox" name="autoFetchOthersData" v-model="autoFetchOthersData" @click="changeAutoFetchOthersData">
                     </div>
                     <div class="flex">
-                         <p :class="{disable: !autoFetchOthersData}">fetch their images too</p>
+                         <p :class="{disable: !autoFetchOthersData}" class="genericText verdana">fetch their images too</p>
                          <input type="checkbox" name="" v-model="autoFetchOthersImages" :disabled="!autoFetchOthersData" @click="changeAutoFetchOthersImages">
                     </div>
                </div>
                <br><br>
                <div v-if="userName && onLine()===true">
-                    <button @click="fetchMyCountries()">&#10549; my countries</button>
-                    <button @click="pushMyCountries()">my countries &#10548;</button>
+                    <button @click="fetchMyCountries()" class="generalButton">&#10549; my countries</button>
+                    <button @click="pushMyCountries()" class="generalButton">my countries &#10548;</button>
                </div>
                <div v-if="userName && onLine()===true" class="flex">
                     <input type="checkbox" v-model="fetchPicsAlso">
-                    <p>&#10549; my pics too</p>
+                    <p class="genericText verdana">&#10549; my pics too</p>
                </div>
                
                <br>
-               <button @click="requestDropboxAccess()" v-if="userName && onLine()===true && !token">connect my Dropbox</button>
+               <button @click="requestDropboxAccess()" v-if="userName && onLine()===true && !token" class="generalButton">connect my Dropbox</button>
                <br>
-               <button v-show="userName" @click="logout">logout {{userName}}</button>
+               <button v-show="userName" @click="logout" class="generalButton">logout {{userName}}</button>
           </div>
 
 
+
+          <!-- main screen -->
           <div id="mainScreen" v-show="screen==='main'" class="vertical">
-                  <div id="locButtons" v-show="screen==='main'" class="flex just_around">
-                              <button v-on:click="openLocationInput('country',$event)">add country</button>
-                              <button v-on:click="openLocationInput('city',$event)">add city</button>
-                              <button v-on:click="openLocationInput('shop',$event)">add shop</button>
-                  </div>
+               <div id="locButtons" v-show="screen==='main'" class="flex just_around">
+                              <button v-on:click="openLocationInput('country',$event)" class="generalButton fingerSized">add country</button>
+                              <button v-on:click="openLocationInput('city',$event)" class="generalButton fingerSized">add city</button>
+                              <button v-on:click="openLocationInput('shop',$event)" class="generalButton fingerSized">add shop</button>
+               </div>
                
-                  <div id="locations" v-show="screen==='main'" class="flex just_around">
+               <div id="locations" v-show="screen==='main'" class="flex just_around">
                
                        <select id="CountrySel" v-model="currentCountry" data-forlabel="currentCountry" data-saveas="countries" v-on:change="updateLocationSelect(0, $event)">
                             <option v-for="country in countries">{{country.name}}</option>
@@ -138,10 +140,10 @@
                             <option v-for="shop in shops">{{shop.name}}</option>
                        </select>
                            
-                  </div>
+               </div>
 
         
-                  <div id="locationInput" v-show="locationInputShown" class="vertical">
+               <div id="locationInput" v-show="locationInputShown" class="vertical">
                            
                        <button id="locationInputHide" v-on:click="locationInputShown=false">hide</button>
                            
@@ -149,16 +151,19 @@
                        <input id="addCountryIn" type="text" v-model="newLocation">
                        <button id="confCountryBut" v-on:click="addNewLocation()">confirm</button>
         
-                  </div>
-        
-               <div id="prodSearchContainer" class="flex" :class="{open: showPSearch}" v-show="screen==='main' && !newProductForm">
-                    <span @click="showProdSearch(true)">&#128269;</span>
-                    <input id="prodSearch" type="text" v-show="showPSearch" v-model="toSearch" placeholder="avocado?">
                </div>
-               
+        
+
+               <div id="filteringIndicator" v-show="toSearch || showPSearch" :class="{detached: detachSearchIndicator }">
+                    <span v-show="toSearch">you see only stuff with<br></span>
+                    <span v-show="toSearch" class="big">'{{toSearch}}'</span>
+                    
+                    
+                    <span v-show="!toSearch" style="font-style: italic">...waiting for my Master</span>
+               </div>
 
 
-               <!-- products display -->
+               <!-- display of products -->
                <div v-show="newProductForm === false" id="productList">
                     <div v-for="country in countries" v-show="currentCountry == country.name || currentCountry=='all countries'" class="countryContainer">
                          
@@ -196,12 +201,16 @@
                          </div>
                     </div>
                </div>
-                                   
-               <!--h4 v-show="newProductForm === false && currentDisplayedProducts.length==0"
-                    >no products to display</h4-->
+               
 
+               <!-- filtering -->
+               <div id="prodSearchContainer" class="flex" :class="{open: showPSearch}" v-show="screen==='main' && !newProductForm">
+                    <span @click="showProdSearch(true)">&#128269;</span>
+                    <input id="prodSearch" type="text" v-show="showPSearch" v-model="toSearch" placeholder="avocado?">
+               </div>
 
-               <button id="addProductButton" v-show="!newProductForm" v-on:click="openProductForm(true)">+</button>
+               <!--  && !showPSearch -->
+               <button id="addProductButton" v-show="!newProductForm" :class="{noShow: showPSearch }" v-on:click="openProductForm(true)">+</button>
 
                <div id="newProductFormContainer" v-show="newProductForm === true">
                     <form name="newProductForm">
