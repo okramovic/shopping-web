@@ -3,11 +3,9 @@
 TODO
 
 
-- issue - after adding new location, products dont appear to be mine
-- issue - after adding new product, screen reloads without new product visible
-          - in case user follows nobody - after new prod is added, its loaded not as user's own prod
 
-
+offline task doubling - if file with same name already has task, second will not be done
+     - how to deal with this
 
 
 when pressing upload product twice - error on server
@@ -15,10 +13,18 @@ when pressing upload product twice - error on server
   error: { '.tag': 'shared_link_already_exists' } }
 
 
-- user has to verify their dropbox email to be able to push pics there -> fix this 
-          STATUS: 409 ??
+  DBX errors
+          - user has to verify their dropbox email to be able to push pics there -> fix this 
+          
+          STATUS: 409
           { error_summary: 'email_not_verified/..',
                error: { '.tag': 'email_not_verified' } }
+
+          - image is already on users dbx
+
+          status 409
+          { error_summary: 'shared_link_already_exists/.',
+               error: { '.tag': 'shared_link_already_exists' } }
 
 
 smaller ideas
@@ -166,4 +172,11 @@ done:
           - scroll to cca 160px top of page
           - remove add new product when filtering input is open
 - scrolling event listener in vue - https://stackoverflow.com/questions/45437827/how-to-use-listeners-in-vue-js-for-events-like-scroll-and-windows-resizing
+
+31 Jan
+- when adding new country/ city/ shop - make sure they arent already there!
+- issue - after adding new product, screen reloads without new product visible
+          - in case user follows nobody - after new prod is added, its loaded not as user's own prod
+- issue - after adding new location, products dont appear to be mine
+
 */

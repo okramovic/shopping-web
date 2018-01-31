@@ -422,11 +422,10 @@ const app = new Vue({
                          this.informUser(`sorry, '${this.newLocation}' is one of names that are not allowed`,3000)
                          return this.newLocation = ''
                }
-               //console.log(`new ${this.locationSet} is ${this.newLocation}`)
-
+               
                const addLocation = addNewLocationToDB.bind(this)
 
-               return addLocation( this.locationSet, this.newLocation.toString() )
+               return addLocation( this.locationSet, this.newLocation.toString().trim() )
           },
           updateLocationSelect:function(index, event,requestedShopName){
                //console.log('slct', event.srcElement.selectedIndex)
@@ -624,12 +623,12 @@ const app = new Vue({
           },
           openProductForm:function(open){
 
-               //if (open===true && !navigator.onLine) return this.informUser(`You can't add products offline. Take a picture now and add a product when you are online.`,7000)
+               //if (open===true && !navigator.onLine) return this.informUser(`Sorry, you can't add products offline. Take a picture now and add a product when you are online.`,7000)
                
                this.newProductForm = open
 
                if (open === false){
-                    this.newProductPreview= false
+                    
                     this.newProductPreviewLastModified= null
                     this.newProductType= null
                     this.newProductName= null
@@ -639,9 +638,11 @@ const app = new Vue({
 
                     removeFormRatingChecked()
 
-                    this.modifyingProduct= false
                     this.productModified= null
-                    this.modifyingProduct = false;
+                    if (this.modifyingProduct) {
+                         this.modifyingProduct = false;
+                         this.newProductPreview= false
+                    }
                }
           },
           openProductFormToModify:function(prod){
@@ -681,15 +682,16 @@ const app = new Vue({
           },
           imageAdded:function(ev){
 
-                    const reader = new FileReader(),
-                         readBin = new FileReader(),
-                         self = this,
-                         file = ev.target.files[0]
-                    // getPicDate(file.lastModifiedDate || file.lastModified) // lastMod is epoch time on nonSafari
-                    this.newProductPreviewLastModified = file.lastModified    // when storing pic to IDB, its part of filename
-                    console.log(file)
+               console.log('img added', ev)
+               const reader = new FileReader(),
+                    readBin = new FileReader(),
+                    self = this,
+                    file = ev.target.files[0]
+               // getPicDate(file.lastModifiedDate || file.lastModified) // lastMod is epoch time on nonSafari
+               this.newProductPreviewLastModified = file.lastModified    // when storing pic to IDB, its part of filename
+               console.log(file)
 
-                    reader.onload = function(fileObj){
+               reader.onload = function(fileObj){
                          let img = new Image()
 
                          //let data = fileObj.target.result
@@ -736,10 +738,11 @@ const app = new Vue({
                               })
                          }
                          img.src = fileObj.target.result
-                    }
-                    
-                    reader.readAsDataURL(ev.target.files[0])
-                    //this.newProductForm = false
+               }
+
+               reader.readAsDataURL(ev.target.files[0])
+
+               ev.target.value = '' // to eneble opening same pic again - this should work also for IE11, otherwise people use null
           },
           newProductSubmit: function($event){
                $event.preventDefault()
@@ -757,8 +760,7 @@ const app = new Vue({
                const fileName =`${window.localStorage.getItem('deviceUserEmail')
                                }_D${getFormattedDate(this.newProductPreviewLastModified)}`
 
-               //console.log('submit', fileName)
-               //console.log(this.newProductType, this.newProductName, this.newProductDescription, this.newProductPrice, rating)
+               
                const fieldnames=['descr','descrLong','price'],
                      otherFields = [this.newProductDescription, this.newProductDescriptionLong, this.newProductPrice]
 
@@ -780,60 +782,29 @@ const app = new Vue({
 
                const uploadToDBX = uploadImgToDropbox.bind(self),
                      addProduct = addNewLocationToDB.bind(this)
-                     //hasToken = localStorage.getItem('hasToken') // this.token
-
-               /* if (navigator.onLine && this.token) // upload image to dbx
-
-                         uploadToDBX(fileName, window.toUploadToDropbox)
-                         .then(link =>{
-                                   
-                                   console.log('new dbx link', link)
-                                   productToAdd.dbxURL = link
-
-                              return saveImageToIDB(fileName, window.canvasData, this.userName)
-                         })
-                         .then(result =>{
-                              console.log('result 2', result,'<')
-                              window.toUploadToDropbox = undefined
-
-                              if (result) return result
-                         })
-                         .then(y => addProduct('product', productToAdd) )
-                         .then(()=>{
-                              
-                              this.newProductForm = false
-                              this.newProductPreview = false
-                              this.reloadView()
-                         })
-                         .catch(er=>alert('huge arror storing new product'))
-
-                 else if (!navigator.onLine && this.token){
-                         console.log('adding task!')
-                         createTask.call(this, fileName , 'upload')
-                         .then(res=>{
-
-                         })
-               }*/
-
 
                saveImageToIDB(fileName, window.canvasData, this.userName)
                .then(()=> {
 
-                    if (navigator.onLine && this.token) // upload image to dbx
+                    if (navigator.onLine && this.token){ // upload image to dbx
 
+                         animateLoader.call(this)
+                         window.scrollTo(0,200) // so user sees that something is going on
                          return uploadToDBX(fileName, window.toUploadToDropbox)
 
-                    else if (!navigator.onLine && this.token){
+                    } else if (!navigator.onLine && this.token){
 
-                              createTask.call(this, fileName , 'upload')
+                         createTask.call(this, fileName , 'upload')
                               
-                              return null
+                         return null
 
                     } else return null
 
                }) 
                .then(link=> {
                     console.log('new dbx link', link)
+
+                    stopLoaderAnimation.call(this)
 
                     if (link) productToAdd.dbxURL = link
 
@@ -853,7 +824,6 @@ const app = new Vue({
                     this.reloadView()
                })
 
-               
           },
           applyProductChanges:function(ev){
                ev.preventDefault()
@@ -933,6 +903,9 @@ const app = new Vue({
                                    .then(res=>{
                                         console.log('del task created',res)
                                    })
+                                   .catch(er=>{
+                                        // if task with same file name is in IDB, it ll throw error and not create new task
+                                   })
                          }
                     })
                }
@@ -971,7 +944,7 @@ const app = new Vue({
           },
           scrollCheck:function(){
 
-               if (window.scrollY>195) {
+               if (window.scrollY>200) {
                     this.detachSearchIndicator = true
                     return true
 
@@ -1012,7 +985,7 @@ const app = new Vue({
                     } else return getOtherUsersIDBData(this.followedUsers)
 
                })
-               .then(othersData=>{
+               .then( othersData =>{
                     console.log('others data', othersData)
                     if (othersData){
                          let own = [...ownCountries], 
@@ -1031,12 +1004,11 @@ const app = new Vue({
                     } else {
                          console.log('------  other user data should be here but isnt')
                          // in case of logging in on device where no followed users' data is stored but user actually follows someone
-                         //ownCountries = loadProductIDBURLs(ownCountries)   
+                         // ownCountries = loadProductIDBURLs(ownCountries)   
                          // show user suggestion to fetch others' data? or do it automatically?
                          if (this.userName && this.followedUsers)
 
                               fetchDataOfFollowedUsers.call(this)
-
                               .then(()=> this.reloadView() )
 
                          else return null 
@@ -1126,27 +1098,8 @@ const app = new Vue({
                          animateLoader.call(this)  // show Loader
 
                          fetchDataOfFollowedUsers.call(this)
-
                          .then(()=> this.reloadView() )
-                         /*   // copied to separate function:
-                              const fetchedCountryData = this.followedUsers.map(fetchCountriesOfUser) // get new data for each followed user
-
-                              Promise.all(fetchedCountryData)
-                              .then(userData=>{   // store new user data
-
-                                   console.log('nav online - fetched', fetchedCountryData)
-                                   const saved = userData.map(user=>setOtherUserIDBData(user))
-                                   
-                                   return Promise.all(saved)
-                              }).then(saved=>{      // reloadView() is where new locations get copied to users countries
-
-                                   console.log('starting app - other users data', saved)
-                                   //stopLoaderAnimation.call(this)
-                                   return this.reloadView()     //getOtherUsersIDBData(this.followedUsers)
-
-                              }).catch(er=>console.error('error in online branch',er))
-                         */
-
+                         
                          // finds images that should be displayed but are missing on device -> fetches and saves them to device IDB
                          if (this.autoFetchOthersImages===true){  console.log('||| getting also images')
                               
@@ -1157,13 +1110,12 @@ const app = new Vue({
                                    users = users.map(user => getListOfImgNamesAndURLs(user.countries) )  // of other users
                                    return Promise.all(users)
 
-                              }).then(listsOfImgNamesAndURLs=>{ // array of arrays or nulls
+                              }).then(listsOfImgNamesAndURLs =>{ // array of arrays or nulls
                                    //console.log('idk ===', listsOfImgNamesAndURLs)    
                                    // find only those imgs that arent already saved on device
                                    return findImgNamesNotInIDB( listsOfImgNamesAndURLs )
-                              }).then(toFetch=>{
+                              }).then(toFetch =>{
                                    picsNamesAndURLs = toFetch
-                                   //const proms = toFetch.map(img)
                                    const imgData = toFetch.map(obj=>obj.url).map(fetchDbxImage)
                                    return Promise.all(imgData)
                               }).then( dataOfImgs => { // array of raw data strings
@@ -1175,18 +1127,14 @@ const app = new Vue({
                                    const promises = dataOfImgs.map( img => saveImageToIDB(img.imgName, img.data, this.userName) )
 
                                    return Promise.all(promises)
-                                   //return null
-                              }).then(imgNames=>{
+                              }).then(imgNames =>{
                                    console.log('imgNames fetched & saved?', imgNames)
                                    return this.reloadView()
-                              }).catch(er=>this.informUser(`downloading others' images failed`)) 
+                              }).catch(er => this.informUser(`downloading others' images failed`)) 
                          }
                          
-                    } else {
-                         console.log('|||  not online || dont autofetch')
-                         this.reloadView()
-                         //return getOtherUsersIDBData(this.followedUsers)  
-                    }
+                    } else this.reloadView()
+
 
                // this stuff doesnt ever happen now
                }).then(users=>{
@@ -1221,102 +1169,6 @@ const app = new Vue({
                                    } else return initializeLocationSelects(this, final)
                                    //final.forEach( country => deviceUserData.countries.put(country) )
                          })
-
-
-                         /*function copyUserData(users, owndata){
-                              //console.log('EQUAL', ownCountries == owndata)
-                              
-                              return new Promise((resolve, reject)=>{
-                                   const sets = ['countries','cities','shops','products']
-                                   let index = 0
-                                   users.forEach(other_countries => {
-
-                                             // remove products from each country
-                                             const others_cleaned = other_countries.map( country => removeProducts(country,0))     
-
-                                             copyEntries(index, owndata, others_cleaned)
-
-                                             .then(newCountries=> resolve(newCountries) )  
-                                   })
-
-                                   function removeProducts(entry,index){
-                                        //if (index>3) return;
-
-                                        if (entry.hasOwnProperty('products')){
-                                             //console.log('in SHOP', entry.name)
-                                             return {name: entry.name, products: []} //entry.products = []
-
-                                        } else if (entry.name){
-                                             //console.log('|||| not shop', index, entry.name, sets[index])
-                                             let name = entry.name
-                                             let prop = sets[index+1]  // cities shops
-                                             let y 
-                                             entry[prop] = entry[prop].map(entry => {
-                                                            //console.log('-- going into',entry.name, sets[index+1])
-                                                            return removeProducts(entry, index+1)
-                                                           })
-                                             //console.log('filtered ',prop,'of',entry.name, entry[prop])
-                                             return entry
-                                        } 
-                                   }
-                                   function copyEntries(outerIndex, ownEntries, otherEntries){
-                                        
-                                        function emptyspace(ind){
-                                                  let spaces = "", len = ind*5
-                                                  for (let i=0; i<len; i++){
-                                                       spaces = spaces.concat(" ")
-                                                  }
-                                                  return spaces
-                                        }
-                                        let index = outerIndex +1
-                                        let set = sets[outerIndex], subset = sets[index]
-                                        //console.log(emptyspace(outerIndex),'index', index, set, subset)
-                                        // if its shops now
-
-                                        return new Promise((resolve,rej)=>{
-                                             otherEntries.forEach(other_entry=>{
-                                                  
-                                                  //console.log( emptyspace(outerIndex),`checking others '${other_entry.name}'`)
-
-                                                  if (ownEntries.some(ownEntry=> ownEntry.name == other_entry.name)=== false ) {
-                                                       // not on device -> add it there
-                                                       //console.log(emptyspace(outerIndex),set, 'NOT THERE -> ADDING ',other_entry.name )
-                                                        //console.log(emptyspace(outerIndex),'- doing -', other_entry.name) 
-                                                        //let locations = removeProducts( other_entry, index)
-                                                        //console.log('without products',set, locations, subset)
-                                                        //other_entry[subset] = location
-                                                       ownEntries.push(other_entry)
-                                                       somethingChanged = true
-                                                        //console.log(other_entry.name,'updated?',other_entry)
-                                                        //console.log( other_entry.name, 'updated?',locations )
-
-                                                  // if this entry is already there
-                                                  } else{
-                                                       ownEntries.forEach( own_entry=>{
-                                                            //console.log(emptyspace(outerIndex),'checking >>>',subset, 'of',own_entry.name, own_entry)
-                                                            //console.log(emptyspace(outerIndex),set, 'is there checking >>>',own_entry.name, own_entry)
-                                                            // take others subentries and add them to Own
-                                                            if (own_entry.name === other_entry.name){
-                                                                 //console.log(emptyspace(outerIndex),`duplicates ${own_entry.name} = ${other_entry.name}`)
-                                                                 //console.log(emptyspace(outerIndex),index, 'subset',subset,'<<')
-                                                                 if (index<3)//subset!==undefined) // if subset is undefined, can it even reach this deep? i.e. - if the condition neccessary
-                                                                 copyEntries(index, own_entry[subset], other_entry[subset] )
-
-                                                                 else if (subset===undefined) {
-                                                                      
-                                                                      //console.log(emptyspace(outerIndex),'??',own_entry)
-                                                                      //let smt = removeProducts(own_entry,index)
-                                                                      //console.log(emptyspace(outerIndex),'done ------- with', set)
-                                                                 }
-                                                            } //it gets added above
-                                                       })
-                                                  }
-                                             })
-                                             resolve(ownEntries)
-                                        })
-                                   }
-                              })
-                         }*/
                     }
                })
 
@@ -1374,7 +1226,7 @@ const app = new Vue({
           toSearch:function(n,o){
                //console.log('watcher? n', n,'o', o, '<')
                //o = o.toString()  //  && o.match(/w/)
-               window.scrollTo(0,195)
+               window.scrollTo(0,200)
 
                clearTimeout(this.sTimer)
 
@@ -1416,6 +1268,7 @@ const app = new Vue({
           //console.log('CREATED')
      }
 })
+
 
 function createTask(imgName, type){
      
@@ -1897,9 +1750,6 @@ const copyUserDataOrig = (users, owndata, removeProds) => {
           const sets = ['countries','cities','shops','products']
           let index = 0
 
-          //console.log('removeProds?', removeProds)
-
-
           users.forEach(other_countries => {
      
                     let others_cleaned
@@ -1925,56 +1775,44 @@ const copyUserDataOrig = (users, owndata, removeProds) => {
                let set = sets[outerIndex], subset = sets[index]
 
                otherEntries.forEach(other_entry=>{
-                         //console.log( emptyspace(outerIndex),`checking others '${other_entry.name}'`)
-
+                         
                          if (ownEntries.some(ownEntry=> ownEntry.name == other_entry.name)=== false ){
                          // it's not on device -> add it there
-                              console.log(emptyspace(outerIndex),set, 'NOT THERE -> ADDING ',other_entry.name )
+                              //console.log(emptyspace(outerIndex),set, 'NOT THERE -> ADDING ',other_entry.name )
                               
                               ownEntries.push(other_entry)
                               somethingChanged = true
                               
-
                          // this entry is already there
-                         } else ownEntries.forEach( own_entry=>{
-                              //console.log(emptyspace(outerIndex),'checking >>>',subset, 'of',own_entry.name, own_entry)
-                              //console.log(emptyspace(outerIndex),set, 'is there checking >>>',own_entry.name, own_entry)
+                         } else ownEntries.forEach( own_entry =>{
+                              
                               // take others subentries and add them to Own
                               if (own_entry.name === other_entry.name){
-                                   //console.log(emptyspace(outerIndex),`duplicates ${own_entry.name} = ${other_entry.name}`)
-                                   //console.log(emptyspace(outerIndex),index, 'subset',subset,'<<')
 
-                                        if (index< 3)  copyEntries( index, own_entry[subset], other_entry[subset] )
+                                   if (index< 3)  copyEntries( index, own_entry[subset], other_entry[subset] )
 
-                                        else if (index===3 && !removeProds)
+                                   else if (index===3 && !removeProds)
                                              copyEntries(index, own_entry[subset], other_entry[subset] )
-                                   
 
                               } //it gets added above
                          })
-                         
-                         
                })
                return ownEntries
-               
           }
           function removeProducts(entry,index){
-               //if (index>3) return;
+               
 
                if (entry.hasOwnProperty('products')){
-                    //console.log('in SHOP', entry.name)
-                    return {name: entry.name, products: []} //entry.products = []
+
+                    return { name: entry.name, products: [] }
 
                } else if (entry.name){
-                    //console.log('|||| not shop', index, entry.name, sets[index])
+
                     let name = entry.name
                     let prop = sets[index+1]  // cities shops
                     let y 
-                    entry[prop] = entry[prop].map(entry => {
-                                   //console.log('-- going into',entry.name, sets[index+1])
-                                   return removeProducts(entry, index+1)
-                              })
-                    //console.log('filtered ',prop,'of',entry.name, entry[prop])
+                    entry[prop] = entry[prop].map(entry => removeProducts(entry, index+1) )
+                    
                     return entry
                } 
           }
@@ -1985,7 +1823,6 @@ const copyUserDataOrig = (users, owndata, removeProds) => {
                }
                return spaces
           }
-     
 }
 
 function addNewLocationToDB(set, toAdd){
@@ -1995,7 +1832,7 @@ function addNewLocationToDB(set, toAdd){
      .then( ownCountries =>{
           if (set!=='product') toAdd = toAdd.toString()
 
-          let somethingChanged = '333' //false
+          let somethingChanged = 0 //false
           const copyData = new Function('users', 'owndata', copyUserData_text)
           const self = this
           
@@ -2004,9 +1841,9 @@ function addNewLocationToDB(set, toAdd){
           if (set =='country'){
                          
                          //let index = this.countries.findIndex(country=>country.name == toAdd)
-                         let index = ownCountries.findIndex(country=>country.name == toAdd)
+                         let index = ownCountries.findIndex(country=>country.name === toAdd)
 
-                         if (index>-1) { return self.informUser(`'${toAdd}' is already in your database`) }
+                         if (index>-1) return self.informUser(`'${toAdd}' is already in your database, choose another name.`)
 
                          const newCountry = 
                                    [{   name: toAdd, 
@@ -2024,15 +1861,15 @@ function addNewLocationToDB(set, toAdd){
                          lastLocs.push({key: 'cities', value: 'all cities'})
                          lastLocs.push({key: 'shops',  value: 'all shops'})
 
-          } else if (set =='city') { console.log(`this happens 1`)
+          } else if (set =='city') {
 
                     //let countryData = this.countries.find(cntry=> cntry.name == this.currentCountry)
-                    let countryData = ownCountries.find(cntry=> cntry.name == this.currentCountry)
+                    let countryData = ownCountries.find(cntry=> cntry.name === this.currentCountry)
                     
                     // check if this city is already there
-                    let index = countryData.cities.findIndex(city=>city.name == toAdd)
+                    let index = countryData.cities.findIndex(city=>city.name === toAdd)
 
-                    if (index>-1){ return alert(`'${toAdd}' is already in your database`) }
+                    if (index>-1) return self.informUser(`'${toAdd}' is already in your database, choose another name.`)
                     
 
                     countryData.cities.push({
@@ -2050,65 +1887,59 @@ function addNewLocationToDB(set, toAdd){
                     lastLocs.push({key: 'cities', value: toAdd})
                     lastLocs.push({key: 'shops', value: 'all shops'})
 
-          } else if (set =='shop') {  console.log(`this happens 1`)
+          } else if (set =='shop') {
 
                //let countryData = this.countries.find(cntry=> cntry.name ===this.currentCountry)
-               let countryData = ownCountries.find(cntry=> cntry.name ===this.currentCountry)
+               let countryData = ownCountries.find(cntry=> cntry.name === this.currentCountry)
                
                let cityData = countryData.cities.find(city=> city.name === this.currentCity)
-               console.log( '   adding shop ', toAdd, 'to', cityData.name)
+               //console.log( '   adding shop ', toAdd, 'to', cityData.name)
 
                // check its not there already
                if (cityData.shops.findIndex(shop=>shop.name===toAdd) > -1)
-                         return alert(`'${toAdd}' is already in your database`)
+                         return self.informUser(`'${toAdd}' is already in your database, choose another name.`)
                
 
                cityData.shops.push(
-                                        {
+                                   {
                                         name: toAdd,
                                         products: []
-                                        }
+                                   }
                                    )
 
-               console.log('   new entry now', this.currentCountry, countryData)
+               //console.log('   new entry now', this.currentCountry, countryData)
                
                toSave = [[countryData]]
                lastLocs.push({key:'shops', value: toAdd})
                
           } else if (set=='product'){
-               //let countryData = this.countries.find(cntry=> cntry.name=== this.currentCountry)
+               
                let countryData = ownCountries.find(cntry=> cntry.name=== this.currentCountry)
                let cityData = countryData.cities.find(city=> city.name === this.currentCity)
                let shopData = cityData.shops.find(shop=> shop.name=== this.currentShop)
 
                shopData.products.push(toAdd)
-               console.log('shopData', shopData)
-               console.log('countryData', countryData)
                toSave = [[countryData]]
           }
-          
-          // 
 
-          //copyData( toSave, [...this.countries] )
           copyData( toSave, [...ownCountries] )
           .then(final=>{
                     console.log('location data to save', final===this.countries, final)
 
-
-                    lastLocs.forEach(item=>setLastSelection(item.key, item.value))
+                    lastLocs.forEach(item=>setLastSelection(item.key, item.value)) // so new location is set as chosen on app reload
 
                     return updateDeviceUserCountries(this.userName, final)
                               
           }).then(result=>{
                     console.log('result', result)
-                    return initializeLocationSelects(this, result)
+                    this.reloadView()
+                    //initializeLocationSelects(this, result)
+                    return this.switchScreen('main')
           })
           .catch(er=>{
-               alert('add Loc to DB er' + er)
+               alert('error while adding new item\n' + JSON.stringify(er) )
           })
 
-
-          return this.switchScreen('main')
      })
 }
 
@@ -2574,7 +2405,7 @@ function updateDBXToken (email, token){
 function checkDrBxToken (){
 
      const user = localStorage.getItem('deviceUserEmail')
-     if (!user) return; //alert('token? no user')
+     if (!user) return;
 
      if ( navigator.onLine && window.location.hash && 
           window.location.hash.includes('access_token=') && 
@@ -2587,7 +2418,6 @@ function checkDrBxToken (){
 
           let str = window.location.hash.substr(1)
           let arr = decodeURI(str).split('&')
-          //console.log(str,'arr',arr)
           const token = arr[0].replace('access_token=','')
 
           // save token to MDB and reload window to prevent accidental reupdates if leaving token in address bar
@@ -2595,8 +2425,7 @@ function checkDrBxToken (){
           .then(resp => window.location.href = window.location.origin )
           
           
-     } else { console.log('####   no new dropbox token   ####')
-     }//
+     } //else //console.log('####   no new dropbox token   ####')
 }
 /*let getDropToken = function(){
      const xhr = new XMLHttpRequest()
