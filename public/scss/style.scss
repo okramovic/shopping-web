@@ -24,6 +24,11 @@ body{
      font-family: $verdana;
 }
 
+input[type=text]::placeholder, input[type=number]::placeholder, 
+input[type=email]::placeholder, input[type=password]::placeholder,
+textarea::placeholder{
+     color: rgb(168, 168, 168);
+}
 
 select, select:active, select:hover, input[type=file]:active, input[type=file]:hover, 
 input[type=file]:focus, button{
@@ -69,6 +74,26 @@ input[type=file]:focus, button{
           border: none;
      }
 }
+#locationInput{
+     h2{
+          margin-bottom: 0;
+          color:$myColor;
+     }
+     input[type=text]{
+               border: 1px solid rgb(182, 182, 182);
+               height: 40px;
+               margin: 10px 0px;
+               padding-left: 10px;
+               padding-right: 10px;
+               font-size: 15px;
+     }
+     input[type=text]::placeholder{
+               text-align: center;
+               font-style: italic;
+     }
+
+}
+
 #addProductButton{
      position: fixed;
      bottom: 20px;

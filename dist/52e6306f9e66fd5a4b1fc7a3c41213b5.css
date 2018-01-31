@@ -16,6 +16,11 @@ body {
 .verdana {
   font-family: Helvetica, sans-serif; }
 
+input[type=text]::placeholder, input[type=number]::placeholder,
+input[type=email]::placeholder, input[type=password]::placeholder,
+textarea::placeholder {
+  color: #a8a8a8; }
+
 select, select:active, select:hover, input[type=file]:active, input[type=file]:hover,
 input[type=file]:focus, button {
   outline: none; }
@@ -55,6 +60,22 @@ input[type=file]:focus, button {
     background-image: none;
     background-color: transparent;
     border: none; }
+
+#locationInput h2 {
+  margin-bottom: 0;
+  color: #3fecb8; }
+
+#locationInput input[type=text] {
+  border: 1px solid #b6b6b6;
+  height: 40px;
+  margin: 10px 0px;
+  padding-left: 10px;
+  padding-right: 10px;
+  font-size: 15px; }
+
+#locationInput input[type=text]::placeholder {
+  text-align: center;
+  font-style: italic; }
 
 #addProductButton {
   position: fixed;

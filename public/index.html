@@ -168,13 +168,16 @@
 
         
                <div id="locationInput" v-show="locationInputShown" class="vertical">
-                           
-                       <button id="locationInputHide" v-on:click="locationInputShown=false">hide</button>
-                           
-                       <label>add {{locationSet}}</label>
-                       <input id="addCountryIn" type="text" v-model="newLocation">
-                       <button id="confCountryBut"  v-on:click="addNewLocation()">confirm</button>
-        
+                             
+                    <h2>add new {{locationSet}}</h2>
+                    <input id="addCountryIn" type="text" v-model="newLocation" placeholder="Hogwarts cornershop?">
+
+                    <div>
+                         <button id="locationInputHide" v-on:click="locationInputShown=false" class="generalButton fingerSized"
+                              >cancel</button>
+                         <button id="confCountryBut"  v-on:click="addNewLocation()" class="generalButton fingerSized"
+                              >confirm</button>
+                    </div>
                </div>
         
 
