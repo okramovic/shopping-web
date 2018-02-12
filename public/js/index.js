@@ -9,22 +9,73 @@
 const Vue = require('./vendor/Vue.2.5.13.nonmin.js')
 
 const serverURL = 'https://shopp.glitch.me/'
-const initalCountryData = [{
-     name: 'all countries' , 
-     cities: [
+const initalCountryData = [
+     {
+          name: 'all countries' , 
+          cities: [
                {
                     name: 'all cities', 
                     shops:[{
                               name: 'all shops',
-                              products: [
-                                        {"name":"magazine"},
-                                        {"name":"daily tabloid"},
-                                        {"name":"plastic bag"}
-                              ]
+                              products: []
                     }]
                }
-     ]
-}]
+          ]
+     },
+     {
+          "name": "Germany",
+          "cities": [
+              {
+                  "name": "all cities",
+                  "shops": [
+                      {
+                          "name": "all shops",
+                          "products": []
+                      }
+                  ]
+              },
+              {
+                  "name": "Berlin",
+                  "shops": [
+                      {
+                          "name": "all shops",
+                          "products": []
+                      },
+                      {
+                          "name": "Lidl",
+                          "products": [
+                              {
+                                   "imgName": "okram@protonmail.ch_D2018-01-26_T14-36-41",
+                                   "type": "chilli",
+                                   "name": "chilli green",
+                                   "rating": "3",
+                                   "price": "1.00",
+                                   "dbxURL": "https://dl.dropboxusercontent.com/s/8k8e5lr2aljucz3/okram%40protonmail.ch_D2018-01-26_T14-36-41.jpg"
+                               },
+                               {
+                                   "imgName": "okram@protonmail.ch_D2018-01-26_T14-36-56",
+                                   "dbxURL": "https://dl.dropboxusercontent.com/s/l18s600r8y07f6o/okram%40protonmail.ch_D2018-01-26_T14-36-56.jpg",
+                                   "type": "chilli",
+                                   "name": "yellow",
+                                   "descr": "be careful",
+                                   "descrLong": "this ones evil...",
+                                   "rating": "4"
+                               },
+                               {
+                                   "imgName": "okram@protonmail.ch_D2018-01-26_T14-37-03",
+                                   "type": "chilli",
+                                   "name": "Red",
+                                   "rating": "3",
+                                   "descrLong": "smile",
+                                   "dbxURL": "https://dl.dropboxusercontent.com/s/yukdu5urkldtkhn/okram%40protonmail.ch_D2018-01-26_T14-37-03.jpg"
+                               }
+                          ]
+                      }
+                  ]
+              }
+          ]
+     }
+]
 
 
 
