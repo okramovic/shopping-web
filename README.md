@@ -1,5 +1,6 @@
 # shopping memo
-(working title)
+Current used server code is in branch Glitch (due to push/pull workflow Glitch uses)
+
 
 try at https://shopp.glitch.me  (you might need to reload the page if it doesn't succeed on first try)
 
@@ -9,5 +10,3 @@ External memory - app to keep track of quality of good/bad products user purchas
 
 
 > In progress...
-
-Curent server code in branch Glitch (due to push/pull workflow Glitch uses)
