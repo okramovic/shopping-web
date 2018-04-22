@@ -9,3 +9,5 @@ External memory - app to keep track of quality of good/bad products user purchas
 
 
 > In progress...
+
+Curent server code in branch Glitch (due to push/pull workflow Glitch uses)
