@@ -220,6 +220,7 @@
                          
                               <canvas v-show="newProductPreview==true" :class="{smaller: modifyingProduct}" width="300" height="300"></canvas>
                               <br>
+                              <button v-show="newProductPreview==true && !modifyingProduct" v-on:click="rotateCanvas($event, 90)">rotate 90</button>
                               <p v-show="!modifyingProduct">add picture</p>
                               <input v-show="!modifyingProduct" type="file" accept="img/*" v-on:change="imageAdded($event)"><!-- capture="environment" -->
                               <br>

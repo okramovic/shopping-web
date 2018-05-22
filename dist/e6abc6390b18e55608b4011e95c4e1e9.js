@@ -68,7 +68,7 @@ require = (function (modules, cache, entry) {
 
   // Override the current require with this new one
   return newRequire;
-})({12:[function(require,module,exports) {
+})({13:[function(require,module,exports) {
 var global = (1,eval)("this");
 /*!
  * Vue.js v2.5.13
@@ -10868,7 +10868,7 @@ Vue$3.compile = compileToFunctions;
 return Vue$3;
 
 })));
-},{}],9:[function(require,module,exports) {
+},{}],8:[function(require,module,exports) {
 /**
  *        simple state management http://vuetips.com/simple-state-management-vue-stash
  * 
@@ -11038,6 +11038,7 @@ const app = new Vue({
           newProductDescription: null,
           newProductDescriptionLong: null,
           newProductPrice: null,
+          canvasRotationDegr: 0,
 
           modifyingProduct: false,
           productModified: null,
@@ -11637,24 +11638,18 @@ const app = new Vue({
 
                               else ctx.drawImage(this, start, 0, this.height, this.height,  0,0, wid, wid)
                               
-                              //console.log(' canvas len', canvas.toDataURL().length/1024)
-                              //console.log('preview len',img.src.toString().length/1024)
 
                               self.newProductPreview = true
+                              window.lastImg = this   // store img to be able to rotate it in another function if needed
 
-                              window.canvasData = canvas.toDataURL() // canvas data for new image to save to IDB
+
+                              window.canvasData = canvas.toDataURL()   // canvas data for new image to save to IDB
 
                               canvas.toBlob(function(blob){
                                    
                                    let reader = new FileReader()
                                    reader.onloadend = function(){
-                                        console.log('binary result', reader.result)//, reader.result.substr(0,100) + '...')
                                         window.toUploadToDropbox = reader.result    // global var is used later to upload
-
-                                        //const upload = uploadImgToDropbox.bind(self)
-
-                                        //upload(undefined, reader.result,  ev.target.files[0], blob)//,
-                                        //uploadImgToDropbox(undefined, reader.result)
                                    }
                                    reader.readAsArrayBuffer(blob)    //reader.readAsBinaryString(blob)
                               })
@@ -11665,6 +11660,44 @@ const app = new Vue({
                reader.readAsDataURL(ev.target.files[0])
 
                ev.target.value = '' // to eneble opening same pic again - this should work also for IE11, otherwise people use null
+          },
+          rotateCanvas: function(event, degrees ){
+            if (event) event.preventDefault();
+            console.log('rotate canvas')
+            this.canvasRotationDegr += degrees
+
+            const canvas = document.querySelector('canvas'),
+            ctx = canvas.getContext('2d'),
+            img = window.lastImg,
+            wid = 300,
+            start = img.height >= img.width ? Math.floor( (img.height-img.width)/2 ) : Math.floor((img.width-img.height)/2)
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+
+            ctx.translate(canvas.width/2, canvas.height/2);
+            ctx.rotate(this.canvasRotationDegr * Math.PI / 180 );
+            ctx.translate(-canvas.width/2, -canvas.width/2);
+
+            //ctx.drawImage(img, 0, 0, img.height, img.height)//,  0,0, 300, 300)
+            //ctx.drawImage(window.lastImg, -300/2, -300/2, 300, 300)
+            if (img.height >= img.width) ctx.drawImage(img, 0, start, img.width, img.width, 0, 0,  wid, wid)
+
+            else ctx.drawImage(img, start, 0, img.height, img.height,  0,0, wid, wid)
+
+            ctx.restore()
+
+            // following is needed to be able to save img to IDB and DBX
+            window.canvasData = canvas.toDataURL()
+            canvas.toBlob(blob =>{
+                                   
+                let reader = new FileReader()
+
+                reader.onloadend = function(){
+                    window.toUploadToDropbox = reader.result    // global var is used later to upload
+                }
+                reader.readAsArrayBuffer(blob)
+            })
           },
           newProductSubmit: function($event){
                $event.preventDefault()
@@ -13498,7 +13531,7 @@ let productTemplate = Vue.component('product',{
           )
      }
 })*/
-},{"./vendor/Vue.2.5.13.nonmin.js":12}],0:[function(require,module,exports) {
+},{"./vendor/Vue.2.5.13.nonmin.js":13}],0:[function(require,module,exports) {
 var global = (1, eval)('this');
 var OldModule = module.bundle.Module;
 function Module() {
@@ -13516,7 +13549,7 @@ function Module() {
 module.bundle.Module = Module;
 
 if (!module.bundle.parent && typeof WebSocket !== 'undefined') {
-  var ws = new WebSocket('ws://localhost:58785/');
+  var ws = new WebSocket('ws://localhost:61417/');
   ws.onmessage = function(event) {
     var data = JSON.parse(event.data);
 
@@ -13617,4 +13650,4 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.require, id)
   });
 }
-},{}]},{},[0,9])
+},{}]},{},[0,8])
