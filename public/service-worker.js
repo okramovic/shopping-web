@@ -1,4 +1,4 @@
-const shellName = "shopmem_v0.0.0",
+const shellName = "shopmem_v0.0.1",
      shellFiles = [
   "/index.html",
   "/dist/52e6306f9e66fd5a4b1fc7a3c41213b5.css",
