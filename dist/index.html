@@ -111,7 +111,7 @@
                     <input type="checkbox" v-model="fetchPicsAlso">
                     <p class="genericText verdana">&#10549; my pics too</p>
                </div>
-               
+              
                <br>
                <button @click="requestDropboxAccess()" v-if="userName && onLine()===true && !token" class="generalButton">connect my Dropbox</button>
                <br>

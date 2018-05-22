@@ -317,49 +317,47 @@ const app = new Vue({
                window.location.href = url
           },
           fetchMyCountries:function(){
-               return new Promise((resolve, reject)=>{
+              return new Promise((resolve, reject)=>{
 
-               
-               console.log('fetching device countries of >', this.userName, '<')
-               animateLoader.call(this)               
-               const errorHandlerLocal = errorHandler.bind(this)
+                  console.log('fetching device countries of >', this.userName, '<')
+                  animateLoader.call(this)               
+                  const errorHandlerLocal = errorHandler.bind(this)
 
-               fetchCountriesOfUser({   userName: this.userName,
-                                        email: localStorage.getItem('deviceUserEmail')
-               }).then( userData =>{
+                  fetchCountriesOfUser({ 
+                          userName: this.userName,
+                          email: localStorage.getItem('deviceUserEmail')
 
-                    console.log('|||  userData fetched', userData)
-                    return updateDeviceUserCountries(this.userName, userData.countries)
-                    
-               })
-               .then( countries => {
-                    console.log('saved user own data', countries)
+                  }).then( userData =>{
 
-                    if (this.fetchPicsAlso)
+                        console.log('|||  userData fetched', userData)
+                        return updateDeviceUserCountries(this.userName, userData.countries)
+                  })
+                  .then( countries => {
+                        console.log('saved user own data', countries)
 
-                         fetchAndSaveMyImages.call(this, countries)
-                         .then(()=>{
-                              stopLoaderAnimation.call(this)
-                              //this.switchScreen('main')
-                              //this.startApp()
-                              resolve(countries)
-                         })
+                        if (this.fetchPicsAlso)
 
-                    else {
+                            fetchAndSaveMyImages.call(this, countries)
+                            .then(()=>{
+                                  stopLoaderAnimation.call(this)
+                                  //this.switchScreen('main')
+                                  //this.startApp()
+                                  resolve(countries)
+                            })
 
-                         stopLoaderAnimation.call(this)
-                         this.informUser(`Sukces - your data downloaded!`,2500)
+                        else {
 
-                         //this.switchScreen('main')
-                         //this.startApp()
-                         //return countries
-                         resolve(countries)
-                    }
-                    
-                    
-               }).catch(errorHandlerLocal)
+                            stopLoaderAnimation.call(this)
+                            this.informUser(`Sukces - your data downloaded!`,2500)
 
-               })               
+                            //this.switchScreen('main')
+                            //this.startApp()
+                            //return countries
+                            resolve(countries)
+                        }
+                        
+                  }).catch(errorHandlerLocal)
+              })               
           },
           pushMyCountries:function(){
                if (!this.userName ) return alert('unregistered user cant back up data online')
@@ -369,10 +367,9 @@ const app = new Vue({
                const email = localStorage.getItem('deviceUserEmail')
 
                sendCountryDataOfUser({email, userName: this.userName})
-               .then(()=>{
-
-               })
+               .then(()=> this.informUser(`Sukces, data backed-up.`) )
                .catch(er=>{
+                    console.error(er);
                     this.informUser(`Didnt work out as planned. Try again?`)
                })
           },
@@ -2037,7 +2034,9 @@ const sendCountryDataOfUser = userObj =>
 
                const request = new Request(serverURL + 'API/pushCountriesOfUser',{
                     headers: new Headers({
-                         'Content-Type': 'application/json'
+                         'Content-Type': 'application/json',
+                         "Accept": "application/json, text/plain, */*",
+                         'X-Requested-With': 'XMLHttpRequest'
                     }),
                     method: 'POST',
                     mode:'no-cors',
@@ -2048,10 +2047,16 @@ const sendCountryDataOfUser = userObj =>
                })
      
 
-               fetch(request).then(result =>{
-                    console.log('result ',result)
-                    resolve(null)
-               })
+               fetch(request)
+                .then(response =>{
+
+                    console.log('xx sendCountryDataOfUser response ',response)
+                    if (response.ok) resolve(null)
+                    else reject(`server responded with code ${response.status}`)
+                })
+                .catch(er=>{
+                    reject(er)
+                })
 
 
           }).catch(er=>{
@@ -2074,6 +2079,7 @@ function fetchCountriesOfUser(user){
                          const result = JSON.parse(this.responseText)
                          result.userName = user.userName
 
+                         console.log(this.status)
                          //console.log('   got user data from server',result.email, result)
                          resolve(result)
 
