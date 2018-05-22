@@ -68,7 +68,7 @@ require = (function (modules, cache, entry) {
 
   // Override the current require with this new one
   return newRequire;
-})({6:[function(require,module,exports) {
+})({12:[function(require,module,exports) {
 var global = (1,eval)("this");
 /*!
  * Vue.js v2.5.13
@@ -10868,7 +10868,7 @@ Vue$3.compile = compileToFunctions;
 return Vue$3;
 
 })));
-},{}],3:[function(require,module,exports) {
+},{}],9:[function(require,module,exports) {
 /**
  *        simple state management http://vuetips.com/simple-state-management-vue-stash
  * 
@@ -13498,7 +13498,7 @@ let productTemplate = Vue.component('product',{
           )
      }
 })*/
-},{"./vendor/Vue.2.5.13.nonmin.js":6}],0:[function(require,module,exports) {
+},{"./vendor/Vue.2.5.13.nonmin.js":12}],0:[function(require,module,exports) {
 var global = (1, eval)('this');
 var OldModule = module.bundle.Module;
 function Module() {
@@ -13516,7 +13516,7 @@ function Module() {
 module.bundle.Module = Module;
 
 if (!module.bundle.parent && typeof WebSocket !== 'undefined') {
-  var ws = new WebSocket('ws://localhost:62454/');
+  var ws = new WebSocket('ws://localhost:58785/');
   ws.onmessage = function(event) {
     var data = JSON.parse(event.data);
 
@@ -13617,4 +13617,4 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.require, id)
   });
 }
-},{}]},{},[0,3])
+},{}]},{},[0,9])
