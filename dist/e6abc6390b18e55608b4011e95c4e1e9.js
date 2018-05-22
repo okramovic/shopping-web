@@ -10880,22 +10880,73 @@ return Vue$3;
 const Vue = require('./vendor/Vue.2.5.13.nonmin.js')
 
 const serverURL = 'https://shopp.glitch.me/'
-const initalCountryData = [{
-     name: 'all countries' , 
-     cities: [
+const initalCountryData = [
+     {
+          name: 'all countries' , 
+          cities: [
                {
                     name: 'all cities', 
                     shops:[{
                               name: 'all shops',
-                              products: [
-                                        {"name":"magazine"},
-                                        {"name":"daily tabloid"},
-                                        {"name":"plastic bag"}
-                              ]
+                              products: []
                     }]
                }
-     ]
-}]
+          ]
+     },
+     {
+          "name": "Germany",
+          "cities": [
+              {
+                  "name": "all cities",
+                  "shops": [
+                      {
+                          "name": "all shops",
+                          "products": []
+                      }
+                  ]
+              },
+              {
+                  "name": "Berlin",
+                  "shops": [
+                      {
+                          "name": "all shops",
+                          "products": []
+                      },
+                      {
+                          "name": "Lidl",
+                          "products": [
+                              {
+                                   "imgName": "okram@protonmail.ch_D2018-01-26_T14-36-41",
+                                   "type": "chilli",
+                                   "name": "chilli green",
+                                   "rating": "3",
+                                   "price": "1.00",
+                                   "dbxURL": "https://dl.dropboxusercontent.com/s/8k8e5lr2aljucz3/okram%40protonmail.ch_D2018-01-26_T14-36-41.jpg"
+                               },
+                               {
+                                   "imgName": "okram@protonmail.ch_D2018-01-26_T14-36-56",
+                                   "dbxURL": "https://dl.dropboxusercontent.com/s/l18s600r8y07f6o/okram%40protonmail.ch_D2018-01-26_T14-36-56.jpg",
+                                   "type": "chilli",
+                                   "name": "yellow",
+                                   "descr": "be careful",
+                                   "descrLong": "this ones evil...",
+                                   "rating": "4"
+                               },
+                               {
+                                   "imgName": "okram@protonmail.ch_D2018-01-26_T14-37-03",
+                                   "type": "chilli",
+                                   "name": "Red",
+                                   "rating": "3",
+                                   "descrLong": "smile",
+                                   "dbxURL": "https://dl.dropboxusercontent.com/s/yukdu5urkldtkhn/okram%40protonmail.ch_D2018-01-26_T14-37-03.jpg"
+                               }
+                          ]
+                      }
+                  ]
+              }
+          ]
+     }
+]
 
 
 
@@ -11553,7 +11604,7 @@ const app = new Vue({
           },
           imageAdded:function(ev){
 
-               console.log('img added', ev)
+               //console.log('img added', ev)
                const reader = new FileReader(),
                     readBin = new FileReader(),
                     self = this,
@@ -11564,30 +11615,30 @@ const app = new Vue({
 
                reader.onload = function(fileObj){
                          let img = new Image()
-
-                         //let data = fileObj.target.result
                          
                          img.onload = function(){
-
-                              if (this.width>this.height) return alert(`take image with vertical orientation please`)
-
+                              console.clear()
+                              console.log('--img w,h',this.width,this.height) 
+                              
+                              
                               let fract = 10
                               let wid = 300     //parseInt(  this.width/fract),
                                   //,hei = 300  //parseInt(  this.height/fract)
                               
 
                               const canvas = document.querySelector('canvas'),
-                                   ctx = canvas.getContext('2d'),
-                                   start = Math.floor( (this.height-this.width)/2 )
-                              canvas.width = wid
-                              canvas.height = wid
+                              ctx = canvas.getContext('2d'),
+                              start = this.height >= this.width ? Math.floor( (this.height-this.width)/2 ) : Math.floor((this.width-this.height)/2)
 
+                              canvas.width = canvas.height = wid
+                                                  
+                                                                          //    sX  sY     sW          sH          dx,dy, dW,  dHeight
+                              if (this.height >= this.width) ctx.drawImage(this,0,  start, this.width, this.width, 0, 0,  wid, wid)
 
-                                             //  sX  sY     sW          sH                       
-                              ctx.drawImage(this,0,  start, this.width, this.width,  0,0, wid, wid)
-
-                              console.log(' canvas len', canvas.toDataURL().length/1024)
-                              console.log('preview len',img.src.toString().length/1024)
+                              else ctx.drawImage(this, start, 0, this.height, this.height,  0,0, wid, wid)
+                              
+                              //console.log(' canvas len', canvas.toDataURL().length/1024)
+                              //console.log('preview len',img.src.toString().length/1024)
 
                               self.newProductPreview = true
 
@@ -13465,7 +13516,7 @@ function Module() {
 module.bundle.Module = Module;
 
 if (!module.bundle.parent && typeof WebSocket !== 'undefined') {
-  var ws = new WebSocket('ws://localhost:50333/');
+  var ws = new WebSocket('ws://localhost:62454/');
   ws.onmessage = function(event) {
     var data = JSON.parse(event.data);
 

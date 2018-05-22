@@ -733,7 +733,7 @@ const app = new Vue({
           },
           imageAdded:function(ev){
 
-               console.log('img added', ev)
+               //console.log('img added', ev)
                const reader = new FileReader(),
                     readBin = new FileReader(),
                     self = this,
@@ -744,30 +744,30 @@ const app = new Vue({
 
                reader.onload = function(fileObj){
                          let img = new Image()
-
-                         //let data = fileObj.target.result
                          
                          img.onload = function(){
-
-                              if (this.width>this.height) return alert(`take image with vertical orientation please`)
-
+                              console.clear()
+                              console.log('--img w,h',this.width,this.height) 
+                              
+                              
                               let fract = 10
                               let wid = 300     //parseInt(  this.width/fract),
                                   //,hei = 300  //parseInt(  this.height/fract)
                               
 
                               const canvas = document.querySelector('canvas'),
-                                   ctx = canvas.getContext('2d'),
-                                   start = Math.floor( (this.height-this.width)/2 )
-                              canvas.width = wid
-                              canvas.height = wid
+                              ctx = canvas.getContext('2d'),
+                              start = this.height >= this.width ? Math.floor( (this.height-this.width)/2 ) : Math.floor((this.width-this.height)/2)
 
+                              canvas.width = canvas.height = wid
+                                                  
+                                                                          //    sX  sY     sW          sH          dx,dy, dW,  dHeight
+                              if (this.height >= this.width) ctx.drawImage(this,0,  start, this.width, this.width, 0, 0,  wid, wid)
 
-                                             //  sX  sY     sW          sH                       
-                              ctx.drawImage(this,0,  start, this.width, this.width,  0,0, wid, wid)
-
-                              console.log(' canvas len', canvas.toDataURL().length/1024)
-                              console.log('preview len',img.src.toString().length/1024)
+                              else ctx.drawImage(this, start, 0, this.height, this.height,  0,0, wid, wid)
+                              
+                              //console.log(' canvas len', canvas.toDataURL().length/1024)
+                              //console.log('preview len',img.src.toString().length/1024)
 
                               self.newProductPreview = true
 
